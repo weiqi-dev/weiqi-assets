@@ -1,5 +1,5 @@
 // 自动生成的域名配置
-// 生成时间: 2026-05-31T14:58:40+08:00
+// 生成时间: 2026-05-31T15:03:40+08:00
 // 更新域名: worldcat-richard-walks-fairfield.trycloudflare.com
 
 var API_DOMAIN = "worldcat-richard-walks-fairfield.trycloudflare.com";
