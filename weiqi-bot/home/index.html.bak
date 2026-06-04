@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+  <title>围棋智能助手</title>
+  <style>
+    /* home 特有样式：棋子 logo */
+    .header-logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 8px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .header-logo .stone {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: inline-block;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    .header-logo .stone:nth-child(1) { animation-delay: 0s; }
+    .header-logo .stone:nth-child(3) { animation-delay: 0.5s; }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-3px); }
+    }
+
+    .header-logo .stone-black {
+      background: radial-gradient(circle at 30% 30%, #4a4a4a, #1a1a1a);
+      box-shadow: 2px 2px 8px rgba(0,0,0,0.5), inset -1px -1px 3px rgba(0,0,0,0.3);
+    }
+
+    .header-logo .stone-white {
+      background: radial-gradient(circle at 30% 30%, #ffffff, #d0d0d0);
+      box-shadow: 2px 2px 8px rgba(0,0,0,0.3), inset -1px -1px 3px rgba(255,255,255,0.5);
+    }
+
+    /* home 特有样式：内容区域不需要 padding-top */
+    .glass-content {
+      padding: 0 12px 24px;
+    }
+    
+    /* 分组标签 */
+    .section-label {
+      font-size: 13px;
+      color: rgba(255,255,255,0.8);
+      margin-bottom: 10px;
+      padding-left: 2px;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+    }
+
+    /* 快捷入口卡片 - 玻璃拟态 */
+    .quick-entry-card {
+      display: flex;
+      align-items: center;
+      padding: 14px 16px;
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 16px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .quick-entry-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 100%);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .quick-entry-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+      border-color: rgba(255,255,255,0.3);
+    }
+
+    .quick-entry-card:hover::before {
+      opacity: 1;
+    }
+
+    .quick-entry-card:active {
+      transform: translateY(-1px);
+    }
+
+    .quick-card-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6em;
+      background: rgba(255,255,255,0.2);
+      backdrop-filter: blur(5px);
+      flex-shrink: 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .quick-card-content {
+      flex: 1;
+      margin-left: 14px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .quick-card-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: white;
+      margin-bottom: 3px;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+
+    .quick-card-desc {
+      font-size: 12px;
+      color: rgba(255,255,255,0.8);
+    }
+
+    .quick-card-arrow {
+      font-size: 22px;
+      color: rgba(255,255,255,0.6);
+      margin-left: 8px;
+      transition: transform 0.3s, color 0.3s;
+      position: relative;
+      z-index: 1;
+    }
+
+    .quick-entry-card:hover .quick-card-arrow {
+      transform: translateX(4px);
+      color: white;
+    }
+
+    /* 功能网格 - 玻璃拟态 */
+    .function-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      background: rgba(255,255,255,0.12);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 16px;
+      padding: 16px 10px;
+    }
+
+    .grid-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 10px 4px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .grid-item:hover {
+      background: rgba(255,255,255,0.15);
+      transform: translateY(-2px);
+    }
+
+    .grid-item:active {
+      transform: scale(0.95);
+    }
+
+    .grid-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4em;
+      margin-bottom: 6px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+    }
+
+    .grid-label {
+      font-size: 12px;
+      color: rgba(255,255,255,0.9);
+      text-align: center;
+      font-weight: 500;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+
+    /* 功能网格配色 */
+    .grid-icon.assistant { background: linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%); }
+    .grid-icon.player { background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%); }
+    .grid-icon.opponent { background: linear-gradient(135deg, #E91E63 0%, #C2185B 100%); }
+    .grid-icon.event { background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%); }
+    .grid-icon.decision { background: linear-gradient(135deg, #F44336 0%, #D32F2F 100%); }
+
+    /* 动画 */
+    .quick-entry-card {
+      animation: fadeInUp 0.5s ease-out;
+    }
+
+    .quick-entry-card:nth-child(1) { animation-delay: 0.1s; }
+    .quick-entry-card:nth-child(2) { animation-delay: 0.15s; }
+    .quick-entry-card:nth-child(3) { animation-delay: 0.2s; }
+    .quick-entry-card:nth-child(4) { animation-delay: 0.25s; }
+
+    .function-grid {
+      animation: fadeInUp 0.5s ease-out 0.3s backwards;
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* 涟漪动画 */
+    .ripple {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.4);
+      transform: scale(0);
+      animation: ripple 0.6s linear;
+      pointer-events: none;
+    }
+
+    @keyframes ripple {
+      to { transform: scale(4); opacity: 0; }
+    }
+
+    /* 响应式 */
+    @media (max-width: 360px) {
+      .function-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      .header-title {
+        font-size: 1.7em;
+      }
+    }
+  </style>
+  <script type="module" crossorigin src="../assets/home/index-hGQD9pvL.js"></script>
+  <link rel="modulepreload" crossorigin href="../assets/FavoriteService-Vp2l_PCI.js">
+  <link rel="modulepreload" crossorigin href="../assets/modulepreload-polyfill-eJgYjmQ8.js">
+  <link rel="modulepreload" crossorigin href="../assets/Bootstrap-DFrnJCVa.js">
+  <link rel="stylesheet" crossorigin href="../assets/shell-9ygW22hc.css">
+</head>
+<body>
+  <div class="glass-container">
+    <header class="glass-header">
+      <div class="header-logo">
+        <span class="stone stone-black"></span>
+        <h1 class="glass-title">围棋助手</h1>
+        <span class="stone stone-white"></span>
+      </div>
+      <p class="glass-subtitle" id="greeting"></p>
+    </header>
+    <div class="glass-content">
+      <div id="page-root"></div>
+    </div>
+  </div>
+  <script src="../shared/error-catch.js"></script>
+  <script>
+    // 设置动态问候语
+    const hour = new Date().getHours();
+    let greeting = '你好';
+    if (hour >= 5 && hour < 12) greeting = '早上好';
+    else if (hour >= 12 && hour < 18) greeting = '下午好';
+    else if (hour >= 18 || hour < 5) greeting = '晚上好';
+    document.getElementById('greeting').textContent = greeting + '，准备好对弈了吗？';
+
+    // 涟漪动画
+    document.addEventListener('click', function(e) {
+      const target = e.target.closest('.quick-entry-card, .grid-item');
+      if (!target) return;
+      
+      const ripple = document.createElement('span');
+      ripple.classList.add('ripple');
+      const rect = target.getBoundingClientRect();
+      const size = Math.max(rect.width, rect.height);
+      ripple.style.width = ripple.style.height = size + 'px';
+      ripple.style.left = (e.clientX - rect.left - size/2) + 'px';
+      ripple.style.top = (e.clientY - rect.top - size/2) + 'px';
+      target.style.position = 'relative';
+      target.appendChild(ripple);
+      setTimeout(() => ripple.remove(), 600);
+    });
+  </script>
+</body>
+</html>
