@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>棋谱抓取 - 围棋智能助手</title>
+  <style>
+    .fetcher-container {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      flex-direction: column;
+    }
+    .fetcher-header {
+      text-align: center;
+      color: white;
+      padding: 40px 20px 20px;
+    }
+    .fetcher-header h1 {
+      font-size: 1.8em;
+      margin-bottom: 8px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+    .fetcher-header .subtitle {
+      font-size: 0.95em;
+      opacity: 0.9;
+    }
+    .fetcher-content {
+      flex: 1;
+      padding: 0 16px 20px;
+      max-width: 480px;
+      margin: 0 auto;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    #page-root {
+      width: 100%;
+    }
+  </style>
+  <script type="module" crossorigin src="../assets/fetcher/index-Dy6B-kkp.js"></script>
+  <link rel="modulepreload" crossorigin href="../assets/FavoriteService-CuLiD-pB.js">
+  <link rel="modulepreload" crossorigin href="../assets/modulepreload-polyfill-Btlm8H0F.js">
+  <link rel="modulepreload" crossorigin href="../assets/Bootstrap-zbz5vrIV.js">
+  <link rel="modulepreload" crossorigin href="../assets/storage-DQWsLe8V.js">
+  <link rel="modulepreload" crossorigin href="../assets/IPlayer-CgO1tktP.js">
+  <link rel="modulepreload" crossorigin href="../assets/HtmlParser-DpPToidn.js">
+  <link rel="modulepreload" crossorigin href="../assets/sgf-eV_n6cbd.js">
+  <link rel="modulepreload" crossorigin href="../assets/game-Bhy-ql8Z.js">
+  <link rel="modulepreload" crossorigin href="../assets/WebFileExporter-6LTyjd7X.js">
+  <link rel="stylesheet" crossorigin href="../assets/shell-CWZ5AzIL.css">
+</head>
+<body>
+  <div class="fetcher-container">
+    <header class="fetcher-header">
+      <h1>🎯 棋谱抓取</h1>
+      <p class="subtitle">粘贴分享链接，自动下载 SGF 棋谱</p>
+    </header>
+    <div class="fetcher-content">
+      <div id="page-root"></div>
+    </div>
+  </div>
+  <script src="../shared/error-catch.js"></script>
+</body>
+</html>

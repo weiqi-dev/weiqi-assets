@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+  <title>赛事详情 - 围棋智能助手</title>
+  <style>
+    /* ===== 完全照搬 events.html 的样式 ===== */
+    /* ===== 标题栏 ===== */
+    header {
+      text-align: center;
+      padding: 20px 12px 12px;
+      color: white;
+    }
+    header h1 {
+      font-size: 1.4em;
+      margin: 0;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+
+    /* ===== 覆盖 shell.css 容器宽度 ===== */
+    .container {
+      max-width: 100%;
+    }
+    @media (min-width: 768px) {
+      .container {
+        max-width: 800px;
+      }
+    }
+
+    /* ===== 白色大面板 ===== */
+    .event-detail-group {
+      background: white;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+
+    /* ===== 面板头部，完全照搬 events.html ===== */
+    .detail-header {
+      background: #f8f9fa;
+      padding: 12px 15px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* ===== 筛选标签区域，完全照搬 ===== */
+    .detail-tabs {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+      flex-wrap: nowrap;
+      align-items: center;
+    }
+    .detail-tabs::-webkit-scrollbar { display: none; }
+
+    /* ===== 手机屏幕下优化 ===== */
+    @media (max-width: 480px) {
+      .detail-tabs select {
+        max-width: 120px !important;
+      }
+    }
+
+    /* ===== 筛选按钮，完全照搬 events.html ===== */
+    .detail-tab {
+      padding: 3px 8px;
+      font-size: 0.8em;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: #fff;
+      color: #666;
+      white-space: nowrap;
+    }
+    .detail-tab:hover {
+      background: #e0e0e0;
+    }
+    .detail-tab.active {
+      background: rgba(102,126,234,0.1);
+      color: #667eea;
+    }
+
+    /* ===== 轮次导航 ===== */
+    .round-nav {
+      padding: 10px 15px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+    }
+    .round-btn {
+      padding: 4px 12px;
+      font-size: 0.85em;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      cursor: pointer;
+      background: white;
+      transition: all 0.2s;
+    }
+    .round-btn:hover:not(:disabled) {
+      background: #f0f0f0;
+    }
+    .round-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+  </style>
+  <script type="module" crossorigin src="../assets/event/detail-BpVz9Uys.js"></script>
+  <link rel="modulepreload" crossorigin href="../assets/FavoriteService-CuLiD-pB.js">
+  <link rel="modulepreload" crossorigin href="../assets/modulepreload-polyfill-Btlm8H0F.js">
+  <link rel="modulepreload" crossorigin href="../assets/tokens-29UTe5Qr.js">
+  <link rel="modulepreload" crossorigin href="../assets/Bootstrap-zbz5vrIV.js">
+  <link rel="modulepreload" crossorigin href="../assets/storage-DQWsLe8V.js">
+  <link rel="modulepreload" crossorigin href="../assets/ResourceCache-QnlqNopT.js">
+  <link rel="modulepreload" crossorigin href="../assets/HtmlParser-DpPToidn.js">
+  <link rel="modulepreload" crossorigin href="../assets/event-CbQ80xsY.js">
+  <link rel="modulepreload" crossorigin href="../assets/SessionPageCache-BH4tvR3-.js">
+  <link rel="stylesheet" crossorigin href="../assets/shell-CWZ5AzIL.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🏆 赛事详情</h1>
+    </header>
+
+    <div class="event-detail-group">
+      <div class="detail-header">
+        <div class="detail-tabs" id="detail-tabs"></div>
+      </div>
+      <div id="page-root"></div>
+    </div>
+  </div>
+
+  <script src="../shared/error-catch.js"></script>
+</body>
+</html>

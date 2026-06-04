@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <title>人机对弈</title>
+  <script type="module" crossorigin src="../assets/play/hm-BIcyoiDd.js"></script>
+  <link rel="modulepreload" crossorigin href="../assets/FavoriteService-CuLiD-pB.js">
+  <link rel="modulepreload" crossorigin href="../assets/modulepreload-polyfill-Btlm8H0F.js">
+  <link rel="modulepreload" crossorigin href="../assets/KataGoWebAdapter-BcoG9DbO.js">
+  <link rel="modulepreload" crossorigin href="../assets/RecorderHistoryManager-CgnMnZ2c.js">
+  <link rel="modulepreload" crossorigin href="../assets/ProgressManager-DHL7r9iz.js">
+  <link rel="modulepreload" crossorigin href="../assets/Bootstrap-zbz5vrIV.js">
+  <link rel="modulepreload" crossorigin href="../assets/storage-DQWsLe8V.js">
+  <link rel="modulepreload" crossorigin href="../assets/IPlayer-CgO1tktP.js">
+  <link rel="modulepreload" crossorigin href="../assets/HtmlParser-DpPToidn.js">
+  <link rel="modulepreload" crossorigin href="../assets/sgf-eV_n6cbd.js">
+  <link rel="modulepreload" crossorigin href="../assets/game-Bhy-ql8Z.js">
+  <link rel="modulepreload" crossorigin href="../assets/Game-1yyHzA2P.js">
+  <link rel="modulepreload" crossorigin href="../assets/WebAudioPlayer-DXLr8Vks.js">
+  <link rel="modulepreload" crossorigin href="../assets/adapters-BDAJJJGc.js">
+  <link rel="modulepreload" crossorigin href="../assets/InMemoryDocumentStorage-DOGLYs3b.js">
+  <link rel="modulepreload" crossorigin href="../assets/ResourceCache-QnlqNopT.js">
+  <link rel="modulepreload" crossorigin href="../assets/ModelService-7_wYDAFG.js">
+  <link rel="stylesheet" crossorigin href="../assets/hm-Cvo8sGdm.css">
+</head>
+<body>
+  <div class="container">
+    <!-- 渐变标题栏 -->
+    <header class="page-header">
+      <div class="header-left">
+        <div class="page-title" id="pageTitle">
+          <span class="stone-dot black"></span>玩家
+          <span style="opacity:0.6">vs</span>
+          <span class="stone-dot white"></span>AI
+        </div>
+        <div class="page-subtitle" id="modelInfo">等待开始</div>
+      </div>
+      <div class="header-right">
+        <div class="dropdown">
+          <button class="menu-btn" id="menuBtn" title="菜单">⋮</button>
+          <div class="dropdown-menu" id="dropdownMenu">
+            <button class="dropdown-item" id="menuUndoBtn" disabled>
+              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 14L4 9l5-5"/>
+                <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/>
+              </svg>
+              <span>悔棋</span>
+            </button>
+            <button class="dropdown-item" id="menuPassBtn" disabled>
+              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10" stroke-dasharray="4 2"/>
+              </svg>
+              <span>停一手</span>
+            </button>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item danger" id="menuResignBtn" disabled>
+              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="6" y="6" width="12" height="12"/>
+              </svg>
+              <span style="color: #ff6b6b;">认输</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+    
+    <!-- 棋盘区域 -->
+    <div class="board-section">
+      <div id="page-root"></div>
+    </div>
+    
+    <!-- 工具栏 -->
+    <div class="toolbar">
+      <div class="btn-group" id="btnGroup">
+        <button class="icon-btn primary" id="confirmBtn" title="确认落子" style="display:none;">
+          <svg viewBox="0 0 24 24">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </button>
+        <button class="icon-btn" id="situationBtn" title="形势判断" disabled>
+          <svg viewBox="0 0 24 24">
+            <path d="M3 3v18h18"/>
+            <path d="M7 16l4-6 4 3 5-8"/>
+          </svg>
+        </button>
+      </div>
+      <div class="stats-info" id="statsInfo">
+        <span class="move-count">第 <strong id="moveCount">0</strong> 手</span>
+        <span class="capture-info">
+          <span class="capture-item"><span class="stone-dot black"></span>提<strong id="blackCaptures">0</strong></span>
+          <span class="capture-item"><span class="stone-dot white"></span>提<strong id="whiteCaptures">0</strong></span>
+        </span>
+      </div>
+    </div>
+    
+    <!-- 状态栏 -->
+    <div class="status-bar" id="gameStatus">等待开始...</div>
+  
+  <!-- 弹框容器 -->
+  <div id="dialogContainer"></div>
+  
+  <!-- 加载覆盖层 -->
+  <div id="loadingOverlay" style="display:none;">
+    <div class="loading-spinner"></div>
+    <div class="loading-text" id="loadingText">正在加载模型...</div>
+    <div class="loading-progress" id="loadingProgress">准备下载...</div>
+  </div>
+  
+  <!-- 选项对话框 -->
+  <div class="dialog-overlay" id="optionsDialog" style="display:none;">
+    <div class="dialog options-dialog">
+      <div class="dialog-title">🎮 开始对局</div>
+      
+      <!-- 难度选择 -->
+      <div class="options-section">
+        <span class="options-label">难度</span>
+        <div class="options-row" id="difficultyRow">
+          <button class="option-btn" data-value="easy">简单</button>
+          <button class="option-btn active" data-value="medium">中等</button>
+          <button class="option-btn" data-value="hard">困难</button>
+        </div>
+      </div>
+      
+      <!-- 执色选择 -->
+      <div class="options-section">
+        <span class="options-label">执色</span>
+        <div class="options-row" id="colorRow">
+          <button class="option-btn active" data-value="black">
+            <span class="stone-dot black"></span> 执黑
+          </button>
+          <button class="option-btn" data-value="white">
+            <span class="stone-dot white"></span> 执白
+          </button>
+        </div>
+      </div>
+      
+      <!-- 让子选择 -->
+      <div class="options-section">
+        <span class="options-label">让子</span>
+        <div class="options-row" id="handicapRow">
+          <button class="option-btn active" data-value="0">不让</button>
+          <button class="option-btn" data-value="2">2子</button>
+          <button class="option-btn" data-value="3">3子</button>
+          <button class="option-btn" data-value="4">4子</button>
+        </div>
+      </div>
+      
+      <!-- 模型选择 -->
+      <div class="form-group">
+        <label>AI 模型</label>
+        <div id="modelCards"></div>
+      </div>
+      
+      <!-- 悔棋设置 -->
+      <div class="options-section">
+        <span class="options-label">规则</span>
+        <div class="options-row" id="rulesRow">
+          <button class="option-btn active" data-value="allow-undo">允许悔棋</button>
+          <button class="option-btn" data-value="no-undo">禁止悔棋</button>
+        </div>
+      </div>
+      
+      <div class="dialog-btn-group">
+        <button class="dialog-btn primary" id="startGameBtn">开始对局</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 形势判断弹框 -->
+  <div class="dialog-overlay" id="situationDialog" style="display:none;">
+    <div class="dialog">
+      <div class="dialog-title">📊 形势判断</div>
+      <div class="situation-content">
+        <div class="situation-row">
+          <span class="situation-label">黑方胜率</span>
+          <span class="situation-value" id="winRate">--</span>
+        </div>
+        <div class="situation-row">
+          <span class="situation-label">目差</span>
+          <span class="situation-value" id="scoreDiff">--</span>
+        </div>
+        <div class="situation-note" id="situationNote"></div>
+      </div>
+      <button class="dialog-btn secondary" id="closeSituationBtn">关闭</button>
+    </div>
+  </div>
+  
+  <!-- 确认对话框 -->
+  <div class="dialog-overlay" id="confirmDialog" style="display:none;">
+    <div class="dialog">
+      <div class="dialog-title" id="confirmTitle">确认</div>
+      <div class="confirm-message" id="confirmMessage"></div>
+      <div class="dialog-btn-group">
+        <button class="dialog-btn secondary" id="confirmCancelBtn">取消</button>
+        <button class="dialog-btn primary" id="confirmOkBtn">确定</button>
+      </div>
+    </div>
+  </div>
+  
+</body>
+</html>
