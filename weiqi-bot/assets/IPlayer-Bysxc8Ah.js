@@ -1,0 +1,1 @@
+function e(e){return e===`black`?`white`:`black`}function t(e){return e===`B`?`black`:`white`}function n(e){return e===`black`?`B`:`W`}export{n,t as r,e as t};

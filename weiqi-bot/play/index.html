@@ -5,44 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
   <title>围棋对弈</title>
   <style>
-    /* 覆盖 shell.css 背景 */
-    body {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #5a3d7a 100%);
-      background-attachment: fixed;
-    }
-
-    .play-nav-container {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .play-nav-header {
-      text-align: center;
-      color: white;
-      padding: 24px 12px 20px;
-      position: relative;
-    }
-
-    /* 动态光效背景 */
-    .play-nav-header::before {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 300px;
-      height: 300px;
-      background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
-      transform: translate(-50%, -50%);
-      animation: pulse 6s ease-in-out infinite;
-      pointer-events: none;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 0.4; transform: translate(-50%, -50%) scale(1); }
-      50% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.2); }
-    }
-
+    /* play 特有样式：棋子 logo */
     .header-logo {
       display: flex;
       align-items: center;
@@ -79,34 +42,11 @@
       box-shadow: 2px 2px 8px rgba(0,0,0,0.3), inset -1px -1px 3px rgba(255,255,255,0.5);
     }
 
-    .play-nav-header h1 {
-      font-size: 28px;
-      font-weight: 700;
-      text-shadow: 2px 2px 8px rgba(0,0,0,0.3);
-      animation: glow 3s ease-in-out infinite;
-      position: relative;
-      z-index: 1;
-    }
-
-    @keyframes glow {
-      0%, 100% { text-shadow: 2px 2px 8px rgba(0,0,0,0.3); }
-      50% { text-shadow: 2px 2px 16px rgba(255,255,255,0.4); }
-    }
-
-    .play-nav-header .subtitle {
-      font-size: 14px;
-      opacity: 0.9;
-      position: relative;
-      z-index: 1;
-    }
-
-    .play-nav-content {
-      flex: 1;
-      padding: 0 12px 24px;
-      max-width: 480px;
-      margin: 0 auto;
-      width: 100%;
-      box-sizing: border-box;
+    /* 响应式 */
+    @media (max-width: 360px) {
+      .glass-title {
+        font-size: 1.7em;
+      }
     }
 
     /* 玻璃拟态卡片 */
@@ -229,27 +169,27 @@
 
     /* 响应式 */
     @media (max-width: 360px) {
-      .play-nav-header h1 {
+      .glass-title {
         font-size: 1.7em;
       }
     }
   </style>
-  <script type="module" crossorigin src="../assets/play/index-5c8DA1fe.js"></script>
-  <link rel="modulepreload" crossorigin href="../assets/modulepreload-polyfill-Btlm8H0F.js">
-  <link rel="stylesheet" crossorigin href="../assets/shell-CWZ5AzIL.css">
+  <script type="module" crossorigin src="../assets/play/index-CYGWn1jP.js"></script>
+  <link rel="modulepreload" crossorigin href="../assets/modulepreload-polyfill-eJgYjmQ8.js">
+  <link rel="stylesheet" crossorigin href="../assets/shell-9ygW22hc.css">
 </head>
 <body>
-  <div class="play-nav-container">
-    <header class="play-nav-header">
+  <div class="glass-container">
+    <header class="glass-header">
       <div class="header-logo">
         <span class="stone stone-black"></span>
-        <h1>围棋对弈</h1>
+        <h1 class="glass-title">围棋对弈</h1>
         <span class="stone stone-white"></span>
       </div>
-      <p class="subtitle" id="greeting">选择对弈模式开始下棋</p>
+      <p class="glass-subtitle" id="greeting">选择对弈模式开始下棋</p>
     </header>
 
-    <div class="play-nav-content">
+    <div class="glass-content">
       <a href="hh.html" class="nav-btn">
         <div class="icon">👥</div>
         <div class="content">

@@ -5,36 +5,37 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
   <title>赛事详情 - 围棋智能助手</title>
   <style>
-    /* ===== 完全照搬 events.html 的样式 ===== */
-    /* ===== 标题栏 ===== */
-    header {
-      text-align: center;
-      padding: 20px 12px 12px;
-      color: white;
-    }
-    header h1 {
-      font-size: 1.4em;
-      margin: 0;
-      text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
-    }
-
-    /* ===== 覆盖 shell.css 容器宽度 ===== */
-    .container {
+    /* detail 特有样式 */
+    
+    /* 覆盖容器宽度 */
+    .glass-content {
       max-width: 100%;
+      padding: 0 12px 20px;
     }
     @media (min-width: 768px) {
-      .container {
+      .glass-content {
         max-width: 800px;
       }
     }
 
-    /* ===== 白色大面板 ===== */
+    /* 白色大面板 */
     .event-detail-group {
-      background: white;
+      background: rgba(255,255,255,0.9);
       border-radius: 8px;
       margin-bottom: 12px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.08);
       overflow: hidden;
+      display: none; /* 默认隐藏 */
+    }
+    
+    /* 有内容时显示 */
+    .event-detail-group.has-content {
+      display: block;
+    }
+
+    /* 隐藏内容为空 web-card（防止 opponentCard 等空卡片显示） */
+    .web-card:has(.web-card__body:empty) {
+      display: none !important;
     }
 
     /* ===== 面板头部，完全照搬 events.html ===== */
@@ -111,29 +112,32 @@
       cursor: not-allowed;
     }
   </style>
-  <script type="module" crossorigin src="../assets/event/detail-BpVz9Uys.js"></script>
-  <link rel="modulepreload" crossorigin href="../assets/FavoriteService-CuLiD-pB.js">
-  <link rel="modulepreload" crossorigin href="../assets/modulepreload-polyfill-Btlm8H0F.js">
-  <link rel="modulepreload" crossorigin href="../assets/tokens-29UTe5Qr.js">
-  <link rel="modulepreload" crossorigin href="../assets/Bootstrap-zbz5vrIV.js">
-  <link rel="modulepreload" crossorigin href="../assets/storage-DQWsLe8V.js">
-  <link rel="modulepreload" crossorigin href="../assets/ResourceCache-QnlqNopT.js">
-  <link rel="modulepreload" crossorigin href="../assets/HtmlParser-DpPToidn.js">
-  <link rel="modulepreload" crossorigin href="../assets/event-CbQ80xsY.js">
-  <link rel="modulepreload" crossorigin href="../assets/SessionPageCache-BH4tvR3-.js">
-  <link rel="stylesheet" crossorigin href="../assets/shell-CWZ5AzIL.css">
+  <script type="module" crossorigin src="../assets/event/detail-XegOQT0n.js"></script>
+  <link rel="modulepreload" crossorigin href="../assets/FavoriteService-Vp2l_PCI.js">
+  <link rel="modulepreload" crossorigin href="../assets/modulepreload-polyfill-eJgYjmQ8.js">
+  <link rel="modulepreload" crossorigin href="../assets/tokens-DXsjJs3r.js">
+  <link rel="modulepreload" crossorigin href="../assets/Bootstrap-DFrnJCVa.js">
+  <link rel="modulepreload" crossorigin href="../assets/storage-DWLdMfCC.js">
+  <link rel="modulepreload" crossorigin href="../assets/ResourceCache-Dnf9OMqi.js">
+  <link rel="modulepreload" crossorigin href="../assets/HtmlParser-tVqD2W5k.js">
+  <link rel="modulepreload" crossorigin href="../assets/ReadMarkService-BLR5vnpP.js">
+  <link rel="modulepreload" crossorigin href="../assets/event-DHkk4LrZ.js">
+  <link rel="modulepreload" crossorigin href="../assets/SessionPageCache-CKhSckGb.js">
+  <link rel="stylesheet" crossorigin href="../assets/shell-9ygW22hc.css">
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>🏆 赛事详情</h1>
+  <div class="glass-container">
+    <header class="glass-header">
+      <h1 class="glass-title">🏆 赛事详情</h1>
     </header>
 
-    <div class="event-detail-group">
-      <div class="detail-header">
-        <div class="detail-tabs" id="detail-tabs"></div>
+    <div class="glass-content">
+      <div class="event-detail-group">
+        <div class="detail-header">
+          <div class="detail-tabs" id="detail-tabs"></div>
+        </div>
+        <div id="page-root"></div>
       </div>
-      <div id="page-root"></div>
     </div>
   </div>
 

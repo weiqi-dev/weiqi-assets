@@ -82,20 +82,6 @@
       gap: 8px;
     }
 
-    /* 手数显示 */
-    .move-count {
-      font-size: 14px;
-      color: white;
-      background: rgba(255,255,255,0.2);
-      padding: 2px 10px;
-      border-radius: 20px;
-      white-space: nowrap;
-    }
-
-    .move-count strong {
-      font-weight: 600;
-    }
-
     /* 三点菜单按钮 */
     .menu-btn {
       width: 36px;
@@ -193,9 +179,8 @@
     /* ---- 底部功能按钮栏 ---- */
     .toolbar {
       display: flex;
-      justify-content: center;
+      justify-content: space-between;
       align-items: center;
-      gap: 12px;
       padding: 12px 16px;
       background: white;
       border-top: 1px solid #e8e8e8;
@@ -205,6 +190,21 @@
     .btn-group {
       display: flex;
       gap: 12px;
+    }
+
+    /* 手数显示（底部栏右下角） */
+    .move-count {
+      font-size: 14px;
+      color: #666;
+      background: #f5f5f5;
+      padding: 4px 12px;
+      border-radius: 16px;
+      white-space: nowrap;
+    }
+
+    .move-count strong {
+      font-weight: 600;
+      color: #667eea;
     }
 
     /* SVG 图标按钮（无背景，纯线条） */
@@ -368,21 +368,27 @@
       }
     }
   </style>
-  <script type="module" crossorigin src="../assets/recorder/index-mnzrU3Hz.js"></script>
-  <link rel="modulepreload" crossorigin href="../assets/FavoriteService-CuLiD-pB.js">
-  <link rel="modulepreload" crossorigin href="../assets/modulepreload-polyfill-Btlm8H0F.js">
-  <link rel="modulepreload" crossorigin href="../assets/RecorderHistoryManager-CgnMnZ2c.js">
-  <link rel="modulepreload" crossorigin href="../assets/Bootstrap-zbz5vrIV.js">
-  <link rel="modulepreload" crossorigin href="../assets/storage-DQWsLe8V.js">
-  <link rel="modulepreload" crossorigin href="../assets/IPlayer-CgO1tktP.js">
-  <link rel="modulepreload" crossorigin href="../assets/HtmlParser-DpPToidn.js">
-  <link rel="modulepreload" crossorigin href="../assets/sgf-eV_n6cbd.js">
-  <link rel="modulepreload" crossorigin href="../assets/game-Bhy-ql8Z.js">
-  <link rel="modulepreload" crossorigin href="../assets/Game-1yyHzA2P.js">
-  <link rel="modulepreload" crossorigin href="../assets/WebAudioPlayer-DXLr8Vks.js">
-  <link rel="modulepreload" crossorigin href="../assets/LocalStorageAdapter-CcdnMw84.js">
-  <link rel="modulepreload" crossorigin href="../assets/WebFileExporter-6LTyjd7X.js">
-  <link rel="modulepreload" crossorigin href="../assets/adapters-BDAJJJGc.js">
+  <script type="module" crossorigin src="../assets/recorder/index-BxZXjcu6.js"></script>
+  <link rel="modulepreload" crossorigin href="../assets/FavoriteService-Vp2l_PCI.js">
+  <link rel="modulepreload" crossorigin href="../assets/modulepreload-polyfill-eJgYjmQ8.js">
+  <link rel="modulepreload" crossorigin href="../assets/RecorderHistoryManager-BWMRwHei.js">
+  <link rel="modulepreload" crossorigin href="../assets/Bootstrap-DFrnJCVa.js">
+  <link rel="modulepreload" crossorigin href="../assets/storage-DWLdMfCC.js">
+  <link rel="modulepreload" crossorigin href="../assets/HtmlParser-tVqD2W5k.js">
+  <link rel="modulepreload" crossorigin href="../assets/GameService-BdiqRzD0.js">
+  <link rel="modulepreload" crossorigin href="../assets/game-l92sn-wi.js">
+  <link rel="modulepreload" crossorigin href="../assets/game-BZCagLXN.js">
+  <link rel="modulepreload" crossorigin href="../assets/Board-CPmOtILD.js">
+  <link rel="modulepreload" crossorigin href="../assets/IPlayer-Bysxc8Ah.js">
+  <link rel="modulepreload" crossorigin href="../assets/CaptureRule-BiWBgqZQ.js">
+  <link rel="modulepreload" crossorigin href="../assets/IMove-DTl7Prex.js">
+  <link rel="modulepreload" crossorigin href="../assets/Game-B7PgZkun.js">
+  <link rel="modulepreload" crossorigin href="../assets/SGFParser-B7SpJ087.js">
+  <link rel="modulepreload" crossorigin href="../assets/sgf-B38Vdlrb.js">
+  <link rel="modulepreload" crossorigin href="../assets/WebAudioPlayer-Pr0wyKEB.js">
+  <link rel="modulepreload" crossorigin href="../assets/LocalStorageAdapter-3ZHtkCKE.js">
+  <link rel="modulepreload" crossorigin href="../assets/WebFileExporter-C-ONJSK2.js">
+  <link rel="modulepreload" crossorigin href="../assets/adapters-CwjzkNpn.js">
 </head>
 <body>
   <div class="page-container compact">
@@ -393,7 +399,6 @@
         <div class="page-subtitle">手动录入棋谱</div>
       </div>
       <div class="header-right">
-        <span class="move-count">第 <strong id="moveNum">0</strong> 手</span>
         <div class="dropdown">
           <button class="menu-btn" id="menuBtn" title="菜单">⋮</button>
           <div class="dropdown-menu" id="dropdownMenu">
@@ -425,6 +430,7 @@
           <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
         </button>
       </div>
+      <span class="move-count">第 <strong id="moveNum">0</strong> 手</span>
     </div>
   </div>
 

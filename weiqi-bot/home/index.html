@@ -5,40 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
   <title>围棋智能助手</title>
   <style>
-    /* 首页样式 - 紫色渐变背景 + 玻璃拟态卡片 */
-    
-    /* 覆盖 shell.css 的背景，增强渐变效果 */
-    body {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #5a3d7a 100%);
-      background-attachment: fixed;
-    }
-
-    .home-header {
-      padding: 24px 12px 20px;
-      text-align: center;
-      color: white;
-      position: relative;
-    }
-
-    /* 动态光效背景 */
-    .home-header::before {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 300px;
-      height: 300px;
-      background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
-      transform: translate(-50%, -50%);
-      animation: pulse 6s ease-in-out infinite;
-      pointer-events: none;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 0.4; transform: translate(-50%, -50%) scale(1); }
-      50% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.2); }
-    }
-
+    /* home 特有样式：棋子 logo */
     .header-logo {
       display: flex;
       align-items: center;
@@ -75,29 +42,11 @@
       box-shadow: 2px 2px 8px rgba(0,0,0,0.3), inset -1px -1px 3px rgba(255,255,255,0.5);
     }
 
-    .header-title {
-      font-size: 28px;
-      font-weight: 700;
-      text-shadow: 2px 2px 8px rgba(0,0,0,0.3);
-      animation: glow 3s ease-in-out infinite;
-    }
-
-    @keyframes glow {
-      0%, 100% { text-shadow: 2px 2px 8px rgba(0,0,0,0.3); }
-      50% { text-shadow: 2px 2px 16px rgba(255,255,255,0.4); }
-    }
-
-    .header-subtitle {
-      font-size: 14px;
-      opacity: 0.9;
-      position: relative;
-      z-index: 1;
-    }
-
-    .home-content {
+    /* home 特有样式：内容区域不需要 padding-top */
+    .glass-content {
       padding: 0 12px 24px;
     }
-
+    
     /* 分组标签 */
     .section-label {
       font-size: 13px;
@@ -302,23 +251,23 @@
       }
     }
   </style>
-  <script type="module" crossorigin src="../assets/home/index-D3GjNsg-.js"></script>
-  <link rel="modulepreload" crossorigin href="../assets/FavoriteService-CuLiD-pB.js">
-  <link rel="modulepreload" crossorigin href="../assets/modulepreload-polyfill-Btlm8H0F.js">
-  <link rel="modulepreload" crossorigin href="../assets/Bootstrap-zbz5vrIV.js">
-  <link rel="stylesheet" crossorigin href="../assets/shell-CWZ5AzIL.css">
+  <script type="module" crossorigin src="../assets/home/index-hGQD9pvL.js"></script>
+  <link rel="modulepreload" crossorigin href="../assets/FavoriteService-Vp2l_PCI.js">
+  <link rel="modulepreload" crossorigin href="../assets/modulepreload-polyfill-eJgYjmQ8.js">
+  <link rel="modulepreload" crossorigin href="../assets/Bootstrap-DFrnJCVa.js">
+  <link rel="stylesheet" crossorigin href="../assets/shell-9ygW22hc.css">
 </head>
 <body>
-  <div class="container">
-    <header class="home-header">
+  <div class="glass-container">
+    <header class="glass-header">
       <div class="header-logo">
         <span class="stone stone-black"></span>
-        <h1 class="header-title">围棋助手</h1>
+        <h1 class="glass-title">围棋助手</h1>
         <span class="stone stone-white"></span>
       </div>
-      <p class="subtitle header-subtitle" id="greeting"></p>
+      <p class="glass-subtitle" id="greeting"></p>
     </header>
-    <div class="home-content">
+    <div class="glass-content">
       <div id="page-root"></div>
     </div>
   </div>

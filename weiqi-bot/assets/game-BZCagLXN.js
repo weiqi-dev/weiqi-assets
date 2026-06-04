@@ -1,0 +1,1 @@
+import{g as e}from"./Bootstrap-DFrnJCVa.js";import{i as t,n,r}from"./storage-DWLdMfCC.js";import{t as i}from"./GameService-BdiqRzD0.js";import"./game-l92sn-wi.js";async function a(a){let[o,s,c]=await Promise.all([n(),t(a),r()]),l=new e(s,c);return await l.initialize(),{gameService:new i(a.network,{archiveCache:o,historyStorage:l,configProvider:a.config})}}export{a as t};
