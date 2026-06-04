@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebGL 支持测试</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #f5f5f5; }
+        .result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background: #4CAF50; color: white; }
+        .error { background: #F44336; color: white; }
+        .info { background: #2196F3; color: white; }
+        pre { background: #333; color: #0f0; padding: 10px; overflow: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔍 WebGL 支持测试</h1>
+    <div id="results"></div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
+    <script>
+        const results = document.getElementById('results');
+        
+        function addResult(title, status, message) {
+            const div = document.createElement('div');
+            div.className = `result ${status}`;
+            div.innerHTML = `<strong>${title}</strong>: ${message}`;
+            results.appendChild(div);
+        }
+        
+        // 1. 测试 WebGL 基础支持
+        try {
+            const canvas = document.createElement('canvas');
+            const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+            if (gl) {
+                addResult('WebGL 基础支持', 'success', '✅ 支持 WebGL');
+                console.log('WebGL 上下文:', gl);
+                
+                // 获取 WebGL 信息
+                const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+                if (debugInfo) {
+                    const vendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
+                    const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+                    addResult('WebGL 渲染器', 'info', `Vendor: ${vendor}<br>Renderer: ${renderer}`);
+                }
+            } else {
+                addResult('WebGL 基础支持', 'error', '❌ 不支持 WebGL');
+            }
+        } catch (e) {
+            addResult('WebGL 基础支持', 'error', `❌ 错误: ${e.message}`);
+        }
+        
+        // 2. 测试 TensorFlow.js 后端
+        setTimeout(() => {
+            try {
+                // 尝试设置 WebGL 后端
+                tf.setBackend('webgl').then(() => {
+                    return tf.ready();
+                }).then(() => {
+                    const backend = tf.getBackend();
+                    addResult('TensorFlow.js 后端', 'success', `✅ 当前后端: ${backend}`);
+                    
+                    // 测试简单的 tensor 操作
+                    const a = tf.tensor([1, 2, 3]);
+                    const b = a.square();
+                    b.print();
+                    addResult('Tensor 操作测试', 'success', '✅ TensorFlow.js 工作正常');
+                    
+                    // 显示内存信息
+                    const mem = tf.memory();
+                    addResult('内存信息', 'info', `Num tensors: ${mem.numTensors}<br>Num bytes: ${mem.numBytes}`);
+                }).catch(err => {
+                    addResult('TensorFlow.js 后端', 'error', `❌ WebGL 后端失败: ${err.message}`);
+                    
+                    // 尝试 WASM 后端
+                    tf.setBackend('wasm').then(() => {
+                        return tf.ready();
+                    }).then(() => {
+                        const backend = tf.getBackend();
+                        addResult('TensorFlow.js 后端 (WASM)', 'info', `⚠️ 回退到 WASM 后端: ${backend}`);
+                    }).catch(err2 => {
+                        addResult('TensorFlow.js 后端 (WASM)', 'error', `❌ WASM 后端也失败: ${err2.message}`);
+                        
+                        // 最后尝试 CPU
+                        tf.setBackend('cpu').then(() => {
+                            return tf.ready();
+                        }).then(() => {
+                            const backend = tf.getBackend();
+                            addResult('TensorFlow.js 后端 (CPU)', 'info', `⚠️ 回退到 CPU 后端: ${backend}`);
+                        });
+                    });
+                });
+            } catch (e) {
+                addResult('TensorFlow.js', 'error', `❌ 错误: ${e.message}`);
+            }
+        }, 1000);
+        
+        // 3. 显示用户代理
+        addResult('User Agent', 'info', navigator.userAgent);
+        
+        // 4. 检查硬件加速
+        if (navigator.gpu) {
+            addResult('WebGPU', 'success', '✅ 支持 WebGPU (未来替代 WebGL)');
+            navigator.gpu.requestAdapter().then(adapter => {
+                addResult('WebGPU Adapter', 'info', `Adapter: ${adapter.name || 'Unknown'}`);
+            });
+        } else {
+            addResult('WebGPU', 'info', 'ℹ️ 不支持 WebGPU');
+        }
+    </script>
+</body>
+</html>
