@@ -1,4 +1,5 @@
 {
-  "version": "20260605-v2",
-  "releaseDate": "2026-06-05T08:17:00Z"
+  "version": "20260605-webgl",
+  "description": "主线程 WebGL 初始化，修复 APP 中 GPU 使用问题",
+  "updatedAt": "2026-06-05T08:59:00+08:00"
 }
