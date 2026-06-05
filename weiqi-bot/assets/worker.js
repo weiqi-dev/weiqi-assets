@@ -12681,7 +12681,7 @@ vec2 packedUVfrom3D(int texNumR, int texNumC,
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * =============================================================================
- */y0()&&wp("webgl",()=>new Uf,2);/**
+ */y0()&&wp("webgl",()=>new Uf,999);/**
  * @license
  * Copyright 2017 Google LLC. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0 (the "License");
