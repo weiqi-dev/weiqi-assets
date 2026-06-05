@@ -4,6 +4,19 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>真人对弈</title>
+  <!-- TensorFlow.js 环境变量配置（解决华为手机 Google WebView GPU 兼容性问题） -->
+  <script>
+    // 在 TensorFlow.js 加载前设置环境变量，绕过 failIfMajorPerformanceCaveat 检查
+    // 这样即使 WebView 检测到性能警告，也会启用 WebGL GPU 加速
+    window.tfjs_flags = window.tfjs_flags || {};
+    window.tfjs_flags.SOFTWARE_WEBGL_ENABLED = true;
+    // 通过 URL 参数传递 flags（TensorFlow.js 会自动读取）
+    if (window.location.search.indexOf('tfjsflags') === -1) {
+      // 如果 URL 中没有 tfjsflags，添加它
+      const flags = Object.keys(window.tfjs_flags).map(k => k + ':' + window.tfjs_flags[k]).join(',');
+      window.location.search = (window.location.search ? window.location.search + '&' : '?') + 'tfjsflags=' + flags;
+    }
+  </script>
   <script type="module" crossorigin src="../assets/play/hh-BpW-32qE.js"></script>
   <link rel="modulepreload" crossorigin href="../assets/FavoriteService-Vp2l_PCI.js">
   <link rel="modulepreload" crossorigin href="../assets/modulepreload-polyfill-eJgYjmQ8.js">
