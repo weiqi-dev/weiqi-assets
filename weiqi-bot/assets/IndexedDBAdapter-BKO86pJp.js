@@ -1,0 +1,1 @@
+import{i as e}from"./FavoriteService-CqGqGpov.js";export{e as IndexedDBAdapter};
