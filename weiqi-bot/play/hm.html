@@ -5,41 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <title>人机对弈</title>
-  <!-- TensorFlow.js 配置：强制使用 WebGL backend（解决华为手机 GPU 兼容性问题） -->
-  <script>
-    // 设置环境变量，绕过 TensorFlow.js 的性能检查
-    window.tfjs_flags = window.tfjs_flags || {};
-    window.tfjs_flags.SOFTWARE_WEBGL_ENABLED = true;
-    
-    // 监听 TensorFlow.js 加载完成
-    window.addEventListener('load', async () => {
-      // 等待 tf 对象可用
-      const checkTf = setInterval(async () => {
-        if (window.tf) {
-          clearInterval(checkTf);
-          try {
-            // 强制设置 WebGL backend
-            await window.tf.setBackend('webgl');
-            await window.tf.ready();
-            console.log('[GPU] TensorFlow.js backend: ' + window.tf.getBackend());
-          } catch (e) {
-            console.error('[GPU] Failed to set WebGL backend:', e);
-          }
-        }
-      }, 100);
-      
-      // 5秒后停止检查
-      setTimeout(() => clearInterval(checkTf), 5000);
-    });
-  </script>
-  <script type="module" crossorigin src="../assets/play/hm-C1gKPIbD.js"></script>
+  <script type="module" crossorigin src="../assets/play/hm-CESPkffb.js"></script>
   <link rel="modulepreload" crossorigin href="../assets/FavoriteService-Vp2l_PCI.js">
   <link rel="modulepreload" crossorigin href="../assets/modulepreload-polyfill-eJgYjmQ8.js">
-  <link rel="modulepreload" crossorigin href="../assets/ai-ibZdUyzB.js">
+  <link rel="modulepreload" crossorigin href="../assets/ai-B3bCo3Mf.js">
   <link rel="modulepreload" crossorigin href="../assets/RecorderHistoryManager-BWMRwHei.js">
   <link rel="modulepreload" crossorigin href="../assets/Bootstrap-DFrnJCVa.js">
   <link rel="modulepreload" crossorigin href="../assets/ResourceCache-Dnf9OMqi.js">
-  <link rel="modulepreload" crossorigin href="../assets/ProgressManager-daeK_O1v.js">
+  <link rel="modulepreload" crossorigin href="../assets/ProgressManager-BKNxx1uh.js">
   <link rel="modulepreload" crossorigin href="../assets/storage-DWLdMfCC.js">
   <link rel="modulepreload" crossorigin href="../assets/HtmlParser-tVqD2W5k.js">
   <link rel="modulepreload" crossorigin href="../assets/GameService-BdiqRzD0.js">

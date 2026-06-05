@@ -1,0 +1,1 @@
+import"../modulepreload-polyfill-3xzlJT5O.js";/* empty css               */async function e(){console.log(`[PlayIndex] 对弈索引页面已加载`)}e().catch(console.error);
