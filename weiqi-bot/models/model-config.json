@@ -2,13 +2,14 @@
   "models": [
     {
       "id": "katago-small",
-      "name": "KataGo 小模型",
-      "description": "20层网络，经典模型，稳定可靠",
+      "name": "KataGo b6c96",
+      "description": "6块96通道网络，适合移动端和快速分析",
       "url": "models/katago-small.bin.gz",
       "size": "3.7MB",
       "sizeBytes": 3879731,
-      "version": "1.0.0",
-      "blocks": 20,
+      "version": "g170",
+      "blocks": 6,
+      "channels": 96,
       "default": true,
       "recommended": ["mobile", "desktop", "beginner", "intermediate"],
       "difficulty": ["easy", "medium", "hard"],
@@ -26,6 +27,7 @@
       "sizeBytes": 11138987,
       "version": "g170",
       "blocks": 10,
+      "channels": 128,
       "default": false,
       "recommended": ["desktop", "advanced"],
       "difficulty": ["hard"],
@@ -36,8 +38,8 @@
     }
   ],
   "metadata": {
-    "version": "1.4.0",
-    "lastUpdated": "2026-05-11",
+    "version": "1.5.0",
+    "lastUpdated": "2026-06-04",
     "source": "https://katagotraining.org/",
     "note": "所有模型已内置，无需外部下载"
   }
