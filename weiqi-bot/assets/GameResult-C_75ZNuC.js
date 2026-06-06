@@ -1,0 +1,1 @@
+function e(e){if(!e)return`-`;let t={"B+R":`黑中盘胜`,"W+R":`白中盘胜`,"B+T":`黑超时胜`,"W+T":`白超时胜`};if(t[e])return t[e];let n=e.match(/^([BW])\+([\d.]+)$/);return n?`${n[1]===`B`?`黑`:`白`}胜${n[2]}目`:e}export{e as t};
