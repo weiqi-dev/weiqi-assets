@@ -251,10 +251,10 @@
       }
     }
   </style>
-  <script type="module" crossorigin src="../assets/home/index-J64hRRO_.js"></script>
+  <script type="module" crossorigin src="../assets/home/index-BwpMNA38.js"></script>
   <link rel="modulepreload" crossorigin href="../assets/FavoriteService-CqGqGpov.js">
   <link rel="modulepreload" crossorigin href="../assets/modulepreload-polyfill-eJgYjmQ8.js">
-  <link rel="modulepreload" crossorigin href="../assets/Bootstrap-D6wlULpp.js">
+  <link rel="modulepreload" crossorigin href="../assets/Bootstrap-CmDXkhN7.js">
   <link rel="stylesheet" crossorigin href="../assets/shell-9ygW22hc.css">
 </head>
 <body>
@@ -280,6 +280,94 @@
     else if (hour >= 12 && hour < 18) greeting = '下午好';
     else if (hour >= 18 || hour < 5) greeting = '晚上好';
     document.getElementById('greeting').textContent = greeting + '，准备好对弈了吗？';
+
+    // 连续点击标题开启调试日志
+    (function() {
+      let clickCount = 0;
+      let lastClickTime = 0;
+      const CLICK_THRESHOLD = 5; // 连续点击次数
+      const TIME_WINDOW = 2000; // 时间窗口（毫秒）
+
+      const title = document.querySelector('.glass-title');
+      if (!title) return;
+
+      title.style.cursor = 'pointer';
+      title.style.userSelect = 'none';
+      title.style.webkitUserSelect = 'none';
+
+      title.addEventListener('click', function() {
+        const now = Date.now();
+        
+        // 如果距离上次点击超过时间窗口，重置计数
+        if (now - lastClickTime > TIME_WINDOW) {
+          clickCount = 0;
+        }
+        
+        clickCount++;
+        lastClickTime = now;
+
+        // 达到阈值，切换调试模式
+        if (clickCount >= CLICK_THRESHOLD) {
+          const currentDebug = localStorage.getItem('KATAGO_DEBUG') === 'true';
+          const newDebug = !currentDebug;
+          localStorage.setItem('KATAGO_DEBUG', newDebug.toString());
+          
+          // 显示提示
+          showToast(newDebug ? '🐛 调试模式已开启' : '🐛 调试模式已关闭');
+          
+          // 重置计数
+          clickCount = 0;
+        }
+      });
+
+      // Toast 提示函数
+      function showToast(message) {
+        // 移除已有的 toast
+        const existingToast = document.querySelector('.debug-toast');
+        if (existingToast) {
+          existingToast.remove();
+        }
+
+        const toast = document.createElement('div');
+        toast.className = 'debug-toast';
+        toast.textContent = message;
+        toast.style.cssText = `
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          background: rgba(0, 0, 0, 0.8);
+          color: white;
+          padding: 12px 24px;
+          border-radius: 8px;
+          font-size: 14px;
+          z-index: 10000;
+          animation: toastFadeIn 0.3s ease-out;
+        `;
+
+        // 添加动画样式
+        if (!document.querySelector('#debug-toast-style')) {
+          const style = document.createElement('style');
+          style.id = 'debug-toast-style';
+          style.textContent = `
+            @keyframes toastFadeIn {
+              from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+              to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            }
+          `;
+          document.head.appendChild(style);
+        }
+
+        document.body.appendChild(toast);
+
+        // 2 秒后自动消失
+        setTimeout(() => {
+          toast.style.opacity = '0';
+          toast.style.transition = 'opacity 0.3s';
+          setTimeout(() => toast.remove(), 300);
+        }, 2000);
+      }
+    })();
 
     // 涟漪动画
     document.addEventListener('click', function(e) {

@@ -1,1 +1,0 @@
-function e(e,t,n,r){return{x:e,y:t,color:n,number:r}}function t(e,t){return{color:e,number:t,isPass:!0}}function n(e){return`isPass`in e&&e.isPass===!0}function r(e){return n(e)?null:{x:e.x,y:e.y}}export{n as i,t as n,r,e as t};
