@@ -1,1 +1,0 @@
-var e=class{get(e){return sessionStorage.getItem(e)}set(e,t){sessionStorage.setItem(e,t)}remove(e){sessionStorage.removeItem(e)}};export{e as t};
