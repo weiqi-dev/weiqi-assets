@@ -1,15 +1,4 @@
 {
-  "version": "0.2.0",
-  "buildTime": "2026-06-07T20:04:00+08:00",
-  "gitCommit": "3b5d6b79bd7591d4204014a6a8f2101c181b0e08",
-  "gitBranch": "master",
-  "changes": [
-    "feat(ui): 用自绘组件替代浏览器原生 UI 控件",
-    "fix(ui): 修复 Select 组件当前选项文字不可见问题",
-    "fix(ui): 为 play/review/replay 页面添加 ui.css 引入",
-    "fix(ui): 修复真人对弈对话框在 PC 宽屏下过宽问题",
-    "fix(ui): 修复 WebSelect 组件导致 event 页面下拉框不可见问题",
-    "fix(ui): 让下拉菜单宽度自适应，避免选项文字换行"
-  ],
-  "tag": "openclaw-control-ui"
+  "version": "2026060720",
+  "releaseDate": "2026-06-07T20:04:00Z"
 }
