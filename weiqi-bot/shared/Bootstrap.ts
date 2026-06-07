@@ -102,7 +102,10 @@ export class WebBootstrap {
    */
   static async init(options: WebBootstrapOptions): Promise<WebShellContext> {
     const containerId = options.containerId;
-    const proxyUrl = options.proxyUrl ?? 'https://api.weiqi.lol';
+    const proxyUrl = options.proxyUrl ??
+      (typeof navigator !== 'undefined' && navigator.userAgent.includes('WeiqiApp')
+        ? 'http://localhost:8088/proxy'
+        : 'https://api.weiqi.lol');
 
     // 1. Logger
     LogManager.registerTransport(new ConsoleTransport());
