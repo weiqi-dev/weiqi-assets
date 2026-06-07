@@ -224,21 +224,22 @@
             opacity: 0.5;
         }
     </style>
-  <script type="module" crossorigin src="../assets/opponent/index-JeyaBK7h.js"></script>
+  <script type="module" crossorigin src="../assets/opponent/index-Vq-oEsCe.js"></script>
   <link rel="modulepreload" crossorigin href="../assets/FavoriteService-CqGqGpov.js">
   <link rel="modulepreload" crossorigin href="../assets/ai-D5wQt06O.js">
   <link rel="modulepreload" crossorigin href="../assets/modulepreload-polyfill-eJgYjmQ8.js">
-  <link rel="modulepreload" crossorigin href="../assets/Bootstrap-CfHMz65X.js">
-  <link rel="modulepreload" crossorigin href="../assets/storage-CGuzle2D.js">
-  <link rel="modulepreload" crossorigin href="../assets/JosekiMatcher-C8oOGU09.js">
-  <link rel="modulepreload" crossorigin href="../assets/SGFParser-C1D4adJL.js">
-  <link rel="modulepreload" crossorigin href="../assets/JosekiDiscoverService-CBFYSfFL.js">
-  <link rel="modulepreload" crossorigin href="../assets/ActivityLogService-B1dPdMEi.js">
-  <link rel="modulepreload" crossorigin href="../assets/JosekiLoader-D60zcKgv.js">
-  <link rel="modulepreload" crossorigin href="../assets/HtmlParser-CdkI-Ujs.js">
-  <link rel="modulepreload" crossorigin href="../assets/GameService-BTpTLUoI.js">
-  <link rel="modulepreload" crossorigin href="../assets/game-Flb5pUeB.js">
-  <link rel="stylesheet" crossorigin href="../assets/shell-9ygW22hc.css">
+  <link rel="modulepreload" crossorigin href="../assets/Bootstrap-CKB6Dk6m.js">
+  <link rel="modulepreload" crossorigin href="../assets/storage-DDgkmvuQ.js">
+  <link rel="modulepreload" crossorigin href="../assets/Dialog-B-rpeUMs.js">
+  <link rel="modulepreload" crossorigin href="../assets/JosekiMatcher-Bq-rDz9h.js">
+  <link rel="modulepreload" crossorigin href="../assets/SGFParser-Dhv58K1N.js">
+  <link rel="modulepreload" crossorigin href="../assets/JosekiDiscoverService-CCbOVevx.js">
+  <link rel="modulepreload" crossorigin href="../assets/ActivityLogService-PnNtXTTL.js">
+  <link rel="modulepreload" crossorigin href="../assets/JosekiLoader-By1wQPxa.js">
+  <link rel="modulepreload" crossorigin href="../assets/HtmlParser-DyXRWrj_.js">
+  <link rel="modulepreload" crossorigin href="../assets/GameService-BmUkWV6I.js">
+  <link rel="modulepreload" crossorigin href="../assets/game-DbBReHNn.js">
+  <link rel="stylesheet" crossorigin href="../assets/shell-Dq2WFr1R.css">
 </head>
 <body>
     <div class="glass-container">
@@ -266,12 +267,10 @@
             <div class="card">
                 <h2>🔍 野狐棋手ID</h2>
                 <input type="text" id="foxwqIdInput" placeholder="请输入野狐昵称..." maxlength="20">
-                <select id="limitSelect">
-                    <option value="10" selected>最近 10 盘</option>
-                    <option value="20">最近 20 盘</option>
-                    <option value="30">最近 30 盘</option>
-                    <option value="50">最近 50 盘</option>
-                </select>
+                <div data-ui="select"
+                     id="limitSelect"
+                     data-value="10"
+                     data-options='[{"value":"10","label":"最近 10 盘"},{"value":"20","label":"最近 20 盘"},{"value":"30","label":"最近 30 盘"},{"value":"50","label":"最近 50 盘"}]'></div>
                 <button id="queryBtn">开始分析</button>
             </div>
         </div>

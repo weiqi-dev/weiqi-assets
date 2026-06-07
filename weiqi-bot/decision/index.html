@@ -210,19 +210,20 @@
     .empty-state { text-align: center; padding: 40px 20px; color: #888; }
     .empty-state-icon { font-size: 3em; margin-bottom: 12px; opacity: 0.5; }
   </style>
-  <script type="module" crossorigin src="../assets/decision/index-CqDF-mWT.js"></script>
+  <script type="module" crossorigin src="../assets/decision/index-BWjrFvqq.js"></script>
   <link rel="modulepreload" crossorigin href="../assets/FavoriteService-CqGqGpov.js">
   <link rel="modulepreload" crossorigin href="../assets/modulepreload-polyfill-eJgYjmQ8.js">
-  <link rel="modulepreload" crossorigin href="../assets/Bootstrap-CfHMz65X.js">
-  <link rel="modulepreload" crossorigin href="../assets/storage-CGuzle2D.js">
-  <link rel="modulepreload" crossorigin href="../assets/HtmlParser-CdkI-Ujs.js">
-  <link rel="modulepreload" crossorigin href="../assets/GameService-BTpTLUoI.js">
-  <link rel="modulepreload" crossorigin href="../assets/game-Flb5pUeB.js">
-  <link rel="modulepreload" crossorigin href="../assets/game-D77qDT0M.js">
-  <link rel="modulepreload" crossorigin href="../assets/DecisionRules-DGuucxeY.js">
-  <link rel="modulepreload" crossorigin href="../assets/SGFParser-C1D4adJL.js">
-  <link rel="modulepreload" crossorigin href="../assets/WebAudioPlayer-WLQOmcZi.js">
-  <link rel="stylesheet" crossorigin href="../assets/shell-9ygW22hc.css">
+  <link rel="modulepreload" crossorigin href="../assets/Bootstrap-CKB6Dk6m.js">
+  <link rel="modulepreload" crossorigin href="../assets/storage-DDgkmvuQ.js">
+  <link rel="modulepreload" crossorigin href="../assets/HtmlParser-DyXRWrj_.js">
+  <link rel="modulepreload" crossorigin href="../assets/GameService-BmUkWV6I.js">
+  <link rel="modulepreload" crossorigin href="../assets/game-DbBReHNn.js">
+  <link rel="modulepreload" crossorigin href="../assets/game-4RnssaBh.js">
+  <link rel="modulepreload" crossorigin href="../assets/Dialog-B-rpeUMs.js">
+  <link rel="modulepreload" crossorigin href="../assets/DecisionRules-DP_H3I7K.js">
+  <link rel="modulepreload" crossorigin href="../assets/SGFParser-Dhv58K1N.js">
+  <link rel="modulepreload" crossorigin href="../assets/WebAudioPlayer-BMJvn-ba.js">
+  <link rel="stylesheet" crossorigin href="../assets/shell-Dq2WFr1R.css">
 </head>
 <body>
   <div class="glass-container">
@@ -249,19 +250,18 @@
     <div id="generate-tab" class="tab-content active">
       <div class="card">
         <h2>🎲 生成实战选点题</h2>
-        <select id="source-select">
-          <option value="foxwq">野狐围棋</option>
-        </select>
-        <select id="date-select">
-          <option value="0">今天</option>
-          <option value="1" selected>昨天</option>
-          <option value="">全部</option>
-        </select>
-        <select id="limit-select">
-          <option value="10">最近 10 盘</option>
-          <option value="20">最近 20 盘</option>
-          <option value="50" selected>最近 50 盘</option>
-        </select>
+        <div data-ui="select"
+             id="source-select"
+             data-value="foxwq"
+             data-options='[{"value":"foxwq","label":"野狐围棋"}]'></div>
+        <div data-ui="select"
+             id="date-select"
+             data-value="1"
+             data-options='[{"value":"0","label":"今天"},{"value":"1","label":"昨天"},{"value":"","label":"全部"}]'></div>
+        <div data-ui="select"
+             id="limit-select"
+             data-value="50"
+             data-options='[{"value":"10","label":"最近 10 盘"},{"value":"20","label":"最近 20 盘"},{"value":"50","label":"最近 50 盘"}]'></div>
         <button id="generate-btn">开始生成</button>
       </div>
     </div>

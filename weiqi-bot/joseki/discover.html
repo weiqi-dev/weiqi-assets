@@ -197,26 +197,27 @@
       opacity: 0.5;
     }
   </style>
-  <script type="module" crossorigin src="../assets/joseki/discover-BIkp3G7b.js"></script>
+  <script type="module" crossorigin src="../assets/joseki/discover-B1JwAY8F.js"></script>
   <link rel="modulepreload" crossorigin href="../assets/FavoriteService-CqGqGpov.js">
   <link rel="modulepreload" crossorigin href="../assets/modulepreload-polyfill-eJgYjmQ8.js">
-  <link rel="modulepreload" crossorigin href="../assets/Bootstrap-CfHMz65X.js">
-  <link rel="modulepreload" crossorigin href="../assets/storage-CGuzle2D.js">
-  <link rel="modulepreload" crossorigin href="../assets/HtmlParser-CdkI-Ujs.js">
-  <link rel="modulepreload" crossorigin href="../assets/GameService-BTpTLUoI.js">
-  <link rel="modulepreload" crossorigin href="../assets/game-Flb5pUeB.js">
-  <link rel="modulepreload" crossorigin href="../assets/game-D77qDT0M.js">
-  <link rel="modulepreload" crossorigin href="../assets/JosekiMatcher-C8oOGU09.js">
-  <link rel="modulepreload" crossorigin href="../assets/SGFParser-C1D4adJL.js">
-  <link rel="modulepreload" crossorigin href="../assets/JosekiDiscoverService-CBFYSfFL.js">
-  <link rel="modulepreload" crossorigin href="../assets/JosekiLoader-D60zcKgv.js">
-  <link rel="modulepreload" crossorigin href="../assets/Board-MA05iQZl.js">
-  <link rel="modulepreload" crossorigin href="../assets/IPlayer-BMtOWMYN.js">
-  <link rel="modulepreload" crossorigin href="../assets/CaptureRule-CDCW_i6O.js">
-  <link rel="modulepreload" crossorigin href="../assets/adapters-Bejcjc-d.js">
-  <link rel="modulepreload" crossorigin href="../assets/JosekiThumbnail-DfF7I9Ts.js">
-  <link rel="modulepreload" crossorigin href="../assets/ThumbnailService-DiTkJZmg.js">
-  <link rel="stylesheet" crossorigin href="../assets/shell-9ygW22hc.css">
+  <link rel="modulepreload" crossorigin href="../assets/Bootstrap-CKB6Dk6m.js">
+  <link rel="modulepreload" crossorigin href="../assets/storage-DDgkmvuQ.js">
+  <link rel="modulepreload" crossorigin href="../assets/HtmlParser-DyXRWrj_.js">
+  <link rel="modulepreload" crossorigin href="../assets/GameService-BmUkWV6I.js">
+  <link rel="modulepreload" crossorigin href="../assets/game-DbBReHNn.js">
+  <link rel="modulepreload" crossorigin href="../assets/game-4RnssaBh.js">
+  <link rel="modulepreload" crossorigin href="../assets/JosekiMatcher-Bq-rDz9h.js">
+  <link rel="modulepreload" crossorigin href="../assets/SGFParser-Dhv58K1N.js">
+  <link rel="modulepreload" crossorigin href="../assets/JosekiDiscoverService-CCbOVevx.js">
+  <link rel="modulepreload" crossorigin href="../assets/JosekiLoader-By1wQPxa.js">
+  <link rel="modulepreload" crossorigin href="../assets/Dialog-B-rpeUMs.js">
+  <link rel="modulepreload" crossorigin href="../assets/Board-DgnXO1AF.js">
+  <link rel="modulepreload" crossorigin href="../assets/IPlayer-BSxRmMLH.js">
+  <link rel="modulepreload" crossorigin href="../assets/CaptureRule-l3RWq-Sp.js">
+  <link rel="modulepreload" crossorigin href="../assets/adapters-CO94jsa_.js">
+  <link rel="modulepreload" crossorigin href="../assets/JosekiThumbnail-eWn_Ek66.js">
+  <link rel="modulepreload" crossorigin href="../assets/ThumbnailService-BmcBA6nU.js">
+  <link rel="stylesheet" crossorigin href="../assets/shell-Dq2WFr1R.css">
 </head>
 <body>
   <div class="glass-container">
@@ -246,20 +247,18 @@
     <div id="online-tab" class="tab-content active">
       <div class="card">
         <h2>🌐 线上棋谱分析</h2>
-        <select id="source-select">
-          <option value="foxwq">野狐围棋</option>
-        </select>
-        <select id="date-select">
-          <option value="0">今天</option>
-          <option value="1" selected>昨天</option>
-          <option value="">全部</option>
-        </select>
-        <select id="limit-select">
-          <option value="10">最近 10 盘</option>
-          <option value="20">最近 20 盘</option>
-          <option value="50" selected>最近 50 盘</option>
-          <option value="100">最近 100 盘</option>
-        </select>
+        <div data-ui="select"
+             id="source-select"
+             data-value="foxwq"
+             data-options='[{"value":"foxwq","label":"野狐围棋"}]'></div>
+        <div data-ui="select"
+             id="date-select"
+             data-value="1"
+             data-options='[{"value":"0","label":"今天"},{"value":"1","label":"昨天"},{"value":"","label":"全部"}]'></div>
+        <div data-ui="select"
+             id="limit-select"
+             data-value="50"
+             data-options='[{"value":"10","label":"最近 10 盘"},{"value":"20","label":"最近 20 盘"},{"value":"50","label":"最近 50 盘"},{"value":"100","label":"最近 100 盘"}]'></div>
         <button id="analyze-btn">开始分析</button>
       </div>
     </div>
