@@ -14,6 +14,7 @@ import { LocalStorageCacheAdapter } from '../../../infrastructure/storage/adapte
 import { FavoriteService } from '../../../services/favorite/FavoriteService';
 import { GameHistoryStorage } from '../../../services/game/GameHistoryStorage';
 import { WebAdapterFactory } from '../../../presentation/adapters/web/WebAdapterFactory';
+import { DEFAULT_PLAYER_CONFIG, DEFAULT_GAME_CONFIG, DEFAULT_EVENT_CONFIG } from './defaultConfig';
 import type { WebShellContext } from './Context';
 import type { IDocumentStorage } from '../../../infrastructure/storage/interfaces/IDocumentStorage';
 import type { IFavoriteItem } from '../../../services/favorite/IFavoriteService';
@@ -132,8 +133,14 @@ export class WebBootstrap {
     network.registerProvider(new ProxyProvider({ proxyUrl }));
     await network.initialize();
 
-    // 4. ConfigProvider
-    const config = new DefaultConfigProvider(options.moduleConfigs ?? {});
+    // 4. ConfigProvider - 合并 proxyUrl 到模块配置
+    const mergedModuleConfigs = {
+      player: { ...DEFAULT_PLAYER_CONFIG, proxyUrl },
+      game: { ...DEFAULT_GAME_CONFIG, proxyUrl },
+      event: { ...DEFAULT_EVENT_CONFIG, proxyUrl },
+      ...options.moduleConfigs,  // 允许外部覆盖
+    };
+    const config = new DefaultConfigProvider(mergedModuleConfigs);
 
     // 5. 缓存工厂
     const createCache = async <T extends { id: string }>(dbName: string, storeName: string): Promise<IDocumentStorage<T>> => {
