@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>抓包调试工具</title>
+    <title>抓包调试工具 v2</title>
     <style>
         body {
             font-family: monospace;
@@ -80,11 +80,25 @@
             background: #000;
             border: 1px solid #0f0;
         }
+        .highlight {
+            background: #300;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #f00;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🔍 抓包调试工具</h1>
+        <h1>🔍 抓包调试工具 v2</h1>
+
+        <div class="highlight">
+            <strong>⚠️ 关键发现：</strong><br>
+            window.onSnifferData 和 window.onSnifferResult 不存在！<br>
+            这说明回调函数没有被注册到当前 WebView。<br><br>
+            <strong>原因：</strong>App 使用隐藏的 GeckoSession 加载目标页面，<br>
+            回调函数在那个环境中注册，而不是在当前页面。
+        </div>
 
         <div class="input-section">
             <input type="text" id="urlInput" placeholder="粘贴 URL..." />
@@ -93,7 +107,7 @@
         <div class="input-section">
             <button id="fetchBtn" onclick="startFetch()">开始抓包</button>
             <button id="clearBtn" onclick="clearLog()">清除日志</button>
-            <button id="testBtn" onclick="testCallbacks()">测试回调</button>
+            <button id="checkBtn" onclick="checkEnvironment()">检查环境</button>
         </div>
 
         <div class="status" id="status">
@@ -152,41 +166,28 @@
             log('日志已清除');
         }
 
-        // 测试回调函数
-        function testCallbacks() {
-            log('测试全局回调函数...', 'info');
+        // 检查环境
+        function checkEnvironment() {
+            log('=== 环境检查 ===', 'info');
             
+            log('window 对象存在: ' + !!(typeof window !== 'undefined'), 'info');
+            log('window.location.href: ' + window.location.href, 'info');
             log('window.onSnifferData 存在: ' + !!(window.onSnifferData), 'info');
             log('window.onSnifferResult 存在: ' + !!(window.onSnifferResult), 'info');
-
-            if (window.onSnifferData) {
-                const testData = JSON.stringify({
-                    type: 'ws_open',
-                    wsUrl: 'test://test',
-                    timestamp: Date.now()
-                });
-                log('调用 onSnifferData...', 'info');
-                try {
-                    window.onSnifferData(testData);
-                    log('onSnifferData 调用成功', 'info');
-                } catch (e) {
-                    log('onSnifferData 调用失败: ' + e.message, 'error');
+            
+            // 检查是否有其他全局对象
+            log('window.ReactNativeWebView 存在: ' + !!(window.ReactNativeWebView), 'info');
+            log('window.wx 存在: ' + !!(window.wx), 'info');
+            
+            // 尝试查找所有 sniffer 相关的全局变量
+            log('查找 sniffer 相关的全局变量...', 'info');
+            for (let key in window) {
+                if (key.toLowerCase().includes('sniffer')) {
+                    log(`  发现: window.${key}`, 'warn');
                 }
             }
-
-            if (window.onSnifferResult) {
-                const testResult = JSON.stringify({
-                    action: 'started',
-                    data: 'test-session-id'
-                });
-                log('调用 onSnifferResult(started)...', 'info');
-                try {
-                    window.onSnifferResult(testResult);
-                    log('onSnifferResult(started) 调用成功', 'info');
-                } catch (e) {
-                    log('onSnifferResult 调用失败: ' + e.message, 'error');
-                }
-            }
+            
+            log('=== 环境检查完成 ===', 'info');
         }
 
         // 开始抓包
@@ -214,31 +215,42 @@
                 const messages = [];
                 let resolveWait = null;
                 let status = 'running';
+                let snifferStarted = false;
 
-                // 注册全局回调
-                log('注册全局回调函数...', 'info');
+                // 注册全局回调（尝试多种方式）
+                log('尝试注册全局回调函数...', 'info');
 
+                // 方式 1: 直接赋值
                 window.onSnifferData = function(json) {
-                    log('📥 onSnifferData 被调用', 'info');
+                    snifferStarted = true;
+                    log('📥 onSnifferData 被调用!!!', 'info');
                     logData('原始数据', json);
 
                     try {
                         const data = JSON.parse(json);
                         messages.push(data);
-                        logData('解析后的数据', data);
+                        
+                        // 检查是否有游戏数据
+                        if (data.type === 'ws_receive' && data.data) {
+                            try {
+                                const wsData = JSON.parse(data.data);
+                                if (wsData.cmd === '6' || wsData.cmd === '2') {
+                                    log('🎮 找到游戏数据! cmd=' + wsData.cmd, 'info');
+                                }
+                            } catch (e) {}
+                        }
                     } catch (e) {
                         log('解析数据失败: ' + e.message, 'error');
                     }
                 };
 
                 window.onSnifferResult = function(json) {
-                    log('📥 onSnifferResult 被调用', 'info');
+                    snifferStarted = true;
+                    log('📥 onSnifferResult 被调用!!!', 'info');
                     logData('原始数据', json);
 
                     try {
                         const result = JSON.parse(json);
-                        logData('解析后的结果', result);
-
                         const action = result.action || '';
                         const data = result.data || '';
 
@@ -273,6 +285,8 @@
                 };
 
                 log('✅ 回调函数已注册', 'info');
+                log('window.onSnifferData 存在: ' + !!(window.onSnifferData), 'info');
+                log('window.onSnifferResult 存在: ' + !!(window.onSnifferResult), 'info');
 
                 // 构建 sniffer:// URL
                 const snifferUrl = `sniffer://start?id=${sessionId}&url=${encodeURIComponent(url)}`;
@@ -282,15 +296,18 @@
                 window.location.href = snifferUrl;
 
                 log('⏳ 等待回调...', 'info');
+                log('⚠️ 注意：如果 5 秒内没有收到回调，说明回调机制有问题', 'warn');
 
                 // 等待结果（超时 15 秒）
                 const result = await new Promise((resolve) => {
                     const timer = setTimeout(() => {
                         log('⏰ 等待超时（15秒）', 'warn');
+                        log('是否收到任何回调: ' + snifferStarted, 'warn');
                         resolve({
                             success: false,
                             error: '等待超时',
-                            messages: messages
+                            messages: messages,
+                            callbackReceived: snifferStarted
                         });
                     }, 15000);
 
@@ -303,32 +320,17 @@
                 log('📊 抓包结果:', 'info');
                 logData('结果', result);
                 log(`捕获消息数: ${result.messages.length}`, 'info');
+                log(`是否收到回调: ${result.callbackReceived}`, 'info');
 
-                // 分析消息
-                let gameDataFound = false;
-                for (const msg of result.messages) {
-                    if (msg.type === 'ws_receive' && msg.data) {
-                        try {
-                            const data = JSON.parse(msg.data);
-                            if (data.cmd === '6' || data.cmd === '2') {
-                                log('🎮 找到游戏数据! cmd=' + data.cmd, 'info');
-                                gameDataFound = true;
-                                logData('游戏数据', data.data);
-                            }
-                        } catch (e) {
-                            // 忽略
-                        }
-                    }
-                }
-
-                if (!gameDataFound) {
-                    log('⚠️ 未找到游戏数据（cmd:6 或 cmd:2）', 'warn');
-                }
-
-                if (result.success) {
-                    setStatus('抓包成功');
+                if (result.callbackReceived) {
+                    setStatus('收到回调，但可能未完成');
                 } else {
-                    setStatus('抓包失败: ' + result.error);
+                    setStatus('未收到任何回调');
+                    log('', 'info');
+                    log('❌ 问题诊断:', 'error');
+                    log('1. MainActivity 可能没有调用 jsCallback', 'error');
+                    log('2. 或者回调的目标 WebView 不是当前页面', 'error');
+                    log('3. 需要检查 MainActivity.jsCallback() 的实现', 'error');
                 }
 
             } catch (e) {
@@ -342,7 +344,12 @@
 
         // 页面加载完成
         log('✅ 页面加载完成');
-        log('提示: 点击"测试回调"检查回调函数是否可用');
+        log('提示: 点击"检查环境"查看当前环境信息');
+        
+        // 自动检查环境
+        setTimeout(() => {
+            checkEnvironment();
+        }, 500);
     </script>
 </body>
 </html>
