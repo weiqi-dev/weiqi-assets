@@ -108,6 +108,12 @@ export class WebBootstrap {
         ? 'http://localhost:8088/proxy'
         : 'https://api.weiqi.lol');
 
+    console.log('[Bootstrap] Environment detection:', {
+      isWeiqiApp: typeof navigator !== 'undefined' && navigator.userAgent.includes('WeiqiApp'),
+      proxyUrl,
+      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown'
+    });
+
     // 1. Logger
     LogManager.registerTransport(new ConsoleTransport());
     const logger = LogManager.createLogger('shell');
@@ -140,6 +146,11 @@ export class WebBootstrap {
       event: { ...DEFAULT_EVENT_CONFIG, proxyUrl },
       ...options.moduleConfigs,  // 允许外部覆盖
     };
+    console.log('[Bootstrap] Player config:', {
+      proxyUrl: mergedModuleConfigs.player.proxyUrl,
+      shoutanBaseUrl: mergedModuleConfigs.player.shoutanBaseUrl,
+      timeout: mergedModuleConfigs.player.timeout
+    });
     const config = new DefaultConfigProvider(mergedModuleConfigs);
 
     // 5. 缓存工厂
