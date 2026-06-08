@@ -1,242 +1,390 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>抓包调试工具 v4</title>
-    <script src="../shared/sniffer-debug.js"></script>
-    <style>
-        body {
-            font-family: monospace;
-            padding: 20px;
-            background: #1a1a1a;
-            color: #0f0;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        .input-section {
-            margin-bottom: 20px;
-        }
-        input[type="text"] {
-            width: 100%;
-            padding: 10px;
-            font-size: 16px;
-            font-family: monospace;
-            background: #000;
-            color: #0f0;
-            border: 1px solid #0f0;
-            box-sizing: border-box;
-        }
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-            font-family: monospace;
-            background: #0f0;
-            color: #000;
-            border: none;
-            cursor: pointer;
-            margin-right: 10px;
-        }
-        button:hover {
-            background: #0c0;
-        }
-        button:disabled {
-            background: #666;
-            cursor: not-allowed;
-        }
-        .log-section {
-            background: #000;
-            border: 1px solid #0f0;
-            padding: 10px;
-            height: 500px;
-            overflow-y: auto;
-            font-size: 14px;
-        }
-        .log-entry {
-            margin: 5px 0;
-            padding: 5px;
-            border-bottom: 1px solid #333;
-        }
-        .log-time {
-            color: #888;
-        }
-        .log-info {
-            color: #0f0;
-        }
-        .log-error {
-            color: #f00;
-        }
-        .log-warn {
-            color: #ff0;
-        }
-        .log-data {
-            color: #0ff;
-            word-break: break-all;
-        }
-        .status {
-            margin: 10px 0;
-            padding: 10px;
-            background: #000;
-            border: 1px solid #0f0;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+  <title>围棋智能助手</title>
+  <style>
+    /* home 特有样式：棋子 logo */
+    .header-logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 8px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .header-logo .stone {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: inline-block;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    .header-logo .stone:nth-child(1) { animation-delay: 0s; }
+    .header-logo .stone:nth-child(3) { animation-delay: 0.5s; }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-3px); }
+    }
+
+    .header-logo .stone-black {
+      background: radial-gradient(circle at 30% 30%, #4a4a4a, #1a1a1a);
+      box-shadow: 2px 2px 8px rgba(0,0,0,0.5), inset -1px -1px 3px rgba(0,0,0,0.3);
+    }
+
+    .header-logo .stone-white {
+      background: radial-gradient(circle at 30% 30%, #ffffff, #d0d0d0);
+      box-shadow: 2px 2px 8px rgba(0,0,0,0.3), inset -1px -1px 3px rgba(255,255,255,0.5);
+    }
+
+    /* home 特有样式：内容区域不需要 padding-top */
+    .glass-content {
+      padding: 0 12px 24px;
+    }
+    
+    /* 分组标签 */
+    .section-label {
+      font-size: 13px;
+      color: rgba(255,255,255,0.8);
+      margin-bottom: 10px;
+      padding-left: 2px;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+    }
+
+    /* 快捷入口卡片 - 玻璃拟态 */
+    .quick-entry-card {
+      display: flex;
+      align-items: center;
+      padding: 14px 16px;
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 16px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .quick-entry-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 100%);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .quick-entry-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+      border-color: rgba(255,255,255,0.3);
+    }
+
+    .quick-entry-card:hover::before {
+      opacity: 1;
+    }
+
+    .quick-entry-card:active {
+      transform: translateY(-1px);
+    }
+
+    .quick-card-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6em;
+      background: rgba(255,255,255,0.2);
+      backdrop-filter: blur(5px);
+      flex-shrink: 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .quick-card-content {
+      flex: 1;
+      margin-left: 14px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .quick-card-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: white;
+      margin-bottom: 3px;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+
+    .quick-card-desc {
+      font-size: 12px;
+      color: rgba(255,255,255,0.8);
+    }
+
+    .quick-card-arrow {
+      font-size: 22px;
+      color: rgba(255,255,255,0.6);
+      margin-left: 8px;
+      transition: transform 0.3s, color 0.3s;
+      position: relative;
+      z-index: 1;
+    }
+
+    .quick-entry-card:hover .quick-card-arrow {
+      transform: translateX(4px);
+      color: white;
+    }
+
+    /* 功能网格 - 玻璃拟态 */
+    .function-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      background: rgba(255,255,255,0.12);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 16px;
+      padding: 16px 10px;
+    }
+
+    .grid-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 10px 4px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .grid-item:hover {
+      background: rgba(255,255,255,0.15);
+      transform: translateY(-2px);
+    }
+
+    .grid-item:active {
+      transform: scale(0.95);
+    }
+
+    .grid-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4em;
+      margin-bottom: 6px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+    }
+
+    .grid-label {
+      font-size: 12px;
+      color: rgba(255,255,255,0.9);
+      text-align: center;
+      font-weight: 500;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+
+    /* 功能网格配色 */
+    .grid-icon.assistant { background: linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%); }
+    .grid-icon.player { background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%); }
+    .grid-icon.opponent { background: linear-gradient(135deg, #E91E63 0%, #C2185B 100%); }
+    .grid-icon.event { background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%); }
+    .grid-icon.decision { background: linear-gradient(135deg, #F44336 0%, #D32F2F 100%); }
+
+    /* 动画 */
+    .quick-entry-card {
+      animation: fadeInUp 0.5s ease-out;
+    }
+
+    .quick-entry-card:nth-child(1) { animation-delay: 0.1s; }
+    .quick-entry-card:nth-child(2) { animation-delay: 0.15s; }
+    .quick-entry-card:nth-child(3) { animation-delay: 0.2s; }
+    .quick-entry-card:nth-child(4) { animation-delay: 0.25s; }
+
+    .function-grid {
+      animation: fadeInUp 0.5s ease-out 0.3s backwards;
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* 涟漪动画 */
+    .ripple {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.4);
+      transform: scale(0);
+      animation: ripple 0.6s linear;
+      pointer-events: none;
+    }
+
+    @keyframes ripple {
+      to { transform: scale(4); opacity: 0; }
+    }
+
+    /* 响应式 */
+    @media (max-width: 360px) {
+      .function-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      .header-title {
+        font-size: 1.7em;
+      }
+    }
+  </style>
+  <script type="module" crossorigin src="../assets/home/index-B-tiNAMn.js"></script>
+  <link rel="modulepreload" crossorigin href="../assets/FavoriteService-CqGqGpov.js">
+  <link rel="modulepreload" crossorigin href="../assets/modulepreload-polyfill-eJgYjmQ8.js">
+  <link rel="modulepreload" crossorigin href="../assets/Bootstrap-BJRdbauy.js">
+  <link rel="stylesheet" crossorigin href="../assets/shell-Dq2WFr1R.css">
 </head>
 <body>
-    <div class="container">
-        <h1>🔍 抓包调试工具 v4（无遮罩版）</h1>
-
-        <div class="input-section">
-            <input type="text" id="urlInput" placeholder="粘贴 URL..." />
-        </div>
-
-        <div class="input-section">
-            <button id="fetchBtn" onclick="startFetch()">开始抓包</button>
-            <button id="clearBtn" onclick="clearLog()">清除日志</button>
-            <button id="checkBtn" onclick="checkEnvironment()">检查环境</button>
-        </div>
-
-        <div class="status" id="status">
-            状态: 就绪
-        </div>
-
-        <div class="log-section" id="logSection">
-            <div class="log-entry">
-                <span class="log-time">[系统]</span>
-                <span class="log-info">调试工具已加载，等待输入...</span>
-            </div>
-        </div>
+  <div class="glass-container">
+    <header class="glass-header">
+      <div class="header-logo">
+        <span class="stone stone-black"></span>
+        <h1 class="glass-title">围棋助手</h1>
+        <span class="stone stone-white"></span>
+      </div>
+      <p class="glass-subtitle" id="greeting"></p>
+    </header>
+    <div class="glass-content">
+      <div id="page-root"></div>
     </div>
+  </div>
+  <script src="../shared/error-catch.js"></script>
+  <script>
+    // 设置动态问候语
+    const hour = new Date().getHours();
+    let greeting = '你好';
+    if (hour >= 5 && hour < 12) greeting = '早上好';
+    else if (hour >= 12 && hour < 18) greeting = '下午好';
+    else if (hour >= 18 || hour < 5) greeting = '晚上好';
+    document.getElementById('greeting').textContent = greeting + '，准备好对弈了吗？';
 
-    <script>
-        // 日志函数
-        function log(message, type = 'info') {
-            const logSection = document.getElementById('logSection');
-            const time = new Date().toLocaleTimeString();
-            const entry = document.createElement('div');
-            entry.className = 'log-entry';
-            entry.innerHTML = `<span class="log-time">[${time}]</span> <span class="log-${type}">${message}</span>`;
-            logSection.appendChild(entry);
-            logSection.scrollTop = logSection.scrollHeight;
-            console.log(`[${type}] ${message}`);
-        }
+    // 连续点击标题开启调试日志
+    (function() {
+      let clickCount = 0;
+      let lastClickTime = 0;
+      const CLICK_THRESHOLD = 5; // 连续点击次数
+      const TIME_WINDOW = 2000; // 时间窗口（毫秒）
 
-        function setStatus(text) {
-            document.getElementById('status').innerHTML = `状态: ${text}`;
-        }
+      const title = document.querySelector('.glass-title');
+      if (!title) return;
 
-        function clearLog() {
-            document.getElementById('logSection').innerHTML = '';
-            log('日志已清除');
-        }
+      title.style.cursor = 'pointer';
+      title.style.userSelect = 'none';
+      title.style.webkitUserSelect = 'none';
 
-        // 检查环境
-        function checkEnvironment() {
-            log('=== 环境检查 ===', 'info');
-            log('window.onSnifferData 存在: ' + !!(window.onSnifferData), 'info');
-            log('window.onSnifferResult 存在: ' + !!(window.onSnifferResult), 'info');
-            log('=== 环境检查完成 ===', 'info');
-        }
-
-        // 开始抓包
-        async function startFetch() {
-            const urlInput = document.getElementById('urlInput');
-            const url = urlInput.value.trim();
-
-            if (!url) {
-                log('请输入 URL', 'error');
-                return;
-            }
-
-            log('开始抓包: ' + url, 'info');
-            setStatus('正在抓包...');
-
-            const fetchBtn = document.getElementById('fetchBtn');
-            fetchBtn.disabled = true;
-
-            try {
-                // 生成会话 ID
-                const sessionId = `debug-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-                log('会话 ID: ' + sessionId, 'info');
-
-                // 检查回调函数
-                log('检查回调函数...', 'info');
-                log('window.onSnifferData: ' + (typeof window.onSnifferData), 'info');
-                log('window.onSnifferResult: ' + (typeof window.onSnifferResult), 'info');
-
-                if (!window.onSnifferData) {
-                    log('⚠️ window.onSnifferData 不存在！', 'warn');
-                }
-                if (!window.onSnifferResult) {
-                    log('⚠️ window.onSnifferResult 不存在！', 'warn');
-                }
-
-                // 注册回调监控
-                let callbackReceived = false;
-                const originalOnSnifferResult = window.onSnifferResult;
-                window.onSnifferResult = function(json) {
-                    callbackReceived = true;
-                    log('✅ onSnifferResult 被调用！！！', 'info');
-                    log('数据: ' + json, 'info');
-                    
-                    if (originalOnSnifferResult) {
-                        originalOnSnifferResult.call(window, json);
-                    }
-                };
-
-                const originalOnSnifferData = window.onSnifferData;
-                window.onSnifferData = function(json) {
-                    callbackReceived = true;
-                    log('✅ onSnifferData 被调用！！！', 'info');
-                    log('数据: ' + json.substring(0, 100), 'info');
-                    
-                    if (originalOnSnifferData) {
-                        originalOnSnifferData.call(window, json);
-                    }
-                };
-
-                log('✅ 回调监控已设置', 'info');
-
-                // 构建 sniffer:// URL
-                const snifferUrl = `sniffer://start?id=${sessionId}&url=${encodeURIComponent(url)}`;
-                log('调用 sniffer:// 协议', 'info');
-
-                // 触发 sniffer://start
-                window.location.href = snifferUrl;
-
-                log('⏳ 等待回调...（超时 15 秒）', 'info');
-
-                // 等待一段时间后检查回调
-                setTimeout(() => {
-                    if (!callbackReceived) {
-                        log('❌ 15 秒内未收到任何回调！', 'error');
-                        log('可能原因：', 'error');
-                        log('1. MainActivity 的 jsCallback 调用了错误的 WebView', 'error');
-                        log('2. 或者回调函数在错误的 JavaScript 环境中', 'error');
-                        setStatus('未收到回调');
-                    } else {
-                        log('✅ 已收到回调', 'info');
-                        setStatus('抓包进行中');
-                    }
-                    fetchBtn.disabled = false;
-                }, 15000);
-
-            } catch (e) {
-                log('❌ 错误: ' + e.message, 'error');
-                log(e.stack, 'error');
-                setStatus('错误: ' + e.message);
-                fetchBtn.disabled = false;
-            }
-        }
-
-        // 页面加载完成
-        log('✅ 页面加载完成');
+      title.addEventListener('click', function() {
+        const now = Date.now();
         
-        // 自动检查环境
+        // 如果距离上次点击超过时间窗口，重置计数
+        if (now - lastClickTime > TIME_WINDOW) {
+          clickCount = 0;
+        }
+        
+        clickCount++;
+        lastClickTime = now;
+
+        // 达到阈值，切换调试模式
+        if (clickCount >= CLICK_THRESHOLD) {
+          const currentDebug = localStorage.getItem('KATAGO_DEBUG') === 'true';
+          const newDebug = !currentDebug;
+          localStorage.setItem('KATAGO_DEBUG', newDebug.toString());
+          
+          // 显示提示
+          showToast(newDebug ? '🐛 调试模式已开启' : '🐛 调试模式已关闭');
+          
+          // 重置计数
+          clickCount = 0;
+        }
+      });
+
+      // Toast 提示函数
+      function showToast(message) {
+        // 移除已有的 toast
+        const existingToast = document.querySelector('.debug-toast');
+        if (existingToast) {
+          existingToast.remove();
+        }
+
+        const toast = document.createElement('div');
+        toast.className = 'debug-toast';
+        toast.textContent = message;
+        toast.style.cssText = `
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          background: rgba(0, 0, 0, 0.8);
+          color: white;
+          padding: 12px 24px;
+          border-radius: 8px;
+          font-size: 14px;
+          z-index: 10000;
+          animation: toastFadeIn 0.3s ease-out;
+        `;
+
+        // 添加动画样式
+        if (!document.querySelector('#debug-toast-style')) {
+          const style = document.createElement('style');
+          style.id = 'debug-toast-style';
+          style.textContent = `
+            @keyframes toastFadeIn {
+              from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+              to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            }
+          `;
+          document.head.appendChild(style);
+        }
+
+        document.body.appendChild(toast);
+
+        // 2 秒后自动消失
         setTimeout(() => {
-            checkEnvironment();
-        }, 500);
-    </script>
+          toast.style.opacity = '0';
+          toast.style.transition = 'opacity 0.3s';
+          setTimeout(() => toast.remove(), 300);
+        }, 2000);
+      }
+    })();
+
+    // 涟漪动画
+    document.addEventListener('click', function(e) {
+      const target = e.target.closest('.quick-entry-card, .grid-item');
+      if (!target) return;
+      
+      const ripple = document.createElement('span');
+      ripple.classList.add('ripple');
+      const rect = target.getBoundingClientRect();
+      const size = Math.max(rect.width, rect.height);
+      ripple.style.width = ripple.style.height = size + 'px';
+      ripple.style.left = (e.clientX - rect.left - size/2) + 'px';
+      ripple.style.top = (e.clientY - rect.top - size/2) + 'px';
+      target.style.position = 'relative';
+      target.appendChild(ripple);
+      setTimeout(() => ripple.remove(), 600);
+    });
+  </script>
 </body>
 </html>
