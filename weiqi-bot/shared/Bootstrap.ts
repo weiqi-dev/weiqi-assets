@@ -114,6 +114,17 @@ export class WebBootstrap {
       userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown'
     });
 
+    // 在页面上显示调试信息（方便 App 端调试）
+    if (typeof document !== 'undefined') {
+      const debugDiv = document.createElement('div');
+      debugDiv.id = 'bootstrap-debug';
+      debugDiv.style.cssText = 'position:fixed;top:0;left:0;background:rgba(0,0,0,0.8);color:#0f0;padding:5px;font-size:12px;z-index:99999;font-family:monospace;';
+      debugDiv.textContent = `[Bootstrap] UA: ${typeof navigator !== 'undefined' ? navigator.userAgent.substring(0, 50) : 'unknown'} | proxyUrl: ${proxyUrl}`;
+      document.body ? document.body.appendChild(debugDiv) : document.addEventListener('DOMContentLoaded', () => document.body.appendChild(debugDiv));
+      // 3秒后自动隐藏
+      setTimeout(() => debugDiv.remove(), 3000);
+    }
+
     // 1. Logger
     LogManager.registerTransport(new ConsoleTransport());
     const logger = LogManager.createLogger('shell');
