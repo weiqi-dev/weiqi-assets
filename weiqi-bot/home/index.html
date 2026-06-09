@@ -222,16 +222,15 @@
             }
         };
         
-        // 隐藏 iframe 用于触发 sniffer:// 协议，避免主页面进入"加载中"卡顿状态
+        // 用 <a> 标签触发 sniffer:// 协议，避免主页面进入"加载中"卡顿状态
         function fireSnifferUri(uri) {
-            let iframe = document.getElementById('__sniffer_iframe__');
-            if (!iframe) {
-                iframe = document.createElement('iframe');
-                iframe.id = '__sniffer_iframe__';
-                iframe.style.cssText = 'position:absolute;width:1px;height:1px;border:0;visibility:hidden;';
-                document.body.appendChild(iframe);
-            }
-            iframe.src = uri;
+            const a = document.createElement('a');
+            a.href = uri;
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            // 延迟移除，确保点击事件已处理
+            setTimeout(() => a.remove(), 100);
         }
 
         function startSniffer() {
@@ -253,7 +252,7 @@
             document.getElementById('sessionId').textContent = currentSessionId;
             updateDuration();
             
-            // 通过隐藏 iframe 触发，不会让主页面"加载中"
+            // 通过 <a> 标签触发
             fireSnifferUri(
                 `sniffer://start?id=${currentSessionId}&url=${encodeURIComponent(url)}&timeout=${timeout}`
             );
