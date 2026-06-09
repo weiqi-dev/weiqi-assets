@@ -164,77 +164,125 @@
         let startTime = 0;
         let eventCount = 0;
         let logs = [];
-        
-        // 注册回调
-        window.onSnifferData = function(sessionId, data) {
+
+        // 隐藏 iframe 用于触发 sniffer:// 协议，避免主页面进入“加载中”卡顿状态
+        function fireSnifferUri(uri) {
+            let f = document.getElementById('__sniffer_iframe__');
+            if (!f) {
+                f = document.createElement('iframe');
+                f.id = '__sniffer_iframe__';
+                f.style.cssText = 'position:absolute;width:0;height:0;border:0;visibility:hidden;';
+                document.body.appendChild(f);
+            }
+            f.src = uri;
+        }
+
+        // ==================== Native 回调 ====================
+        // 协议（与 MainActivity.jsCallback 严格一致）：
+        //   onSnifferData(jsonStr)   — jsonStr 是 events 数组的 JSON字符串
+        //   onSnifferResult(jsonStr) — jsonStr 是 { action, data, events? } 的 JSON字符串
+
+        window.onSnifferData = function (jsonStr) {
             try {
-                const events = JSON.parse(data);
-                events.forEach(event => addLog(event));
+                const events = JSON.parse(jsonStr);
+                if (!Array.isArray(events)) {
+                    console.warn('onSnifferData expected array, got', typeof events);
+                    return;
+                }
+                events.forEach(addLog);
             } catch (e) {
-                console.error('Failed to parse sniffer data:', e);
+                console.error('Failed to parse sniffer data:', e, 'raw:', jsonStr);
             }
         };
-        
-        window.onSnifferResult = function(sessionId, action, data) {
-            console.log('Sniffer result:', sessionId, action, data);
-            
-            switch(action) {
+
+        window.onSnifferResult = function (jsonStr) {
+            let payload;
+            try {
+                payload = JSON.parse(jsonStr);
+            } catch (e) {
+                console.error('Failed to parse sniffer result:', e, 'raw:', jsonStr);
+                return;
+            }
+            const action = payload && payload.action;
+            const data = payload && payload.data;
+            console.log('Sniffer result:', action, data, payload);
+
+            switch (action) {
                 case 'started':
-                    updateStatus('running', `🟢 抓包中... [${sessionId}]`);
+                    updateStatus('running', `🟢 抓包中... [${data}]`);
                     document.getElementById('startBtn').disabled = true;
                     document.getElementById('stopBtn').disabled = false;
                     break;
                 case 'stopped':
-                case 'completed':
-                case 'timeout':
-                    updateStatus('stopped', `⏹ ${action === 'timeout' ? '超时' : '已停止'} [${sessionId}]`);
+                case 'flushed':
+                case 'completed': {
+                    const evCount = (payload && typeof payload.events === 'number') ? `，共 ${payload.events} 条` : '';
+                    updateStatus('stopped', `⏹ ${action}：${data}${evCount}`);
                     document.getElementById('startBtn').disabled = false;
                     document.getElementById('stopBtn').disabled = true;
                     currentSessionId = null;
+                    if (window.durationTimer) { clearInterval(window.durationTimer); window.durationTimer = null; }
+                    break;
+                }
+                case 'timeout':
+                    updateStatus('stopped', `⏹ 超时 [${data}]`);
+                    document.getElementById('startBtn').disabled = false;
+                    document.getElementById('stopBtn').disabled = true;
+                    currentSessionId = null;
+                    if (window.durationTimer) { clearInterval(window.durationTimer); window.durationTimer = null; }
                     break;
                 case 'error':
-                    updateStatus('stopped', `❌ 错误: ${data}`);
+                    updateStatus('stopped', `❌ 错误：${data}`);
                     document.getElementById('startBtn').disabled = false;
                     document.getElementById('stopBtn').disabled = true;
                     currentSessionId = null;
+                    if (window.durationTimer) { clearInterval(window.durationTimer); window.durationTimer = null; }
                     break;
+                case 'status':
+                    console.log('running sessions:', data);
+                    break;
+                default:
+                    console.warn('unknown sniffer action:', action, payload);
             }
         };
-        
+
         function startSniffer() {
             const url = document.getElementById('urlInput').value.trim();
-            const timeout = document.getElementById('timeoutInput').value * 1000;
-            
-            if (!url || !url.startsWith('http')) {
-                alert('请输入有效的URL');
+            const timeout = parseInt(document.getElementById('timeoutInput').value, 10) * 1000;
+
+            if (!url || !/^https?:\/\//i.test(url)) {
+                alert('请输入有效的 http(s) URL');
                 return;
             }
-            
+
             // 清空之前的数据
             clearLogs();
-            
+
             currentSessionId = 'test_' + Date.now();
             startTime = Date.now();
             eventCount = 0;
-            
+
             document.getElementById('sessionId').textContent = currentSessionId;
+            updateStatus('running', `🟡 启动中... [${currentSessionId}]`);
+            document.getElementById('startBtn').disabled = true;
             updateDuration();
-            
-            // 调用底层接口
-            window.location.href = `sniffer://start?id=${currentSessionId}&url=${encodeURIComponent(url)}&timeout=${timeout}`;
-            
+
+            // 通过隐藏 iframe 触发，不会让主页面“加载中”
+            fireSnifferUri(
+                `sniffer://start?id=${encodeURIComponent(currentSessionId)}` +
+                `&url=${encodeURIComponent(url)}` +
+                `&timeout=${timeout}`
+            );
+
             // 定时更新耗时
+            if (window.durationTimer) clearInterval(window.durationTimer);
             window.durationTimer = setInterval(updateDuration, 1000);
         }
-        
+
         function stopSniffer() {
             if (!currentSessionId) return;
-            
-            window.location.href = `sniffer://stop?id=${currentSessionId}`;
-            
-            if (window.durationTimer) {
-                clearInterval(window.durationTimer);
-            }
+            fireSnifferUri(`sniffer://stop?id=${encodeURIComponent(currentSessionId)}`);
+            if (window.durationTimer) { clearInterval(window.durationTimer); window.durationTimer = null; }
         }
         
         function addLog(event) {
@@ -302,10 +350,10 @@
             return div.innerHTML;
         }
         
-        // 页面卸载时停止会话
+        // 页面卸载时停止会话（用 iframe 触发，避免 navigation 被中断）
         window.addEventListener('beforeunload', () => {
             if (currentSessionId) {
-                window.location.href = `sniffer://stop?id=${currentSessionId}`;
+                try { fireSnifferUri(`sniffer://stop?id=${encodeURIComponent(currentSessionId)}`); } catch (e) {}
             }
         });
     </script>
