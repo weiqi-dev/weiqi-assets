@@ -1,390 +1,313 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-  <title>围棋智能助手</title>
-  <style>
-    /* home 特有样式：棋子 logo */
-    .header-logo {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      margin-bottom: 8px;
-      position: relative;
-      z-index: 1;
-    }
-
-    .header-logo .stone {
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      display: inline-block;
-      animation: float 3s ease-in-out infinite;
-    }
-
-    .header-logo .stone:nth-child(1) { animation-delay: 0s; }
-    .header-logo .stone:nth-child(3) { animation-delay: 0.5s; }
-
-    @keyframes float {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-3px); }
-    }
-
-    .header-logo .stone-black {
-      background: radial-gradient(circle at 30% 30%, #4a4a4a, #1a1a1a);
-      box-shadow: 2px 2px 8px rgba(0,0,0,0.5), inset -1px -1px 3px rgba(0,0,0,0.3);
-    }
-
-    .header-logo .stone-white {
-      background: radial-gradient(circle at 30% 30%, #ffffff, #d0d0d0);
-      box-shadow: 2px 2px 8px rgba(0,0,0,0.3), inset -1px -1px 3px rgba(255,255,255,0.5);
-    }
-
-    /* home 特有样式：内容区域不需要 padding-top */
-    .glass-content {
-      padding: 0 12px 24px;
-    }
-    
-    /* 分组标签 */
-    .section-label {
-      font-size: 13px;
-      color: rgba(255,255,255,0.8);
-      margin-bottom: 10px;
-      padding-left: 2px;
-      font-weight: 500;
-      letter-spacing: 0.5px;
-    }
-
-    /* 快捷入口卡片 - 玻璃拟态 */
-    .quick-entry-card {
-      display: flex;
-      align-items: center;
-      padding: 14px 16px;
-      background: rgba(255,255,255,0.15);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      border: 1px solid rgba(255,255,255,0.2);
-      border-radius: 16px;
-      margin-bottom: 10px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .quick-entry-card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 100%);
-      opacity: 0;
-      transition: opacity 0.3s;
-    }
-
-    .quick-entry-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 8px 25px rgba(0,0,0,0.2);
-      border-color: rgba(255,255,255,0.3);
-    }
-
-    .quick-entry-card:hover::before {
-      opacity: 1;
-    }
-
-    .quick-entry-card:active {
-      transform: translateY(-1px);
-    }
-
-    .quick-card-icon {
-      width: 48px;
-      height: 48px;
-      border-radius: 14px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.6em;
-      background: rgba(255,255,255,0.2);
-      backdrop-filter: blur(5px);
-      flex-shrink: 0;
-      position: relative;
-      z-index: 1;
-    }
-
-    .quick-card-content {
-      flex: 1;
-      margin-left: 14px;
-      position: relative;
-      z-index: 1;
-    }
-
-    .quick-card-title {
-      font-size: 16px;
-      font-weight: 600;
-      color: white;
-      margin-bottom: 3px;
-      text-shadow: 0 1px 2px rgba(0,0,0,0.2);
-    }
-
-    .quick-card-desc {
-      font-size: 12px;
-      color: rgba(255,255,255,0.8);
-    }
-
-    .quick-card-arrow {
-      font-size: 22px;
-      color: rgba(255,255,255,0.6);
-      margin-left: 8px;
-      transition: transform 0.3s, color 0.3s;
-      position: relative;
-      z-index: 1;
-    }
-
-    .quick-entry-card:hover .quick-card-arrow {
-      transform: translateX(4px);
-      color: white;
-    }
-
-    /* 功能网格 - 玻璃拟态 */
-    .function-grid {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 10px;
-      background: rgba(255,255,255,0.12);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      border: 1px solid rgba(255,255,255,0.15);
-      border-radius: 16px;
-      padding: 16px 10px;
-    }
-
-    .grid-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 10px 4px;
-      border-radius: 12px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .grid-item:hover {
-      background: rgba(255,255,255,0.15);
-      transform: translateY(-2px);
-    }
-
-    .grid-item:active {
-      transform: scale(0.95);
-    }
-
-    .grid-icon {
-      width: 42px;
-      height: 42px;
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.4em;
-      margin-bottom: 6px;
-      box-shadow: 0 3px 10px rgba(0,0,0,0.2);
-    }
-
-    .grid-label {
-      font-size: 12px;
-      color: rgba(255,255,255,0.9);
-      text-align: center;
-      font-weight: 500;
-      text-shadow: 0 1px 2px rgba(0,0,0,0.2);
-    }
-
-    /* 功能网格配色 */
-    .grid-icon.assistant { background: linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%); }
-    .grid-icon.player { background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%); }
-    .grid-icon.opponent { background: linear-gradient(135deg, #E91E63 0%, #C2185B 100%); }
-    .grid-icon.event { background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%); }
-    .grid-icon.decision { background: linear-gradient(135deg, #F44336 0%, #D32F2F 100%); }
-
-    /* 动画 */
-    .quick-entry-card {
-      animation: fadeInUp 0.5s ease-out;
-    }
-
-    .quick-entry-card:nth-child(1) { animation-delay: 0.1s; }
-    .quick-entry-card:nth-child(2) { animation-delay: 0.15s; }
-    .quick-entry-card:nth-child(3) { animation-delay: 0.2s; }
-    .quick-entry-card:nth-child(4) { animation-delay: 0.25s; }
-
-    .function-grid {
-      animation: fadeInUp 0.5s ease-out 0.3s backwards;
-    }
-
-    @keyframes fadeInUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* 涟漪动画 */
-    .ripple {
-      position: absolute;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.4);
-      transform: scale(0);
-      animation: ripple 0.6s linear;
-      pointer-events: none;
-    }
-
-    @keyframes ripple {
-      to { transform: scale(4); opacity: 0; }
-    }
-
-    /* 响应式 */
-    @media (max-width: 360px) {
-      .function-grid {
-        grid-template-columns: repeat(3, 1fr);
-      }
-      .header-title {
-        font-size: 1.7em;
-      }
-    }
-  </style>
-  <script type="module" crossorigin src="../assets/home/index-B-tiNAMn.js"></script>
-  <link rel="modulepreload" crossorigin href="../assets/FavoriteService-CqGqGpov.js">
-  <link rel="modulepreload" crossorigin href="../assets/modulepreload-polyfill-eJgYjmQ8.js">
-  <link rel="modulepreload" crossorigin href="../assets/Bootstrap-BJRdbauy.js">
-  <link rel="stylesheet" crossorigin href="../assets/shell-Dq2WFr1R.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Sniffer 测试</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', monospace;
+            background: #0d1117;
+            color: #c9d1d9;
+            padding: 20px;
+            font-size: 14px;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 { color: #58a6ff; margin-bottom: 20px; }
+        
+        .controls {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .input-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+        label { color: #8b949e; min-width: 80px; }
+        input[type="text"], input[type="number"] {
+            flex: 1;
+            padding: 10px 12px;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            color: #c9d1d9;
+            font-size: 14px;
+        }
+        input[type="number"] { max-width: 120px; }
+        
+        .buttons {
+            display: flex;
+            gap: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            background: #21262d;
+            color: #c9d1d9;
+            transition: all 0.2s;
+        }
+        button:hover { background: #30363d; }
+        button.primary { background: #238636; border-color: #238636; color: white; }
+        button.primary:hover { background: #2ea043; }
+        button.danger { background: #da3633; border-color: #da3633; color: white; }
+        button.danger:hover { background: #f85149; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .status {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .status-text { font-size: 16px; }
+        .status-text.running { color: #3fb950; }
+        .status-text.stopped { color: #f85149; }
+        .stats { display: flex; gap: 20px; color: #8b949e; }
+        
+        .logs {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 15px;
+            min-height: 400px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .logs h2 { color: #58a6ff; font-size: 16px; margin-bottom: 15px; }
+        .log-entry {
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin-bottom: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            line-height: 1.6;
+            word-break: break-all;
+        }
+        .log-entry:hover { background: #21262d; }
+        .log-time { color: #6e7681; margin-right: 10px; }
+        .log-type { font-weight: 600; margin-right: 10px; padding: 2px 6px; border-radius: 3px; }
+        .log-type-open { color: #3fb950; background: #3fb95020; }
+        .log-type-send { color: #58a6ff; background: #58a6ff20; }
+        .log-type-receive { color: #a371f7; background: #a371f720; }
+        .log-type-close { color: #f85149; background: #f8514920; }
+        .log-type-error { color: #f85149; background: #f8514940; }
+        .log-url { color: #8b949e; margin-right: 10px; }
+        .log-data { color: #c9d1d9; }
+        
+        .empty { color: #6e7681; text-align: center; padding: 40px; }
+        
+        .json-view {
+            background: #0d1117;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 11px;
+            white-space: pre-wrap;
+            word-break: break-all;
+            color: #c9d1d9;
+        }
+    </style>
 </head>
 <body>
-  <div class="glass-container">
-    <header class="glass-header">
-      <div class="header-logo">
-        <span class="stone stone-black"></span>
-        <h1 class="glass-title">围棋助手</h1>
-        <span class="stone stone-white"></span>
-      </div>
-      <p class="glass-subtitle" id="greeting"></p>
-    </header>
-    <div class="glass-content">
-      <div id="page-root"></div>
+    <div class="container">
+        <h1>🕸️ WebSocket Sniffer 测试</h1>
+        
+        <div class="controls">
+            <div class="input-row">
+                <label>目标URL:</label>
+                <input type="text" id="urlInput" placeholder="https://example.com" value="https://">
+            </div>
+            <div class="input-row">
+                <label>超时(秒):</label>
+                <input type="number" id="timeoutInput" value="30" min="5" max="120">
+            </div>
+            <div class="buttons">
+                <button id="startBtn" class="primary" onclick="startSniffer()">▶ 开始抓包</button>
+                <button id="stopBtn" class="danger" onclick="stopSniffer()" disabled>⏹ 停止</button>
+                <button onclick="clearLogs()">🗑 清空</button>
+            </div>
+        </div>
+        
+        <div class="status">
+            <span class="status-text stopped" id="statusText">⏹ 未开始</span>
+            <div class="stats">
+                <span>会话: <b id="sessionId">-</b></span>
+                <span>事件: <b id="eventCount">0</b></span>
+                <span>耗时: <b id="duration">0s</b></span>
+            </div>
+        </div>
+        
+        <div class="logs">
+            <h2>📋 抓包日志</h2>
+            <div id="logContainer">
+                <div class="empty">点击"开始抓包"启动会话</div>
+            </div>
+        </div>
     </div>
-  </div>
-  <script src="../shared/error-catch.js"></script>
-  <script>
-    // 设置动态问候语
-    const hour = new Date().getHours();
-    let greeting = '你好';
-    if (hour >= 5 && hour < 12) greeting = '早上好';
-    else if (hour >= 12 && hour < 18) greeting = '下午好';
-    else if (hour >= 18 || hour < 5) greeting = '晚上好';
-    document.getElementById('greeting').textContent = greeting + '，准备好对弈了吗？';
 
-    // 连续点击标题开启调试日志
-    (function() {
-      let clickCount = 0;
-      let lastClickTime = 0;
-      const CLICK_THRESHOLD = 5; // 连续点击次数
-      const TIME_WINDOW = 2000; // 时间窗口（毫秒）
-
-      const title = document.querySelector('.glass-title');
-      if (!title) return;
-
-      title.style.cursor = 'pointer';
-      title.style.userSelect = 'none';
-      title.style.webkitUserSelect = 'none';
-
-      title.addEventListener('click', function() {
-        const now = Date.now();
+    <script>
+        let currentSessionId = null;
+        let startTime = 0;
+        let eventCount = 0;
+        let logs = [];
         
-        // 如果距离上次点击超过时间窗口，重置计数
-        if (now - lastClickTime > TIME_WINDOW) {
-          clickCount = 0;
-        }
-        
-        clickCount++;
-        lastClickTime = now;
-
-        // 达到阈值，切换调试模式
-        if (clickCount >= CLICK_THRESHOLD) {
-          const currentDebug = localStorage.getItem('KATAGO_DEBUG') === 'true';
-          const newDebug = !currentDebug;
-          localStorage.setItem('KATAGO_DEBUG', newDebug.toString());
-          
-          // 显示提示
-          showToast(newDebug ? '🐛 调试模式已开启' : '🐛 调试模式已关闭');
-          
-          // 重置计数
-          clickCount = 0;
-        }
-      });
-
-      // Toast 提示函数
-      function showToast(message) {
-        // 移除已有的 toast
-        const existingToast = document.querySelector('.debug-toast');
-        if (existingToast) {
-          existingToast.remove();
-        }
-
-        const toast = document.createElement('div');
-        toast.className = 'debug-toast';
-        toast.textContent = message;
-        toast.style.cssText = `
-          position: fixed;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          background: rgba(0, 0, 0, 0.8);
-          color: white;
-          padding: 12px 24px;
-          border-radius: 8px;
-          font-size: 14px;
-          z-index: 10000;
-          animation: toastFadeIn 0.3s ease-out;
-        `;
-
-        // 添加动画样式
-        if (!document.querySelector('#debug-toast-style')) {
-          const style = document.createElement('style');
-          style.id = 'debug-toast-style';
-          style.textContent = `
-            @keyframes toastFadeIn {
-              from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
-              to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        // 注册回调
+        window.onSnifferData = function(sessionId, data) {
+            try {
+                const events = JSON.parse(data);
+                events.forEach(event => addLog(event));
+            } catch (e) {
+                console.error('Failed to parse sniffer data:', e);
             }
-          `;
-          document.head.appendChild(style);
+        };
+        
+        window.onSnifferResult = function(sessionId, action, data) {
+            console.log('Sniffer result:', sessionId, action, data);
+            
+            switch(action) {
+                case 'started':
+                    updateStatus('running', `🟢 抓包中... [${sessionId}]`);
+                    document.getElementById('startBtn').disabled = true;
+                    document.getElementById('stopBtn').disabled = false;
+                    break;
+                case 'stopped':
+                case 'completed':
+                case 'timeout':
+                    updateStatus('stopped', `⏹ ${action === 'timeout' ? '超时' : '已停止'} [${sessionId}]`);
+                    document.getElementById('startBtn').disabled = false;
+                    document.getElementById('stopBtn').disabled = true;
+                    currentSessionId = null;
+                    break;
+                case 'error':
+                    updateStatus('stopped', `❌ 错误: ${data}`);
+                    document.getElementById('startBtn').disabled = false;
+                    document.getElementById('stopBtn').disabled = true;
+                    currentSessionId = null;
+                    break;
+            }
+        };
+        
+        function startSniffer() {
+            const url = document.getElementById('urlInput').value.trim();
+            const timeout = document.getElementById('timeoutInput').value * 1000;
+            
+            if (!url || !url.startsWith('http')) {
+                alert('请输入有效的URL');
+                return;
+            }
+            
+            // 清空之前的数据
+            clearLogs();
+            
+            currentSessionId = 'test_' + Date.now();
+            startTime = Date.now();
+            eventCount = 0;
+            
+            document.getElementById('sessionId').textContent = currentSessionId;
+            updateDuration();
+            
+            // 调用底层接口
+            window.location.href = `sniffer://start?id=${currentSessionId}&url=${encodeURIComponent(url)}&timeout=${timeout}`;
+            
+            // 定时更新耗时
+            window.durationTimer = setInterval(updateDuration, 1000);
         }
-
-        document.body.appendChild(toast);
-
-        // 2 秒后自动消失
-        setTimeout(() => {
-          toast.style.opacity = '0';
-          toast.style.transition = 'opacity 0.3s';
-          setTimeout(() => toast.remove(), 300);
-        }, 2000);
-      }
-    })();
-
-    // 涟漪动画
-    document.addEventListener('click', function(e) {
-      const target = e.target.closest('.quick-entry-card, .grid-item');
-      if (!target) return;
-      
-      const ripple = document.createElement('span');
-      ripple.classList.add('ripple');
-      const rect = target.getBoundingClientRect();
-      const size = Math.max(rect.width, rect.height);
-      ripple.style.width = ripple.style.height = size + 'px';
-      ripple.style.left = (e.clientX - rect.left - size/2) + 'px';
-      ripple.style.top = (e.clientY - rect.top - size/2) + 'px';
-      target.style.position = 'relative';
-      target.appendChild(ripple);
-      setTimeout(() => ripple.remove(), 600);
-    });
-  </script>
+        
+        function stopSniffer() {
+            if (!currentSessionId) return;
+            
+            window.location.href = `sniffer://stop?id=${currentSessionId}`;
+            
+            if (window.durationTimer) {
+                clearInterval(window.durationTimer);
+            }
+        }
+        
+        function addLog(event) {
+            eventCount++;
+            document.getElementById('eventCount').textContent = eventCount;
+            
+            const container = document.getElementById('logContainer');
+            
+            // 移除 empty 提示
+            if (container.querySelector('.empty')) {
+                container.innerHTML = '';
+            }
+            
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            
+            const time = new Date(event.ts).toLocaleTimeString('zh-CN');
+            const typeClass = `log-type-${event.t}`;
+            const typeText = event.t.toUpperCase();
+            
+            let dataHtml = '';
+            if (event.d) {
+                if (typeof event.d === 'string') {
+                    dataHtml = `<span class="log-data">${escapeHtml(event.d.substring(0, 200))}${event.d.length > 200 ? '...' : ''}</span>`;
+                } else {
+                    dataHtml = `<div class="json-view">${escapeHtml(JSON.stringify(event.d, null, 2))}</div>`;
+                }
+            }
+            
+            entry.innerHTML = `
+                <span class="log-time">${time}</span>
+                <span class="log-type ${typeClass}">${typeText}</span>
+                <span class="log-url">${escapeHtml(event.u)}</span>
+                ${dataHtml}
+            `;
+            
+            container.appendChild(entry);
+            container.scrollTop = container.scrollHeight;
+            
+            logs.push(event);
+        }
+        
+        function clearLogs() {
+            logs = [];
+            eventCount = 0;
+            document.getElementById('eventCount').textContent = '0';
+            document.getElementById('logContainer').innerHTML = '<div class="empty">点击"开始抓包"启动会话</div>';
+        }
+        
+        function updateStatus(state, text) {
+            const statusEl = document.getElementById('statusText');
+            statusEl.className = `status-text ${state}`;
+            statusEl.textContent = text;
+        }
+        
+        function updateDuration() {
+            if (!startTime) return;
+            const seconds = Math.floor((Date.now() - startTime) / 1000);
+            document.getElementById('duration').textContent = seconds + 's';
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // 页面卸载时停止会话
+        window.addEventListener('beforeunload', () => {
+            if (currentSessionId) {
+                window.location.href = `sniffer://stop?id=${currentSessionId}`;
+            }
+        });
+    </script>
 </body>
 </html>
