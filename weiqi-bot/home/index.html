@@ -222,15 +222,10 @@
             }
         };
         
-        // 用 <a> 标签触发 sniffer:// 协议，避免主页面进入"加载中"卡顿状态
+        // 用 prompt() 触发 sniffer:// 协议，完全避免导航请求
+        // Kotlin 端在 PromptDelegate.onTextPrompt 里拦截并处理
         function fireSnifferUri(uri) {
-            const a = document.createElement('a');
-            a.href = uri;
-            a.style.display = 'none';
-            document.body.appendChild(a);
-            a.click();
-            // 延迟移除，确保点击事件已处理
-            setTimeout(() => a.remove(), 100);
+            prompt(uri);
         }
 
         function startSniffer() {
