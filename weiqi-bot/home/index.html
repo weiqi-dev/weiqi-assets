@@ -222,9 +222,21 @@
             }
         };
         
+        // 隐藏 iframe 用于触发 sniffer:// 协议，避免主页面进入"加载中"卡顿状态
+        function fireSnifferUri(uri) {
+            let iframe = document.getElementById('__sniffer_iframe__');
+            if (!iframe) {
+                iframe = document.createElement('iframe');
+                iframe.id = '__sniffer_iframe__';
+                iframe.style.cssText = 'position:absolute;width:1px;height:1px;border:0;visibility:hidden;';
+                document.body.appendChild(iframe);
+            }
+            iframe.src = uri;
+        }
+
         function startSniffer() {
             const url = document.getElementById('urlInput').value.trim();
-            const timeout = document.getElementById('timeoutInput').value * 1000;
+            const timeout = parseInt(document.getElementById('timeoutInput').value, 10) * 1000;
             
             if (!url || !url.startsWith('http')) {
                 alert('请输入有效的URL');
@@ -241,17 +253,20 @@
             document.getElementById('sessionId').textContent = currentSessionId;
             updateDuration();
             
-            // 调用底层接口
-            window.location.href = `sniffer://start?id=${currentSessionId}&url=${encodeURIComponent(url)}&timeout=${timeout}`;
+            // 通过隐藏 iframe 触发，不会让主页面"加载中"
+            fireSnifferUri(
+                `sniffer://start?id=${currentSessionId}&url=${encodeURIComponent(url)}&timeout=${timeout}`
+            );
             
             // 定时更新耗时
+            if (window.durationTimer) clearInterval(window.durationTimer);
             window.durationTimer = setInterval(updateDuration, 1000);
         }
         
         function stopSniffer() {
             if (!currentSessionId) return;
             
-            window.location.href = `sniffer://stop?id=${currentSessionId}`;
+            fireSnifferUri(`sniffer://stop?id=${currentSessionId}`);
             
             if (window.durationTimer) {
                 clearInterval(window.durationTimer);
@@ -326,7 +341,7 @@
         // 页面卸载时停止会话
         window.addEventListener('beforeunload', () => {
             if (currentSessionId) {
-                window.location.href = `sniffer://stop?id=${currentSessionId}`;
+                try { fireSnifferUri(`sniffer://stop?id=${currentSessionId}`); } catch (e) {}
             }
         });
     </script>
