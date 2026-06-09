@@ -165,29 +165,50 @@
         let eventCount = 0;
         let logs = [];
         
-        // 注册回调
-        window.onSnifferData = function(sessionId, data) {
+        // 注册回调（与 MainActivity.jsCallback 协议对齐）
+        // Kotlin 实际调用：window.onSnifferData(jsonStr) —— 一个参数
+        window.onSnifferData = function(jsonStr) {
             try {
-                const events = JSON.parse(data);
+                const events = JSON.parse(jsonStr);
+                if (!Array.isArray(events)) {
+                    console.error('onSnifferData: expected array, got', typeof events);
+                    return;
+                }
                 events.forEach(event => addLog(event));
             } catch (e) {
-                console.error('Failed to parse sniffer data:', e);
+                console.error('Failed to parse sniffer data:', e, 'raw:', jsonStr);
             }
         };
         
-        window.onSnifferResult = function(sessionId, action, data) {
-            console.log('Sniffer result:', sessionId, action, data);
+        // Kotlin 实际调用：window.onSnifferResult(jsonStr) —— 一个参数，内容是 {action, data, events?}
+        window.onSnifferResult = function(jsonStr) {
+            let payload;
+            try {
+                payload = JSON.parse(jsonStr);
+            } catch (e) {
+                console.error('Failed to parse sniffer result:', e, 'raw:', jsonStr);
+                return;
+            }
+            const action = payload && payload.action;
+            const data = payload && payload.data;
+            const events = payload && payload.events;
+            console.log('Sniffer result:', action, data, 'events:', events);
             
             switch(action) {
                 case 'started':
-                    updateStatus('running', `🟢 抓包中... [${sessionId}]`);
+                    updateStatus('running', `🟢 抓包中... [${data}]`);
                     document.getElementById('startBtn').disabled = true;
                     document.getElementById('stopBtn').disabled = false;
                     break;
                 case 'stopped':
                 case 'completed':
+                    updateStatus('stopped', `⏹ ${action} [${data}]${events ? '，共 ' + events + ' 条' : ''}`);
+                    document.getElementById('startBtn').disabled = false;
+                    document.getElementById('stopBtn').disabled = true;
+                    currentSessionId = null;
+                    break;
                 case 'timeout':
-                    updateStatus('stopped', `⏹ ${action === 'timeout' ? '超时' : '已停止'} [${sessionId}]`);
+                    updateStatus('stopped', `⏹ 超时 [${data}]`);
                     document.getElementById('startBtn').disabled = false;
                     document.getElementById('stopBtn').disabled = true;
                     currentSessionId = null;
