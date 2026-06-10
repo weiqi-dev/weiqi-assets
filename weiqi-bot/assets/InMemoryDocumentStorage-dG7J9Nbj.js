@@ -46,7 +46,7 @@ import{c as e}from"./FavoriteService-CqGqGpov.js";import{_ as t,s as n}from"./Bo
         </div>
       </div>
     `,(r=document.getElementById(`restoreDraftBtn`))==null||r.addEventListener(`click`,async()=>{a.innerHTML=``,await t.restoreFromDraft(e)}),(i=document.getElementById(`newGameBtn`))==null||i.addEventListener(`click`,async()=>{a.innerHTML=``,await t.hmPlayApp.clearDraft(),t.onShowOptionsDialog&&t.onShowOptionsDialog()}))}async restoreFromDraft(e){var t=this;try{var n,r,i,a,o;let l=(n=e.modelId)==null?`katago-small`:n,u=t.hmPlayApp.getCurrentModel();(!u||u.id!==l)&&(t.progress.show(),t.progress.setValue(10),t.progress.render(),await t.hmPlayApp.switchModel(l,(e,n,r)=>{t.progress.setValue(r*100),t.progress.render()}),t.progress.hide()),await t.hmPlayApp.restoreFromDraft(e),t.moveCount=(r=(i=e.moveCount)==null?(a=e.moveHistory)==null?void 0:a.length:i)==null?0:r,t.playerColor=(o=e.playerColor)==null?`black`:o,t.onUpdateTitleBar&&t.onUpdateTitleBar(t.playerColor),t.render();let d=document.getElementById(`moveCount`);d&&(d.textContent=String(t.moveCount));let f=document.getElementById(`modelInfo`);if(f){var s,c;let n={easy:`简单`,medium:`中等`,hard:`困难`},r=t.playerColor===`black`?`执黑`:`执白`;f.textContent=`${l} · ${(c=n[(s=e.difficulty)==null?`medium`:s])==null?`中等`:c} · ${r}`}t.hmPlayApp.isPlayerTurn()?t.updateStatus(`轮到你落子`):t.updateStatus(`AI 思考中...`),t.updateButtons(),t.toast.info(`对局已恢复`)}catch(e){t.logger.error(`恢复对局失败`,e),t.toast.error(`恢复对局失败`)}}hasDraftToRecover(){return this.uiState.hasDraftToRecover()}destroy(){this.globalClickListener&&(document.removeEventListener(`click`,this.globalClickListener,!0),this.globalClickListener=void 0),this.board.destroy(),this.dialog.destroy(),this.toast.destroy(),this.progress.destroy(),this.initialized=!1}},p=class{constructor(t){e(this,`container`,void 0),this.container=t}generateRandomName(){var e,t;let n=[`天`,`地`,`风`,`云`,`雷`,`电`,`山`,`水`,`星`,`月`,`龙`,`虎`,`鹰`,`狼`,`狐`,`熊`,`鹏`,`麟`,`鹤`,`雀`],r=[`弈`,`棋`,`客`,`士`,`仙`,`圣`,`王`,`君`,`子`,`灵`,`影`,`魂`,`心`,`剑`,`刃`];return((e=n[Math.floor(Math.random()*n.length)])==null?`天`:e)+((t=r[Math.floor(Math.random()*r.length)])==null?`弈`:t)}showStartDialog(e,t){var n,r;this.container.innerHTML=`
-      <div class="dialog-overlay">
+      <div class="dialog-overlay show">
         <div class="dialog">
           <div class="dialog-title">真人对弈</div>
           <button class="btn btn-primary" id="createRoomBtn">创建房间</button>
@@ -54,7 +54,7 @@ import{c as e}from"./FavoriteService-CqGqGpov.js";import{_ as t,s as n}from"./Bo
         </div>
       </div>
     `,(n=document.getElementById(`createRoomBtn`))==null||n.addEventListener(`click`,e),(r=document.getElementById(`joinRoomBtn`))==null||r.addEventListener(`click`,t)}showCreateDialog(e,t,r){var i,a,o,s;this.container.innerHTML=`
-      <div class="dialog-overlay" id="createOverlay">
+      <div class="dialog-overlay show" id="createOverlay">
         <div class="dialog">
           <div class="dialog-title">创建房间</div>
           <div class="form-group">
@@ -91,7 +91,7 @@ import{c as e}from"./FavoriteService-CqGqGpov.js";import{_ as t,s as n}from"./Bo
         </div>
       </div>
     `,n.mountAll(this.container),(i=document.getElementById(`createOverlay`))==null||i.addEventListener(`click`,e=>{e.target===e.currentTarget&&r()}),(a=document.getElementById(`randomNameBtn`))==null||a.addEventListener(`click`,()=>{let e=document.getElementById(`createName`);e&&(e.value=this.generateRandomName())}),(o=document.getElementById(`confirmCreateBtn`))==null||o.addEventListener(`click`,()=>{var e,r,i,a;t(((e=document.getElementById(`createName`))==null?void 0:e.value)||this.generateRandomName(),(r=document.querySelector(`input[name="color"]:checked`))==null?void 0:r.value,parseInt(((i=n.get(`#handicap`))==null?void 0:i.getValue())||`0`),parseInt(((a=n.get(`#timeLimit`))==null?void 0:a.getValue())||`30`))}),(s=document.getElementById(`cancelCreateBtn`))==null||s.addEventListener(`click`,r)}showJoinDialog(e,t,n){var r,i,a,o;this.container.innerHTML=`
-      <div class="dialog-overlay" id="joinOverlay">
+      <div class="dialog-overlay show" id="joinOverlay">
         <div class="dialog">
           <div class="dialog-title">加入房间</div>
           <div class="form-group">
@@ -112,7 +112,7 @@ import{c as e}from"./FavoriteService-CqGqGpov.js";import{_ as t,s as n}from"./Bo
         </div>
       </div>
     `,(r=document.getElementById(`joinOverlay`))==null||r.addEventListener(`click`,e=>{e.target===e.currentTarget&&n()}),(i=document.getElementById(`randomJoinNameBtn`))==null||i.addEventListener(`click`,()=>{let e=document.getElementById(`joinName`);e&&(e.value=this.generateRandomName())}),(a=document.getElementById(`confirmJoinBtn`))==null||a.addEventListener(`click`,()=>{var e,n;t((e=document.getElementById(`joinRoomId`))==null?void 0:e.value.trim().toUpperCase(),((n=document.getElementById(`joinName`))==null?void 0:n.value.trim())||this.generateRandomName())}),(o=document.getElementById(`cancelJoinBtn`))==null||o.addEventListener(`click`,n)}showJoinConfirmDialog(e,t,n,r){var i,a,o,s;let c=e.creatorColor===`black`?`你执白`:`你执黑`,l=e.handicap===0?`不让子`:`让 ${e.handicap} 子`;this.container.innerHTML=`
-      <div class="dialog-overlay" id="confirmOverlay">
+      <div class="dialog-overlay show" id="confirmOverlay">
         <div class="dialog">
           <div class="dialog-title">加入确认</div>
           <div style="margin-bottom:12px">
@@ -139,7 +139,7 @@ import{c as e}from"./FavoriteService-CqGqGpov.js";import{_ as t,s as n}from"./Bo
         </div>
       </div>
     `,(i=document.getElementById(`confirmOverlay`))==null||i.addEventListener(`click`,e=>{e.target===e.currentTarget&&r()}),(a=document.getElementById(`randomConfirmNameBtn`))==null||a.addEventListener(`click`,()=>{let e=document.getElementById(`confirmName`);e&&(e.value=this.generateRandomName())}),(o=document.getElementById(`confirmJoinBtn`))==null||o.addEventListener(`click`,()=>{var e;n(((e=document.getElementById(`confirmName`))==null?void 0:e.value.trim())||this.generateRandomName())}),(s=document.getElementById(`cancelJoinBtn`))==null||s.addEventListener(`click`,r)}},m=class{constructor(t){e(this,`container`,void 0),this.container=t}showWaitingDialog(e,t,n,r,i){var a,o;let s=n===0?`不让子`:`让 ${n} 子`,c=t===`black`?`你执黑`:`你执白`;this.container.innerHTML=`
-      <div class="dialog-overlay">
+      <div class="dialog-overlay show">
         <div class="dialog">
           <div class="dialog-title">等待对手加入</div>
           <div class="room-display">
@@ -162,7 +162,7 @@ import{c as e}from"./FavoriteService-CqGqGpov.js";import{_ as t,s as n}from"./Bo
         </div>
       </div>
     `,(a=document.getElementById(`copyRoomBtn`))==null||a.addEventListener(`click`,()=>{navigator.clipboard.writeText(e).then(()=>{let e=document.getElementById(`copyRoomBtn`);e&&(e.textContent=`已复制`,setTimeout(()=>{e.textContent=`复制房间ID`},2e3))})}),(o=document.getElementById(`cancelWaitingBtn`))==null||o.addEventListener(`click`,i)}showWaitingReconnectDialog(e,t){var n;this.container.innerHTML=`
-      <div class="dialog-overlay">
+      <div class="dialog-overlay show">
         <div class="dialog">
           <div class="dialog-title">对手已离开</div>
           <div style="margin-bottom:16px;text-align:center;color:#666">等待对手恢复连接...</div>
@@ -171,7 +171,7 @@ import{c as e}from"./FavoriteService-CqGqGpov.js";import{_ as t,s as n}from"./Bo
         </div>
       </div>
     `,(n=document.getElementById(`giveUpWaitingBtn`))==null||n.addEventListener(`click`,t)}updateReconnectCountdown(e){let t=document.getElementById(`reconnectCountdown`);t&&e>0&&(t.textContent=`${e} 秒后自动结束`)}},h=class{constructor(t){e(this,`container`,void 0),this.container=t}showDraftRecoveryDialog(e,t,n){var r,i;let a=this.countMovesFromSGF(e.sgf);this.container.innerHTML=`
-      <div class="dialog-overlay">
+      <div class="dialog-overlay show">
         <div class="dialog">
           <div class="dialog-title">恢复对局</div>
           <div style="text-align:center;margin-bottom:16px;color:#666">
@@ -189,7 +189,7 @@ import{c as e}from"./FavoriteService-CqGqGpov.js";import{_ as t,s as n}from"./Bo
         </div>
       </div>
     `,(r=document.getElementById(`reconnectBtn`))==null||r.addEventListener(`click`,t),(i=document.getElementById(`abandonBtn`))==null||i.addEventListener(`click`,n)}showCountRequestDialog(e,t,n){var r,i;this.container.innerHTML=`
-      <div class="dialog-overlay">
+      <div class="dialog-overlay show">
         <div class="dialog">
           <div class="dialog-title">数子请求</div>
           <div style="text-align:center;margin-bottom:16px">${e} 申请数子</div>
@@ -200,7 +200,7 @@ import{c as e}from"./FavoriteService-CqGqGpov.js";import{_ as t,s as n}from"./Bo
         </div>
       </div>
     `,(r=document.getElementById(`agreeCountBtn`))==null||r.addEventListener(`click`,t),(i=document.getElementById(`refuseCountBtn`))==null||i.addEventListener(`click`,n)}showUndoRequestDialog(e,t,n){var r,i;this.container.innerHTML=`
-      <div class="dialog-overlay">
+      <div class="dialog-overlay show">
         <div class="dialog">
           <div class="dialog-title">悔棋请求</div>
           <div style="text-align:center;margin-bottom:16px">${e} 申请悔棋</div>
