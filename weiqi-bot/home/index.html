@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
   <title>围棋智能助手</title>
   <style>
     /* home 特有样式：棋子 logo */
@@ -251,10 +251,10 @@
       }
     }
   </style>
-  <script type="module" crossorigin src="../assets/home/index-CJd16nsB.js"></script>
+  <script type="module" crossorigin src="../assets/home/index-DuwQrN14.js"></script>
   <link rel="modulepreload" crossorigin href="../assets/FavoriteService-CqGqGpov.js">
   <link rel="modulepreload" crossorigin href="../assets/modulepreload-polyfill-eJgYjmQ8.js">
-  <link rel="modulepreload" crossorigin href="../assets/Bootstrap-B1E_DQNG.js">
+  <link rel="modulepreload" crossorigin href="../assets/Bootstrap-Bm5rxH2j.js">
   <link rel="stylesheet" crossorigin href="../assets/shell-Dq2WFr1R.css">
 </head>
 <body>
@@ -281,7 +281,7 @@
     else if (hour >= 18 || hour < 5) greeting = '晚上好';
     document.getElementById('greeting').textContent = greeting + '，准备好对弈了吗？';
 
-    // 连续点击标题开启调试日志
+    // 连续点击标题开启/关闭调试模式
     (function() {
       let clickCount = 0;
       let lastClickTime = 0;
@@ -294,6 +294,10 @@
       title.style.cursor = 'pointer';
       title.style.userSelect = 'none';
       title.style.webkitUserSelect = 'none';
+
+      // 初始化时检查调试模式状态
+      let debugMode = localStorage.getItem('KATAGO_DEBUG') === 'true';
+      updateDebugIcon();
 
       title.addEventListener('click', function() {
         const now = Date.now();
@@ -308,17 +312,50 @@
 
         // 达到阈值，切换调试模式
         if (clickCount >= CLICK_THRESHOLD) {
-          const currentDebug = localStorage.getItem('KATAGO_DEBUG') === 'true';
-          const newDebug = !currentDebug;
-          localStorage.setItem('KATAGO_DEBUG', newDebug.toString());
+          debugMode = !debugMode;
+          localStorage.setItem('KATAGO_DEBUG', debugMode.toString());
           
           // 显示提示
-          showToast(newDebug ? '🐛 调试模式已开启' : '🐛 调试模式已关闭');
+          showToast(debugMode ? '🐛 调试模式已开启' : '🐛 调试模式已关闭');
+          
+          // 更新调试图标
+          updateDebugIcon();
           
           // 重置计数
           clickCount = 0;
         }
       });
+
+      // 更新调试图标显示
+      function updateDebugIcon() {
+        const functionGrid = document.querySelector('.function-grid');
+        if (!functionGrid) return;
+
+        // 查找是否已存在调试图标
+        let debugItem = functionGrid.querySelector('[data-action="navigate:debug"]');
+
+        if (debugMode) {
+          // 显示调试图标
+          if (!debugItem) {
+            debugItem = document.createElement('div');
+            debugItem.className = 'grid-item';
+            debugItem.setAttribute('data-action', 'navigate:debug');
+            debugItem.innerHTML = `
+              <div class="grid-icon">🔧</div>
+              <div class="grid-label">调试</div>
+            `;
+            debugItem.addEventListener('click', function() {
+              window.location.href = '../debug/index.html';
+            });
+            functionGrid.appendChild(debugItem);
+          }
+        } else {
+          // 隐藏调试图标
+          if (debugItem) {
+            debugItem.remove();
+          }
+        }
+      }
 
       // Toast 提示函数
       function showToast(message) {
