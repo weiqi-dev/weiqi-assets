@@ -1,0 +1,30 @@
+import"../modulepreload-polyfill-BVSDYCMZ.js";/* empty css               */import{c as e}from"../FavoriteService-C9LkU7xv.js";import{t}from"../Bootstrap-DoB1Ytpd.js";var n=class{getLogs(){return DebugBridge.getLogs()}clearLogs(){DebugBridge.clearLogs()}getFilesDir(){return DebugBridge.getFilesDir()}getCacheDir(){return DebugBridge.getCacheDir()}getFileSize(e){return DebugBridge.getFileSize(e)}listFiles(e){return DebugBridge.listFiles(e)}deleteFile(e){return DebugBridge.deleteFile(e)}getMaxMemory(){return DebugBridge.getMaxMemory()}getTotalMemory(){return DebugBridge.getTotalMemory()}getFreeMemory(){return DebugBridge.getFreeMemory()}getCurrentTime(){return DebugBridge.getCurrentTime()}getRunningSnifferSessions(){return DebugBridge.getRunningSnifferSessions()}getAppVersion(){return DebugBridge.getAppVersion()}getDeviceModel(){return DebugBridge.getDeviceModel()}getAndroidVersion(){return DebugBridge.getAndroidVersion()}},r=class{constructor(){e(this,`logs`,[])}getLogs(){return JSON.stringify(this.logs)}clearLogs(){this.logs=[]}getFilesDir(){return`localStorage`}getCacheDir(){return`sessionStorage`}getFileSize(e){return JSON.stringify(localStorage).length}listFiles(e){let t=Object.keys(localStorage);return JSON.stringify(t.map(e=>{var t;return{name:e,path:e,isDirectory:!1,size:((t=localStorage.getItem(e))==null?void 0:t.length)||0,lastModified:Date.now()}}))}deleteFile(e){return e===`localStorage`?(localStorage.clear(),!0):(localStorage.removeItem(e),!0)}getMaxMemory(){var e;return((e=performance.memory)==null?void 0:e.jsHeapSizeLimit)||0}getTotalMemory(){var e;return((e=performance.memory)==null?void 0:e.totalJSHeapSize)||0}getFreeMemory(){var e;return((e=performance.memory)==null?void 0:e.usedJSHeapSize)||0}getCurrentTime(){return Date.now()}getRunningSnifferSessions(){return`[]`}getAppVersion(){return`web`}getDeviceModel(){return navigator.userAgent}getAndroidVersion(){return`web`}};function i(){return window.DebugBridge===void 0?new r:new n}var a=class{constructor(){e(this,`adapter`,void 0),this.adapter=i()}async getLogs(e){let t=this.adapter.getLogs(),n=JSON.parse(t).map(e=>{let[t,n,r,...i]=e.split(`|`);return{timestamp:parseInt(t),level:n,tag:r||``,message:i.join(`|`)}});return e!=null&&e.level&&(n=n.filter(t=>t.level===e.level)),e!=null&&e.tag&&(n=n.filter(t=>t.tag.includes(e.tag))),e!=null&&e.limit&&(n=n.slice(-e.limit)),n}async clearLogs(){this.adapter.clearLogs()}async getLogStats(){let e=await this.getLogs();return{total:e.length,error:e.filter(e=>e.level===`ERROR`).length,warn:e.filter(e=>e.level===`WARN`).length,info:e.filter(e=>e.level===`INFO`).length,debug:e.filter(e=>e.level===`DEBUG`).length}}async getStorageStats(){var e=this;let t=e.adapter.getCacheDir(),n=e.adapter.getFilesDir(),r=e.adapter.getFileSize(t),i=e.adapter.getFileSize(n);return{cache:{size:r,formatted:e.formatSize(r)},internal:{size:i,formatted:e.formatSize(i)},total:{size:r+i,formatted:e.formatSize(r+i)}}}async listFiles(e){let t=this.adapter.listFiles(e);return JSON.parse(t)}async deleteFile(e){return this.adapter.deleteFile(e)}async clearCache(){var e=this;let t=e.adapter.getCacheDir();return e.adapter.deleteFile(t)}async getMemoryInfo(){var e=this;let t=e.adapter.getMaxMemory(),n=e.adapter.getTotalMemory(),r=e.adapter.getFreeMemory(),i=n-r;return{max:t,total:n,free:r,used:i,usagePercent:Math.round(i/t*100)}}async getAppInfo(){var e=this;let t=window.DebugBridge===void 0?`web`:`android`;return{version:e.adapter.getAppVersion(),model:e.adapter.getDeviceModel(),os:e.adapter.getAndroidVersion(),platform:t}}async getRunningSnifferSessions(){let e=this.adapter.getRunningSnifferSessions();return JSON.parse(e)}formatSize(e){return e<1024?`${e} B`:e<1024*1024?`${(e/1024).toFixed(2)} KB`:e<1024*1024*1024?`${(e/(1024*1024)).toFixed(2)} MB`:`${(e/(1024*1024*1024)).toFixed(2)} GB`}};async function o(){let e=await t.init({containerId:`page-root`}),n=new a,r=await n.getAppInfo(),i=document.getElementById(`appInfo`);i&&(i.textContent=`${r.version} | ${r.model} | ${r.os}`),await s(n),e.logger.info(`日志页面已启动`)}async function s(e){var t,n;let r=document.getElementById(`page-root`);if(!r)return;let i=await e.getLogs({limit:200}),a=await e.getLogStats();r.innerHTML=`
+    <div class="log-container">
+      <div class="log-header">
+        <div>
+          <div class="log-title">日志记录</div>
+          <div class="log-stats">
+            总计 ${a.total} 条 |
+            <span style="color: #f44;">错误 ${a.error}</span> |
+            <span style="color: #f80;">警告 ${a.warn}</span> |
+            <span style="color: #08f;">信息 ${a.info}</span> |
+            <span style="color: #888;">调试 ${a.debug}</span>
+          </div>
+        </div>
+        <div class="log-actions">
+          <button class="log-btn" id="refresh-btn">刷新</button>
+          <button class="log-btn" id="clear-btn">清空</button>
+        </div>
+      </div>
+      <div class="log-list" id="log-list">
+        ${c(i)}
+      </div>
+    </div>
+  `,(t=document.getElementById(`refresh-btn`))==null||t.addEventListener(`click`,async()=>{await s(e)}),(n=document.getElementById(`clear-btn`))==null||n.addEventListener(`click`,async()=>{confirm(`确定要清空所有日志吗？`)&&(await e.clearLogs(),await s(e))})}function c(e){return e.length===0?`<div class="log-empty">暂无日志</div>`:e.map(e=>`
+    <div class="log-entry ${e.level.toLowerCase()}">
+      <span class="log-time">${l(e.timestamp)}</span>
+      <span class="log-level ${e.level.toLowerCase()}">[${e.level}]</span>
+      <span class="log-tag">[${e.tag}]</span>
+      <span class="log-message">${u(e.message)}</span>
+    </div>
+  `).join(``)}function l(e){return new Date(e).toLocaleTimeString(`zh-CN`,{hour:`2-digit`,minute:`2-digit`,second:`2-digit`,hour12:!1})}function u(e){let t=document.createElement(`div`);return t.textContent=e,t.innerHTML}o().catch(console.error);

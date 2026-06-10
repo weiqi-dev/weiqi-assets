@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+  <title>日志 - 围棋智能助手</title>
+  <style>
+    .log-container {
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 12px;
+      padding: 12px;
+    }
+    
+    .log-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.2);
+    }
+    
+    .log-title {
+      font-size: 14px;
+      font-weight: bold;
+      color: white;
+    }
+    
+    .log-stats {
+      font-size: 12px;
+      color: rgba(255,255,255,0.7);
+    }
+    
+    .log-actions {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .log-btn {
+      padding: 4px 12px;
+      background: rgba(255,255,255,0.2);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 4px;
+      color: white;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .log-btn:hover {
+      background: rgba(255,255,255,0.3);
+    }
+    
+    .log-btn.active {
+      background: rgba(255,255,255,0.4);
+    }
+    
+    .log-list {
+      max-height: 60vh;
+      overflow-y: auto;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      line-height: 1.4;
+    }
+    
+    .log-entry {
+      padding: 6px 8px;
+      margin-bottom: 2px;
+      border-radius: 4px;
+      background: rgba(0,0,0,0.2);
+      word-break: break-all;
+    }
+    
+    .log-entry.error { border-left: 3px solid #f44; }
+    .log-entry.warn { border-left: 3px solid #f80; }
+    .log-entry.info { border-left: 3px solid #08f; }
+    .log-entry.debug { border-left: 3px solid #888; }
+    
+    .log-time { color: #aaa; }
+    .log-level { font-weight: bold; }
+    .log-level.error { color: #f44; }
+    .log-level.warn { color: #f80; }
+    .log-level.info { color: #08f; }
+    .log-level.debug { color: #888; }
+    .log-tag { color: #08f; }
+    .log-message { color: white; }
+    
+    .log-empty {
+      text-align: center;
+      padding: 40px 20px;
+      color: rgba(255,255,255,0.5);
+      font-size: 14px;
+    }
+  </style>
+  <script type="module" crossorigin src="../assets/debug/index-Bi_8Y27Q.js"></script>
+  <link rel="modulepreload" crossorigin href="../assets/FavoriteService-C9LkU7xv.js">
+  <link rel="modulepreload" crossorigin href="../assets/modulepreload-polyfill-BVSDYCMZ.js">
+  <link rel="modulepreload" crossorigin href="../assets/Bootstrap-DoB1Ytpd.js">
+  <link rel="stylesheet" crossorigin href="../assets/shell-Dq2WFr1R.css">
+</head>
+<body>
+  <div class="glass-container">
+    <header class="glass-header">
+      <h1 class="glass-title">📋 日志</h1>
+      <p class="glass-subtitle" id="appInfo"></p>
+    </header>
+    <div class="glass-content">
+      <div id="page-root"></div>
+    </div>
+  </div>
+  <script src="../shared/error-catch.js"></script>
+</body>
+</html>
