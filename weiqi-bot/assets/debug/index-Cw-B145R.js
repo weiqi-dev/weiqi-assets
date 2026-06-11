@@ -13,7 +13,7 @@ import"../modulepreload-polyfill-BVSDYCMZ.js";/* empty css               */impor
         ${c(i)}
       </div>
     </div>
-  `,(t=document.getElementById(`refresh-btn`))==null||t.addEventListener(`click`,async()=>{await s(e)}),(n=document.getElementById(`clear-btn`))==null||n.addEventListener(`click`,async()=>{confirm(`确定要清空所有日志吗？`)&&(await e.clearLogs(),await s(e))})}function c(e){return e.length===0?`<div class="log-empty">暂无日志</div>`:e.map(e=>`
+  `;let a=document.getElementById(`log-list`);a&&(a.scrollTop=a.scrollHeight),(t=document.getElementById(`refresh-btn`))==null||t.addEventListener(`click`,async()=>{await s(e)}),(n=document.getElementById(`clear-btn`))==null||n.addEventListener(`click`,async()=>{await e.clearLogs(),await s(e)})}function c(e){return e.length===0?`<div class="log-empty">暂无日志</div>`:e.map(e=>`
     <div class="log-entry ${e.level.toLowerCase()}">
       <span class="log-time">${l(e.timestamp)}</span>
       <span class="log-level ${e.level.toLowerCase()}">[${e.level}]</span>

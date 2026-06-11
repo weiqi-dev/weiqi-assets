@@ -329,7 +329,11 @@
       // 更新调试图标显示
       function updateDebugIcon() {
         const functionGrid = document.querySelector('.function-grid');
-        if (!functionGrid) return;
+        if (!functionGrid) {
+          // 如果 function-grid 还不存在，延迟重试
+          setTimeout(updateDebugIcon, 100);
+          return;
+        }
 
         // 查找是否已存在调试图标
         let debugItem = functionGrid.querySelector('[data-action="navigate:debug"]');
