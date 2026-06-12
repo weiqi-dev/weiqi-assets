@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>围棋 AI 助理 - 围棋智能助手</title>
     
     <!-- ONNX Runtime Web (CDN) -->
@@ -19,6 +19,24 @@
             position: relative; /* 为菜单提供定位参考 */
         }
         
+        /* 移动端优化：紧凑标题栏 */
+        
+        .glass-header {
+            padding: 12px 16px;
+            text-align: center;
+            color: white;
+            position: relative;
+        }
+        
+        .glass-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin: 0;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.3);
+            position: relative;
+            z-index: 1;
+        }
+        
         .chat-card {
             background: white;
             border-radius: 12px;
@@ -27,7 +45,7 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            margin-bottom: 16px;
+            margin-bottom: 0; /* 移除底部间距，输入框已固定 */
             min-height: 0;
         }
         
@@ -35,6 +53,7 @@
             flex: 1;
             overflow-y: auto;
             padding: 16px;
+            padding-bottom: 90px; /* 输入框高度 + 间距 */
             background: transparent;
         }
         
@@ -121,54 +140,31 @@
             font-weight: 600;
         }
         
-        /* 移动端输入框：键盘弹出时始终可见 */
-        .input-wrapper {
-            position: relative;
-            z-index: 100;
-        }
-        
+        /* ChatGPT 风格输入框 - 固定在底部 */
         .input-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
             background: white;
             border: 2px solid #e0e0e0;
-            border-radius: 24px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border-radius: 24px 24px 0 0;
+            border-bottom: none;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
             overflow: hidden;
-            transition: border-color 0.3s;
+            transition: transform 0.3s ease, border-color 0.3s;
         }
         
         .input-container:focus-within {
             border-color: #667eea;
         }
         
-        /* 键盘弹出时固定输入框到底部 */
-        @media (max-width: 768px) {
-            .input-wrapper {
-                position: fixed;
-                bottom: 0;
-                left: 0;
-                right: 0;
-                padding: 8px 12px 12px;
-                background: rgba(102, 126, 234, 0.15);
-                backdrop-filter: blur(10px);
-                -webkit-backdrop-filter: blur(10px);
-                transition: bottom 0.3s ease;
-            }
-            
-            .glass-content {
-                padding-bottom: 80px; /* 为固定输入框留空间 */
-            }
-            
-            /* 当键盘弹出时，通过 JS 添加 keyboard-open 类 */
-            .keyboard-open .input-wrapper {
-                bottom: var(--keyboard-height, 0);
-            }
-        }
-        
         .input-textarea {
             width: 100%;
             padding: 14px 16px 4px;
             border: none;
-            font-size: 16px; /* 16px 防止 iOS 缩放 */
+            font-size: 15px;
             outline: none;
             resize: none;
             min-height: 52px;
@@ -178,12 +174,10 @@
             box-sizing: border-box;
             color: #333;
             background: transparent;
-            -webkit-user-select: text;
-            user-select: text;
         }
         
         .input-textarea::placeholder {
-            color: #999;
+            color: rgba(255,255,255,0.7);
         }
         
         .input-toolbar {
@@ -453,18 +447,31 @@
         .markdown-content a:hover {
             text-decoration: underline;
         }
+        
+        /* 移动端键盘适配 */
+        @supports (height: 100dvh) {
+            .glass-container {
+                height: 100dvh !important; /* 动态视口高度，自动适配键盘 */
+            }
+        }
+        
+        /* 小屏幕优化 */
+        @media (max-width: 360px) {
+            .glass-title {
+                font-size: 18px;
+            }
+        }
     </style>
-  <script type="module" crossorigin src="../assets/assistant/index-CgQFCPZU.js"></script>
+  <script type="module" crossorigin src="../assets/assistant/index-BSycsEY5.js"></script>
   <link rel="modulepreload" crossorigin href="../assets/FavoriteService-C9LkU7xv.js">
   <link rel="modulepreload" crossorigin href="../assets/modulepreload-polyfill-BVSDYCMZ.js">
   <link rel="modulepreload" crossorigin href="../assets/SessionService-DEXH3GCo.js">
-  <link rel="stylesheet" crossorigin href="../assets/shell-D5kKXs0t.css">
+  <link rel="stylesheet" crossorigin href="../assets/shell-Dq2WFr1R.css">
 </head>
 <body>
     <div class="glass-container" style="height: 100vh; overflow: hidden;">
         <header class="glass-header">
             <h1 class="glass-title">🤖 围棋 AI 助理</h1>
-            <p class="glass-subtitle">智能识别意图 · 自动执行操作</p>
         </header>
         <div class="glass-content" style="max-width: 520px;">
             <div class="chat-card">
@@ -477,8 +484,7 @@
             </div>
             
             <!-- ChatGPT 风格输入框 -->
-            <div class="input-wrapper">
-                <div class="input-container">
+            <div class="input-container">
                 <textarea class="input-textarea" id="userInput" placeholder="输入您想做的事，例如：下载柯洁的棋谱" disabled rows="1"></textarea>
                 <div class="input-toolbar">
                     <input type="file" id="sgfUpload" accept=".sgf" style="display: none;">
@@ -491,7 +497,6 @@
                     <button class="toolbar-btn menu-btn" onclick="toggleCommandMenu()" title="快捷指令">
                         ⋮
                     </button>
-                </div>
                 </div>
             </div>
             
@@ -526,82 +531,54 @@
     </div>
 
     <script src="../shared/error-catch.js"></script>
+    
+    <!-- 移动端键盘适配 -->
     <script>
-    // === 移动端键盘处理：GeckoView / Android 软键盘适配 ===
-    (function() {
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        if (!isMobile) return;
-        
-        const wrapper = document.querySelector('.input-wrapper');
-        const textarea = document.getElementById('userInput');
-        const chatContainer = document.getElementById('chatContainer');
-        let keyboardHeight = 0;
-        
-        // 使用 Visual Viewport API 检测键盘高度（现代浏览器）
+        // 监听 visualViewport 变化（键盘弹出/收起）
         if (window.visualViewport) {
-            const updateViewport = () => {
-                const vv = window.visualViewport;
-                const layoutHeight = window.innerHeight;
-                const visibleHeight = vv.height;
-                keyboardHeight = Math.max(0, layoutHeight - visibleHeight - vv.offsetTop);
+            let previousHeight = window.visualViewport.height;
+            
+            window.visualViewport.addEventListener('resize', () => {
+                const inputContainer = document.querySelector('.input-container');
+                const chatMessages = document.querySelector('.chat-messages');
                 
-                // 调整输入框位置
-                if (keyboardHeight > 100) { // 键盘确实弹出了
-                    document.body.classList.add('keyboard-open');
-                    wrapper.style.bottom = keyboardHeight + 'px';
+                if (!inputContainer || !chatMessages) return;
+                
+                const viewportHeight = window.visualViewport.height;
+                const windowHeight = window.innerHeight;
+                const keyboardHeight = windowHeight - viewportHeight;
+                
+                // 键盘弹出时，输入框上移
+                if (keyboardHeight > 100) {
+                    inputContainer.style.transform = `translateY(-${keyboardHeight}px)`;
+                    chatMessages.style.paddingBottom = `${90 + keyboardHeight}px`;
                     
-                    // 滚动消息区域到底部，确保最新消息可见
+                    // 滚动到底部
                     setTimeout(() => {
-                        chatContainer.scrollTop = chatContainer.scrollHeight;
+                        const chatContainer = document.getElementById('chatContainer');
+                        if (chatContainer) {
+                            chatContainer.scrollTop = chatContainer.scrollHeight;
+                        }
                     }, 100);
                 } else {
-                    document.body.classList.remove('keyboard-open');
-                    wrapper.style.bottom = '0';
+                    // 键盘收起时，恢复原位
+                    inputContainer.style.transform = '';
+                    chatMessages.style.paddingBottom = '90px';
                 }
-            };
-            
-            window.visualViewport.addEventListener('resize', updateViewport);
-            window.visualViewport.addEventListener('scroll', updateViewport);
+                
+                previousHeight = viewportHeight;
+            });
         }
         
-        // 备用方案：监听窗口 resize（旧版 GeckoView）
-        let lastWindowHeight = window.innerHeight;
-        window.addEventListener('resize', () => {
-            if (!window.visualViewport) {
-                const currentHeight = window.innerHeight;
-                const diff = lastWindowHeight - currentHeight;
-                if (diff > 100) {
-                    // 键盘弹出
-                    keyboardHeight = diff;
-                    document.body.classList.add('keyboard-open');
-                    wrapper.style.bottom = diff + 'px';
-                    setTimeout(() => {
-                        chatContainer.scrollTop = chatContainer.scrollHeight;
-                    }, 100);
-                } else if (diff < -50) {
-                    // 键盘收起
-                    document.body.classList.remove('keyboard-open');
-                    wrapper.style.bottom = '0';
-                }
-                lastWindowHeight = currentHeight;
-            }
-        });
-        
-        // 聚焦时确保输入框可见
-        textarea.addEventListener('focus', () => {
+        // 输入框聚焦时自动滚动到可视区域
+        document.getElementById('userInput')?.addEventListener('focus', () => {
             setTimeout(() => {
-                textarea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                chatContainer.scrollTop = chatContainer.scrollHeight;
-            }, 300);
+                document.getElementById('userInput')?.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'nearest' 
+                });
+            }, 300);  // 等待键盘弹出
         });
-        
-        // 处理粘贴按钮：点击输入框外部时隐藏键盘
-        document.addEventListener('click', (e) => {
-            if (!wrapper.contains(e.target) && !e.target.closest('.command-menu')) {
-                // 点击其他地方，不主动失焦，让用户自己控制
-            }
-        });
-    })();
     </script>
 </body>
 </html>
