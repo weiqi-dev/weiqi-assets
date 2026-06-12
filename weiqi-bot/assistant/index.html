@@ -425,5 +425,21 @@
     </div>
 
     <script src="../shared/error-catch.js"></script>
+    
+    <!-- 键盘高度自适应 -->
+    <script>
+    window.onKeyboardHeight = function(data) {
+        try {
+            var info = typeof data === 'string' ? JSON.parse(data) : data;
+            var inputContainer = document.querySelector('.input-container');
+            if (inputContainer) {
+                inputContainer.style.bottom = info.visible ? info.height + 'px' : '0';
+            }
+        } catch (e) {
+            console.error('onKeyboardHeight error:', e);
+        }
+    };
+    </script>
+    
 </body>
 </html>
