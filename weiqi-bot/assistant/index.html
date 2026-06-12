@@ -226,12 +226,7 @@
             color: #B2B2B2;
         }
         
-        .intent-badge::before {
-            content: '💬';
-            font-size: 14px;
-        }
-        
-        /* 状态提示 */
+        /* 状态提示 - 绿色风格 */
         .status {
             padding: 12px;
             background: rgba(232, 245, 233, 0.9);
@@ -310,7 +305,7 @@
             color: #000;
         }
         
-        /* Markdown 内容样式 */
+        /* Markdown 内容样式 - 紫色链接 */
         .markdown-content {
             line-height: 1.4;
         }
@@ -373,13 +368,6 @@
             text-decoration: underline;
         }
         
-        /* 移动端键盘适配 */
-        @supports (height: 100dvh) {
-            body {
-                height: 100dvh;
-            }
-        }
-        
         /* 小屏幕优化 */
         @media (max-width: 360px) {
             .wechat-title {
@@ -391,7 +379,7 @@
             }
         }
     </style>
-  <script type="module" crossorigin src="../assets/assistant/index-gt6Nf0z6.js"></script>
+  <script type="module" crossorigin src="../assets/assistant/index-DvJkyasm.js"></script>
   <link rel="modulepreload" crossorigin href="../assets/FavoriteService-C9LkU7xv.js">
   <link rel="modulepreload" crossorigin href="../assets/modulepreload-polyfill-BVSDYCMZ.js">
   <link rel="modulepreload" crossorigin href="../assets/SessionService-DEXH3GCo.js">
@@ -437,92 +425,5 @@
     </div>
 
     <script src="../shared/error-catch.js"></script>
-    
-    <!-- 移动端键盘适配 -->
-    <script>
-        let keyboardCheckInterval = null;
-        let isKeyboardVisible = false;
-        
-        // 检测输入框是否被键盘遮挡
-        function checkKeyboardAndAdjust() {
-            const inputContainer = document.querySelector('.input-container');
-            const chatContainer = document.querySelector('.chat-container');
-            const userInput = document.getElementById('userInput');
-            
-            if (!inputContainer || !chatContainer || !userInput) return;
-            
-            const rect = userInput.getBoundingClientRect();
-            const inputBottom = rect.bottom;
-            const viewportHeight = window.innerHeight;
-            
-            // 如果输入框底部超出视口底部（预留20px安全距离），说明被键盘遮挡
-            if (inputBottom > viewportHeight - 20) {
-                const keyboardHeight = inputBottom - viewportHeight + 50; // 50px是输入框高度
-                
-                // 上移输入框
-                inputContainer.style.transform = `translateY(-${keyboardHeight}px)`;
-                chatContainer.style.bottom = `${50 + keyboardHeight}px`;
-                
-                // 滚动到底部，确保最新消息可见
-                chatContainer.scrollTop = chatContainer.scrollHeight;
-                
-                isKeyboardVisible = true;
-            } else if (isKeyboardVisible && inputBottom < viewportHeight - 100) {
-                // 键盘收起，恢复原位
-                inputContainer.style.transform = '';
-                chatContainer.style.bottom = '50px';
-                isKeyboardVisible = false;
-            }
-        }
-        
-        // 输入框聚焦时开始检测
-        const userInput = document.getElementById('userInput');
-        if (userInput) {
-            userInput.addEventListener('focus', () => {
-                // 立即检测
-                checkKeyboardAndAdjust();
-                
-                // 定时检测（每200ms，减少频率）
-                keyboardCheckInterval = setInterval(checkKeyboardAndAdjust, 200);
-            });
-            
-            // 输入框失焦时停止检测
-            userInput.addEventListener('blur', () => {
-                if (keyboardCheckInterval) {
-                    clearInterval(keyboardCheckInterval);
-                    keyboardCheckInterval = null;
-                }
-                
-                const inputContainer = document.querySelector('.input-container');
-                const chatContainer = document.querySelector('.chat-container');
-                
-                if (inputContainer) {
-                    inputContainer.style.transform = '';
-                }
-                if (chatContainer) {
-                    chatContainer.style.bottom = '50px';
-                }
-                
-                isKeyboardVisible = false;
-            });
-        }
-        
-        // 监听页面可见性变化（App切换前后台）
-        document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'visible') {
-                const inputContainer = document.querySelector('.input-container');
-                const chatContainer = document.querySelector('.chat-container');
-                
-                if (inputContainer) {
-                    inputContainer.style.transform = '';
-                }
-                if (chatContainer) {
-                    chatContainer.style.bottom = '50px';
-                }
-                
-                isKeyboardVisible = false;
-            }
-        });
-    </script>
 </body>
 </html>
