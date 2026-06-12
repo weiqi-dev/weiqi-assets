@@ -440,17 +440,10 @@
     
     <!-- 移动端键盘适配 -->
     <script>
-        console.log('[键盘适配] 脚本加载');
-        
-        // 检测环境
-        const hasVisualViewport = !!window.visualViewport;
-        const isGeckoView = /GeckoView|Firefox/.test(navigator.userAgent);
-        console.log('[键盘适配] visualViewport支持:', hasVisualViewport, 'GeckoView:', isGeckoView);
-        
         let keyboardCheckInterval = null;
-        let lastInputBottom = 0;
+        let isKeyboardVisible = false;
         
-        // 方法：检测输入框是否被键盘遮挡
+        // 检测输入框是否被键盘遮挡
         function checkKeyboardAndAdjust() {
             const inputContainer = document.querySelector('.input-container');
             const chatContainer = document.querySelector('.chat-container');
@@ -458,57 +451,43 @@
             
             if (!inputContainer || !chatContainer || !userInput) return;
             
-            // 获取输入框相对于视口的位置
             const rect = userInput.getBoundingClientRect();
             const inputBottom = rect.bottom;
             const viewportHeight = window.innerHeight;
             
-            console.log('[键盘适配] 输入框底部:', inputBottom, '视口高度:', viewportHeight);
-            
-            // 如果输入框底部超出视口，说明被键盘遮挡
-            if (inputBottom > viewportHeight - 50) {
-                const keyboardHeight = inputBottom - viewportHeight + 50;
-                console.log('[键盘适配] 输入框被遮挡，键盘高度:', keyboardHeight);
+            // 如果输入框底部超出视口底部（预留20px安全距离），说明被键盘遮挡
+            if (inputBottom > viewportHeight - 20) {
+                const keyboardHeight = inputBottom - viewportHeight + 50; // 50px是输入框高度
                 
                 // 上移输入框
                 inputContainer.style.transform = `translateY(-${keyboardHeight}px)`;
                 chatContainer.style.bottom = `${50 + keyboardHeight}px`;
                 
-                // 滚动到底部
+                // 滚动到底部，确保最新消息可见
                 chatContainer.scrollTop = chatContainer.scrollHeight;
-            } else if (inputBottom < viewportHeight - 100 && lastInputBottom > 0) {
+                
+                isKeyboardVisible = true;
+            } else if (isKeyboardVisible && inputBottom < viewportHeight - 100) {
                 // 键盘收起，恢复原位
-                console.log('[键盘适配] 键盘收起，恢复原位');
                 inputContainer.style.transform = '';
                 chatContainer.style.bottom = '50px';
+                isKeyboardVisible = false;
             }
-            
-            lastInputBottom = inputBottom;
         }
         
         // 输入框聚焦时开始检测
         const userInput = document.getElementById('userInput');
         if (userInput) {
             userInput.addEventListener('focus', () => {
-                console.log('[键盘适配] 输入框聚焦，开始检测');
-                
                 // 立即检测
                 checkKeyboardAndAdjust();
                 
-                // 定时检测（每100ms）
-                keyboardCheckInterval = setInterval(checkKeyboardAndAdjust, 100);
-                
-                // 延迟多次检测（等待键盘动画）
-                setTimeout(checkKeyboardAndAdjust, 200);
-                setTimeout(checkKeyboardAndAdjust, 400);
-                setTimeout(checkKeyboardAndAdjust, 600);
-                setTimeout(checkKeyboardAndAdjust, 800);
+                // 定时检测（每200ms，减少频率）
+                keyboardCheckInterval = setInterval(checkKeyboardAndAdjust, 200);
             });
             
             // 输入框失焦时停止检测
             userInput.addEventListener('blur', () => {
-                console.log('[键盘适配] 输入框失焦，停止检测');
-                
                 if (keyboardCheckInterval) {
                     clearInterval(keyboardCheckInterval);
                     keyboardCheckInterval = null;
@@ -524,15 +503,13 @@
                     chatContainer.style.bottom = '50px';
                 }
                 
-                lastInputBottom = 0;
+                isKeyboardVisible = false;
             });
         }
         
         // 监听页面可见性变化（App切换前后台）
         document.addEventListener('visibilitychange', () => {
-            console.log('[键盘适配] 页面可见性:', document.visibilityState);
             if (document.visibilityState === 'visible') {
-                // 页面重新可见，恢复布局
                 const inputContainer = document.querySelector('.input-container');
                 const chatContainer = document.querySelector('.chat-container');
                 
@@ -543,7 +520,7 @@
                     chatContainer.style.bottom = '50px';
                 }
                 
-                lastInputBottom = 0;
+                isKeyboardVisible = false;
             }
         });
     </script>
