@@ -425,5 +425,37 @@
     </div>
 
     <script src="../shared/error-catch.js"></script>
+
+    <!-- Android 软键盘适配（GeckoView 不响应 adjustResize，需前端手动处理） -->
+    <script>
+    (function() {
+        const inputContainer = document.querySelector('.input-container');
+        const chatContainer = document.querySelector('.chat-container');
+        if (!inputContainer || !chatContainer) return;
+
+        const INPUT_BAR_HEIGHT = 50; // 与 chat-container 的 bottom 保持一致
+
+        function onViewportResize() {
+            if (!window.visualViewport) return;
+            const vv = window.visualViewport;
+            const keyboardHeight = window.innerHeight - vv.height - vv.offsetTop;
+
+            if (keyboardHeight > 0) {
+                inputContainer.style.bottom = keyboardHeight + 'px';
+                chatContainer.style.bottom = (INPUT_BAR_HEIGHT + keyboardHeight) + 'px';
+            } else {
+                inputContainer.style.bottom = '0';
+                chatContainer.style.bottom = INPUT_BAR_HEIGHT + 'px';
+            }
+
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', onViewportResize);
+            window.visualViewport.addEventListener('scroll', onViewportResize);
+        }
+    })();
+    </script>
 </body>
 </html>
