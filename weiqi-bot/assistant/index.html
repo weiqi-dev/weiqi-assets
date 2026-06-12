@@ -440,20 +440,30 @@
     
     <!-- 移动端键盘适配 -->
     <script>
-        // 监听 visualViewport 变化（键盘弹出/收起）
+        console.log('[键盘适配] 脚本加载');
+        
+        // 方法1：监听 visualViewport 变化（现代浏览器）
         if (window.visualViewport) {
+            console.log('[键盘适配] visualViewport 支持');
+            
             window.visualViewport.addEventListener('resize', () => {
                 const inputContainer = document.querySelector('.input-container');
                 const chatContainer = document.querySelector('.chat-container');
                 
-                if (!inputContainer || !chatContainer) return;
+                if (!inputContainer || !chatContainer) {
+                    console.log('[键盘适配] 找不到元素');
+                    return;
+                }
                 
                 const viewportHeight = window.visualViewport.height;
                 const windowHeight = window.innerHeight;
                 const keyboardHeight = windowHeight - viewportHeight;
                 
+                console.log('[键盘适配] 视口高度:', viewportHeight, '窗口高度:', windowHeight, '键盘高度:', keyboardHeight);
+                
                 // 键盘弹出时，输入框上移
                 if (keyboardHeight > 50) {
+                    console.log('[键盘适配] 键盘弹出，上移输入框');
                     inputContainer.style.transform = `translateY(-${keyboardHeight}px)`;
                     chatContainer.style.bottom = `${50 + keyboardHeight}px`;
                     
@@ -464,22 +474,85 @@
                         }
                     }, 100);
                 } else {
-                    // 键盘收起时，恢复原位
+                    console.log('[键盘适配] 键盘收起，恢复原位');
                     inputContainer.style.transform = '';
                     chatContainer.style.bottom = '50px';
                 }
             });
+        } else {
+            console.log('[键盘适配] visualViewport 不支持，使用 resize 监听');
+            
+            // 方法2：监听 window.resize（后备方案）
+            let lastHeight = window.innerHeight;
+            
+            window.addEventListener('resize', () => {
+                const inputContainer = document.querySelector('.input-container');
+                const chatContainer = document.querySelector('.chat-container');
+                
+                if (!inputContainer || !chatContainer) return;
+                
+                const currentHeight = window.innerHeight;
+                const heightDiff = lastHeight - currentHeight;
+                
+                console.log('[键盘适配] resize - 高度差:', heightDiff);
+                
+                if (heightDiff > 100) {
+                    // 键盘弹出
+                    console.log('[键盘适配] 键盘弹出（resize）');
+                    inputContainer.style.transform = `translateY(-${heightDiff}px)`;
+                    chatContainer.style.bottom = `${50 + heightDiff}px`;
+                } else if (heightDiff < -100) {
+                    // 键盘收起
+                    console.log('[键盘适配] 键盘收起（resize）');
+                    inputContainer.style.transform = '';
+                    chatContainer.style.bottom = '50px';
+                }
+                
+                lastHeight = currentHeight;
+            });
         }
         
-        // 输入框聚焦时自动滚动到可视区域
-        document.getElementById('userInput')?.addEventListener('focus', () => {
-            setTimeout(() => {
-                document.getElementById('userInput')?.scrollIntoView({ 
-                    behavior: 'smooth', 
-                    block: 'nearest' 
-                });
-            }, 300);  // 等待键盘弹出
-        });
+        // 方法3：输入框聚焦时强制滚动到可视区域
+        const userInput = document.getElementById('userInput');
+        if (userInput) {
+            userInput.addEventListener('focus', () => {
+                console.log('[键盘适配] 输入框聚焦');
+                
+                // 多次尝试滚动，确保键盘弹出后能正确滚动
+                const scrollToInput = () => {
+                    const inputContainer = document.querySelector('.input-container');
+                    if (inputContainer) {
+                        inputContainer.scrollIntoView({ 
+                            behavior: 'smooth', 
+                            block: 'end',
+                            inline: 'nearest'
+                        });
+                    }
+                };
+                
+                // 立即尝试
+                scrollToInput();
+                
+                // 延迟尝试（等待键盘动画）
+                setTimeout(scrollToInput, 100);
+                setTimeout(scrollToInput, 300);
+                setTimeout(scrollToInput, 500);
+            });
+            
+            // 监听输入框失焦
+            userInput.addEventListener('blur', () => {
+                console.log('[键盘适配] 输入框失焦');
+                const inputContainer = document.querySelector('.input-container');
+                const chatContainer = document.querySelector('.chat-container');
+                
+                if (inputContainer) {
+                    inputContainer.style.transform = '';
+                }
+                if (chatContainer) {
+                    chatContainer.style.bottom = '50px';
+                }
+            });
+        }
     </script>
 </body>
 </html>
