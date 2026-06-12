@@ -442,9 +442,16 @@
     <script>
         console.log('[键盘适配] 脚本加载');
         
+        // 检测环境
+        const hasVisualViewport = !!window.visualViewport;
+        const isGeckoView = /GeckoView|Firefox/.test(navigator.userAgent);
+        console.log('[键盘适配] visualViewport支持:', hasVisualViewport, 'GeckoView:', isGeckoView);
+        
         // 方法1：监听 visualViewport 变化（现代浏览器）
         if (window.visualViewport) {
-            console.log('[键盘适配] visualViewport 支持');
+            console.log('[键盘适配] 使用 visualViewport');
+            
+            let lastViewportHeight = window.visualViewport.height;
             
             window.visualViewport.addEventListener('resize', () => {
                 const inputContainer = document.querySelector('.input-container');
@@ -459,7 +466,7 @@
                 const windowHeight = window.innerHeight;
                 const keyboardHeight = windowHeight - viewportHeight;
                 
-                console.log('[键盘适配] 视口高度:', viewportHeight, '窗口高度:', windowHeight, '键盘高度:', keyboardHeight);
+                console.log('[键盘适配] viewport变化 - 高度:', viewportHeight, '键盘高度:', keyboardHeight);
                 
                 // 键盘弹出时，输入框上移
                 if (keyboardHeight > 50) {
@@ -473,47 +480,80 @@
                             chatContainer.scrollTop = chatContainer.scrollHeight;
                         }
                     }, 100);
-                } else {
+                } else if (keyboardHeight < -50 || Math.abs(keyboardHeight) < 50) {
                     console.log('[键盘适配] 键盘收起，恢复原位');
                     inputContainer.style.transform = '';
                     chatContainer.style.bottom = '50px';
                 }
+                
+                lastViewportHeight = viewportHeight;
             });
         } else {
-            console.log('[键盘适配] visualViewport 不支持，使用 resize 监听');
+            console.log('[键盘适配] visualViewport 不支持');
+        }
+        
+        // 方法2：监听 window.resize（后备方案）
+        let lastWindowHeight = window.innerHeight;
+        
+        window.addEventListener('resize', () => {
+            const inputContainer = document.querySelector('.input-container');
+            const chatContainer = document.querySelector('.chat-container');
             
-            // 方法2：监听 window.resize（后备方案）
-            let lastHeight = window.innerHeight;
+            if (!inputContainer || !chatContainer) return;
             
-            window.addEventListener('resize', () => {
+            const currentHeight = window.innerHeight;
+            const heightDiff = lastWindowHeight - currentHeight;
+            
+            console.log('[键盘适配] resize - 高度差:', heightDiff, '当前高度:', currentHeight);
+            
+            if (heightDiff > 100) {
+                // 键盘弹出
+                console.log('[键盘适配] 键盘弹出（resize）');
+                inputContainer.style.transform = `translateY(-${heightDiff}px)`;
+                chatContainer.style.bottom = `${50 + heightDiff}px`;
+            } else if (heightDiff < -100) {
+                // 键盘收起
+                console.log('[键盘适配] 键盘收起（resize）');
+                inputContainer.style.transform = '';
+                chatContainer.style.bottom = '50px';
+            }
+            
+            lastWindowHeight = currentHeight;
+        });
+        
+        // 方法3：使用 IntersectionObserver 检测输入框是否可见
+        const userInput = document.getElementById('userInput');
+        if (userInput && 'IntersectionObserver' in window) {
+            console.log('[键盘适配] 使用 IntersectionObserver');
+            
+            const observer = new IntersectionObserver((entries) => {
+                const entry = entries[0];
                 const inputContainer = document.querySelector('.input-container');
                 const chatContainer = document.querySelector('.chat-container');
                 
-                if (!inputContainer || !chatContainer) return;
+                console.log('[键盘适配] IntersectionObserver - 可见:', entry.isIntersecting, '比例:', entry.intersectionRatio);
                 
-                const currentHeight = window.innerHeight;
-                const heightDiff = lastHeight - currentHeight;
-                
-                console.log('[键盘适配] resize - 高度差:', heightDiff);
-                
-                if (heightDiff > 100) {
-                    // 键盘弹出
-                    console.log('[键盘适配] 键盘弹出（resize）');
-                    inputContainer.style.transform = `translateY(-${heightDiff}px)`;
-                    chatContainer.style.bottom = `${50 + heightDiff}px`;
-                } else if (heightDiff < -100) {
-                    // 键盘收起
-                    console.log('[键盘适配] 键盘收起（resize）');
-                    inputContainer.style.transform = '';
-                    chatContainer.style.bottom = '50px';
+                if (!entry.isIntersecting && entry.intersectionRatio < 0.5) {
+                    // 输入框不可见，可能被键盘遮挡
+                    console.log('[键盘适配] 输入框被遮挡，强制滚动');
+                    
+                    if (inputContainer) {
+                        inputContainer.scrollIntoView({ 
+                            behavior: 'smooth', 
+                            block: 'end',
+                            inline: 'nearest'
+                        });
+                    }
                 }
-                
-                lastHeight = currentHeight;
+            }, {
+                threshold: [0, 0.5, 1],
+                rootMargin: '0px 0px -100px 0px' // 底部留出100px给键盘
             });
+            
+            observer.observe(userInput);
         }
         
-        // 方法3：输入框聚焦时强制滚动到可视区域
-        const userInput = document.getElementById('userInput');
+        // 方法4：输入框聚焦时强制滚动
         if (userInput) {
             userInput.addEventListener('focus', () => {
                 console.log('[键盘适配] 输入框聚焦');
@@ -537,6 +577,7 @@
                 setTimeout(scrollToInput, 100);
                 setTimeout(scrollToInput, 300);
                 setTimeout(scrollToInput, 500);
+                setTimeout(scrollToInput, 800);
             });
             
             // 监听输入框失焦
@@ -553,6 +594,23 @@
                 }
             });
         }
+        
+        // 方法5：监听页面可见性变化（App切换前后台）
+        document.addEventListener('visibilitychange', () => {
+            console.log('[键盘适配] 页面可见性:', document.visibilityState);
+            if (document.visibilityState === 'visible') {
+                // 页面重新可见，恢复布局
+                const inputContainer = document.querySelector('.input-container');
+                const chatContainer = document.querySelector('.chat-container');
+                
+                if (inputContainer) {
+                    inputContainer.style.transform = '';
+                }
+                if (chatContainer) {
+                    chatContainer.style.bottom = '50px';
+                }
+            }
+        });
     </script>
 </body>
 </html>
