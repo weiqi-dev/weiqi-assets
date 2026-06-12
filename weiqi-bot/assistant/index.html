@@ -12,11 +12,12 @@
         /* 重置所有样式，参考项目风格 + 微信聊天体验 */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
-        html, body {
+        body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #5a3d7a 100%);
             background-attachment: fixed;
-            height: 100%;
+            height: 100vh;
+            height: 100dvh; /* 动态视口高度 */
             overflow: hidden;
             color: #333;
         }
@@ -42,33 +43,26 @@
             text-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
         
-        /* 聊天区域 - 使用 flex 布局替代 fixed 定位 */
-        .app-wrapper {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            height: 100dvh;
-            position: relative;
-        }
-        
+        /* 聊天区域 - 全屏 + 限制宽度 */
         .chat-container {
-            flex: 1;
+            position: fixed;
+            top: 44px;
+            left: 0;
+            right: 0;
+            bottom: 50px; /* 输入框高度 */
             overflow-y: auto;
-            background: #EDEDED;
+            background: #EDEDED; /* 微信灰色背景 */
             padding: 8px 0;
-            margin-top: 44px; /* 标题栏高度 */
-            -webkit-overflow-scrolling: touch;
         }
         
         /* PC端限制宽度，居中显示 */
         @media (min-width: 600px) {
-            .app-wrapper {
+            .chat-container {
                 left: 50%;
                 right: auto;
                 transform: translateX(-50%);
                 width: 100%;
                 max-width: 520px;
-                margin: 0 auto;
                 border-left: 1px solid rgba(0,0,0,0.1);
                 border-right: 1px solid rgba(0,0,0,0.1);
             }
@@ -155,17 +149,32 @@
             font-weight: 600;
         }
         
-        /* 输入框 - 微信风格，使用 flex 布局 */
+        /* 输入框 - 微信风格 */
         .input-container {
-            flex-shrink: 0;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
             background: #F7F7F7;
             border-top: 0.5px solid #D6D6D6;
             padding: 8px 10px;
             display: flex;
             align-items: flex-end;
             gap: 8px;
-            position: relative;
-            z-index: 100;
+        }
+        
+        /* PC端限制输入框宽度，与聊天区域对齐 */
+        @media (min-width: 600px) {
+            .input-container {
+                left: 50%;
+                right: auto;
+                transform: translateX(-50%);
+                width: 100%;
+                max-width: 520px;
+                border-left: 1px solid rgba(0,0,0,0.1);
+                border-right: 1px solid rgba(0,0,0,0.1);
+            }
         }
         
         .input-textarea {
@@ -258,7 +267,7 @@
             animation: slideUp 0.2s ease;
         }
         
-        /* PC端菜单位置调整 */
+        /* PC端菜单位置调整，与输入框对齐 */
         @media (min-width: 600px) {
             .command-menu {
                 right: calc((100vw - 520px) / 2 + 10px);
@@ -369,11 +378,6 @@
                 font-size: 15px;
             }
         }
-        
-        /* 键盘弹出时的适配样式 */
-        .keyboard-open .chat-container {
-            /* 键盘弹出时由 JS 动态调整 */
-        }
     </style>
   <script type="module" crossorigin src="../assets/assistant/index-DvJkyasm.js"></script>
   <link rel="modulepreload" crossorigin href="../assets/FavoriteService-C9LkU7xv.js">
@@ -386,24 +390,21 @@
         <h1 class="wechat-title">围棋 AI 助理</h1>
     </div>
     
-    <!-- 应用主容器 - 使用 flex 布局 -->
-    <div class="app-wrapper" id="appWrapper">
-        <!-- 聊天区域 -->
-        <div class="chat-container" id="chatContainer">
-            <div class="status">
-                <span>✅</span>
-                <span id="loadingText">AI助理准备就绪，试试快捷指令或输入你的需求！</span>
-            </div>
+    <!-- 聊天区域 - 全屏 -->
+    <div class="chat-container" id="chatContainer">
+        <div class="status">
+            <span>✅</span>
+            <span id="loadingText">AI助理准备就绪，试试快捷指令或输入你的需求！</span>
         </div>
-        
-        <!-- 输入框 -->
-        <div class="input-container">
-            <textarea class="input-textarea" id="userInput" placeholder="输入您想做的事" disabled rows="1"></textarea>
-            <input type="file" id="sgfUpload" accept=".sgf" style="display: none;">
-            <button class="toolbar-btn" id="sgfBtn" title="上传 SGF 文件" onclick="document.getElementById('sgfUpload').click()">📄</button>
-            <button class="toolbar-btn send-btn" id="sendBtn" onclick="sendMessage()" disabled title="发送">➤</button>
-            <button class="toolbar-btn" onclick="toggleCommandMenu()" title="更多">⋮</button>
-        </div>
+    </div>
+    
+    <!-- 输入框 - 固定底部 -->
+    <div class="input-container">
+        <textarea class="input-textarea" id="userInput" placeholder="输入您想做的事" disabled rows="1"></textarea>
+        <input type="file" id="sgfUpload" accept=".sgf" style="display: none;">
+        <button class="toolbar-btn" id="sgfBtn" title="上传 SGF 文件" onclick="document.getElementById('sgfUpload').click()">📄</button>
+        <button class="toolbar-btn send-btn" id="sendBtn" onclick="sendMessage()" disabled title="发送">➤</button>
+        <button class="toolbar-btn" onclick="toggleCommandMenu()" title="更多">⋮</button>
     </div>
     
     <!-- Command Menu -->
@@ -424,69 +425,5 @@
     </div>
 
     <script src="../shared/error-catch.js"></script>
-    <script>
-        // 键盘适配：监听 Android 端发送的键盘事件
-        (function() {
-            const appWrapper = document.getElementById('appWrapper');
-            const chatContainer = document.getElementById('chatContainer');
-            const userInput = document.getElementById('userInput');
-            
-            console.log('[KB] Web keyboard handler initialized');
-            console.log('[KB] window.innerHeight=' + window.innerHeight);
-            console.log('[KB] window.visualViewport=' + (window.visualViewport ? 'supported' : 'NOT supported'));
-            
-            // 从 Android 接收键盘高度（单位：dp）
-            window.onKeyboardShow = function(keyboardHeightDp) {
-                console.log('[KB] onKeyboardShow called, height=' + keyboardHeightDp + 'dp');
-                console.log('[KB] window.innerHeight=' + window.innerHeight + ', dpr=' + window.devicePixelRatio);
-                
-                // 将 dp 转换为 px（近似值）
-                const keyboardHeightPx = keyboardHeightDp * (window.devicePixelRatio || 1);
-                console.log('[KB] calculated keyboardHeightPx=' + keyboardHeightPx);
-                
-                // 调整 app-wrapper 高度，为键盘留出空间
-                const newHeight = 'calc(100dvh - ' + keyboardHeightPx + 'px)';
-                console.log('[KB] setting appWrapper.height=' + newHeight);
-                appWrapper.style.height = newHeight;
-                console.log('[KB] appWrapper.style.height now=' + appWrapper.style.height);
-                
-                // 滚动到最新消息
-                setTimeout(() => {
-                    console.log('[KB] scrolling to bottom, scrollHeight=' + chatContainer.scrollHeight);
-                    chatContainer.scrollTop = chatContainer.scrollHeight;
-                }, 100);
-            };
-            
-            window.onKeyboardHide = function() {
-                console.log('[KB] onKeyboardHide called');
-                console.log('[KB] appWrapper.style.height before=' + appWrapper.style.height);
-                // 恢复高度
-                appWrapper.style.height = '';
-                console.log('[KB] appWrapper.style.height after=' + appWrapper.style.height);
-            };
-            
-            // 输入框聚焦时确保可见
-            userInput.addEventListener('focus', () => {
-                console.log('[KB] input focus event');
-                setTimeout(() => {
-                    console.log('[KB] focus scroll to bottom, scrollHeight=' + chatContainer.scrollHeight);
-                    chatContainer.scrollTop = chatContainer.scrollHeight;
-                }, 300);
-            });
-            
-            // 也监听 visualViewport 变化作为备用
-            if (window.visualViewport) {
-                console.log('[KB] visualViewport supported, adding listeners');
-                let lastH = window.visualViewport.height;
-                window.visualViewport.addEventListener('resize', () => {
-                    const vv = window.visualViewport;
-                    console.log('[KB] vv resize: vv.height=' + vv.height + ', lastH=' + lastH + ', innerH=' + window.innerHeight);
-                    lastH = vv.height;
-                });
-            }
-            
-            console.log('[KB] init complete');
-        })();
-    </script>
 </body>
 </html>
