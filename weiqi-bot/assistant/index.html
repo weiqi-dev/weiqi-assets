@@ -436,6 +436,7 @@
         const INPUT_BAR_HEIGHT = 50; // 与 chat-container 的 bottom 保持一致
 
         function onViewportResize() {
+	    console.log("[onViewportResize]");
             if (!window.visualViewport) return;
             const vv = window.visualViewport;
             const keyboardHeight = window.innerHeight - vv.height - vv.offsetTop;
