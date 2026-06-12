@@ -428,6 +428,7 @@
     
     <!-- 键盘高度自适应 -->
     <script>
+    // Android 通过 JS 回调通知
     window.onKeyboardHeight = function(data) {
         try {
             var info = typeof data === 'string' ? JSON.parse(data) : data;
@@ -441,6 +442,44 @@
             console.error('onKeyboardHeight error:', e);
         }
     };
+    
+    // 输入框聚焦/失焦时通知 Android
+    var userInput = document.getElementById('userInput');
+    if (userInput) {
+        userInput.addEventListener('focus', function() {
+            console.log('[Web] 输入框聚焦，通知 Android');
+            if (window.android && window.android.onInputFocus) {
+                window.android.onInputFocus(true);
+            }
+        });
+        userInput.addEventListener('blur', function() {
+            console.log('[Web] 输入框失焦，通知 Android');
+            if (window.android && window.android.onInputBlur) {
+                window.android.onInputBlur();
+            }
+        });
+    }
+    
+    // 使用 visualViewport 兼容检测键盘
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', function() {
+            var viewportHeight = window.visualViewport.height;
+            var windowHeight = window.innerHeight;
+            var diff = windowHeight - viewportHeight;
+            if (diff > 50) {
+                console.log('[Web] visualViewport 检测到键盘:', diff);
+                var inputContainer = document.querySelector('.input-container');
+                if (inputContainer) {
+                    inputContainer.style.bottom = diff + 'px';
+                }
+            } else {
+                var inputContainer = document.querySelector('.input-container');
+                if (inputContainer) {
+                    inputContainer.style.bottom = '0';
+                }
+            }
+        });
+    }
     </script>
     
 </body>
