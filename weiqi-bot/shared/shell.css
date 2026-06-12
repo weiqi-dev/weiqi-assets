@@ -91,6 +91,18 @@ body {
 }
 
 /* 响应式：小屏幕缩小标题 */
+@media (max-width: 768px) {
+  .glass-header {
+    padding: 16px 12px 12px;
+  }
+  .glass-title {
+    font-size: 22px;
+  }
+  .glass-content {
+    padding: 0 8px 80px;
+  }
+}
+
 @media (max-width: 360px) {
   .glass-title {
     font-size: 1.7em;
