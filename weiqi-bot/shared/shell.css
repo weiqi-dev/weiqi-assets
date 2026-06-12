@@ -13,17 +13,20 @@ body {
 /* 页面容器 */
 .glass-container {
   min-height: 100vh;
+  min-height: 100dvh;  /* 动态视口高度，适配刘海屏 */
   background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #5a3d7a 100%);
   background-attachment: fixed;
   display: flex;
   flex-direction: column;
+  /* 关键：顶部留出刘海安全区域，让背景延伸到状态栏 */
+  padding-top: env(safe-area-inset-top);
 }
 
 /* 页面头部 */
 .glass-header {
   text-align: center;
   color: white;
-  padding: 24px 12px 20px;
+  padding: 12px 12px 20px;  /* 减少顶部padding，因为container已处理safe-area */
   position: relative;
 }
 
