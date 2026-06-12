@@ -431,9 +431,11 @@
     window.onKeyboardHeight = function(data) {
         try {
             var info = typeof data === 'string' ? JSON.parse(data) : data;
+            console.log('[Web] onKeyboardHeight:', info);
             var inputContainer = document.querySelector('.input-container');
             if (inputContainer) {
                 inputContainer.style.bottom = info.visible ? info.height + 'px' : '0';
+                console.log('[Web] 设置 bottom:', info.visible ? info.height + 'px' : '0');
             }
         } catch (e) {
             console.error('onKeyboardHeight error:', e);
