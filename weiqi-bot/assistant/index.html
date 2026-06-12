@@ -12,12 +12,11 @@
         /* 重置所有样式，参考项目风格 + 微信聊天体验 */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
-        body {
+        html, body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #5a3d7a 100%);
             background-attachment: fixed;
-            height: 100vh;
-            height: 100dvh; /* 动态视口高度 */
+            height: 100%;
             overflow: hidden;
             color: #333;
         }
@@ -43,26 +42,33 @@
             text-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
         
-        /* 聊天区域 - 全屏 + 限制宽度 */
+        /* 聊天区域 - 使用 flex 布局替代 fixed 定位 */
+        .app-wrapper {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            height: 100dvh;
+            position: relative;
+        }
+        
         .chat-container {
-            position: fixed;
-            top: 44px;
-            left: 0;
-            right: 0;
-            bottom: 50px; /* 输入框高度 */
+            flex: 1;
             overflow-y: auto;
-            background: #EDEDED; /* 微信灰色背景 */
+            background: #EDEDED;
             padding: 8px 0;
+            margin-top: 44px;
+            -webkit-overflow-scrolling: touch;
         }
         
         /* PC端限制宽度，居中显示 */
         @media (min-width: 600px) {
-            .chat-container {
+            .app-wrapper {
                 left: 50%;
                 right: auto;
                 transform: translateX(-50%);
                 width: 100%;
                 max-width: 520px;
+                margin: 0 auto;
                 border-left: 1px solid rgba(0,0,0,0.1);
                 border-right: 1px solid rgba(0,0,0,0.1);
             }
@@ -149,32 +155,17 @@
             font-weight: 600;
         }
         
-        /* 输入框 - 微信风格 */
+        /* 输入框 - 微信风格，使用 flex 布局 */
         .input-container {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            z-index: 100;
+            flex-shrink: 0;
             background: #F7F7F7;
             border-top: 0.5px solid #D6D6D6;
             padding: 8px 10px;
             display: flex;
             align-items: flex-end;
             gap: 8px;
-        }
-        
-        /* PC端限制输入框宽度，与聊天区域对齐 */
-        @media (min-width: 600px) {
-            .input-container {
-                left: 50%;
-                right: auto;
-                transform: translateX(-50%);
-                width: 100%;
-                max-width: 520px;
-                border-left: 1px solid rgba(0,0,0,0.1);
-                border-right: 1px solid rgba(0,0,0,0.1);
-            }
+            position: relative;
+            z-index: 100;
         }
         
         .input-textarea {
@@ -267,7 +258,7 @@
             animation: slideUp 0.2s ease;
         }
         
-        /* PC端菜单位置调整，与输入框对齐 */
+        /* PC端菜单位置调整 */
         @media (min-width: 600px) {
             .command-menu {
                 right: calc((100vw - 520px) / 2 + 10px);
@@ -378,6 +369,11 @@
                 font-size: 15px;
             }
         }
+        
+        /* 键盘弹出时的适配样式 */
+        .keyboard-open .chat-container {
+            /* 键盘弹出时由 JS 动态调整 */
+        }
     </style>
   <script type="module" crossorigin src="../assets/assistant/index-DvJkyasm.js"></script>
   <link rel="modulepreload" crossorigin href="../assets/FavoriteService-C9LkU7xv.js">
@@ -390,21 +386,24 @@
         <h1 class="wechat-title">围棋 AI 助理</h1>
     </div>
     
-    <!-- 聊天区域 - 全屏 -->
-    <div class="chat-container" id="chatContainer">
-        <div class="status">
-            <span>✅</span>
-            <span id="loadingText">AI助理准备就绪，试试快捷指令或输入你的需求！</span>
+    <!-- 应用主容器 - 使用 flex 布局 -->
+    <div class="app-wrapper" id="appWrapper">
+        <!-- 聊天区域 -->
+        <div class="chat-container" id="chatContainer">
+            <div class="status">
+                <span>✅</span>
+                <span id="loadingText">AI助理准备就绪，试试快捷指令或输入你的需求！</span>
+            </div>
         </div>
-    </div>
-    
-    <!-- 输入框 - 固定底部 -->
-    <div class="input-container">
-        <textarea class="input-textarea" id="userInput" placeholder="输入您想做的事" disabled rows="1"></textarea>
-        <input type="file" id="sgfUpload" accept=".sgf" style="display: none;">
-        <button class="toolbar-btn" id="sgfBtn" title="上传 SGF 文件" onclick="document.getElementById('sgfUpload').click()">📄</button>
-        <button class="toolbar-btn send-btn" id="sendBtn" onclick="sendMessage()" disabled title="发送">➤</button>
-        <button class="toolbar-btn" onclick="toggleCommandMenu()" title="更多">⋮</button>
+        
+        <!-- 输入框 -->
+        <div class="input-container">
+            <textarea class="input-textarea" id="userInput" placeholder="输入您想做的事" disabled rows="1"></textarea>
+            <input type="file" id="sgfUpload" accept=".sgf" style="display: none;">
+            <button class="toolbar-btn" id="sgfBtn" title="上传 SGF 文件" onclick="document.getElementById('sgfUpload').click()">📄</button>
+            <button class="toolbar-btn send-btn" id="sendBtn" onclick="sendMessage()" disabled title="发送">➤</button>
+            <button class="toolbar-btn" onclick="toggleCommandMenu()" title="更多">⋮</button>
+        </div>
     </div>
     
     <!-- Command Menu -->
@@ -425,5 +424,68 @@
     </div>
 
     <script src="../shared/error-catch.js"></script>
+    <script>
+        // 键盘适配：监听 Visual Viewport 变化，确保输入框不被键盘遮挡
+        (function() {
+            if (!window.visualViewport) return;
+            
+            const appWrapper = document.getElementById('appWrapper');
+            const chatContainer = document.getElementById('chatContainer');
+            const userInput = document.getElementById('userInput');
+            
+            let lastViewportHeight = window.visualViewport.height;
+            
+            function handleViewportChange() {
+                const vv = window.visualViewport;
+                const isKeyboardOpen = vv.height < window.innerHeight * 0.75;
+                
+                if (isKeyboardOpen) {
+                    // 键盘弹出：调整布局
+                    document.body.classList.add('keyboard-open');
+                    
+                    // 计算键盘高度
+                    const keyboardHeight = window.innerHeight - vv.height;
+                    
+                    // 调整 app-wrapper 高度，使其在可见视口内
+                    appWrapper.style.height = vv.height + 'px';
+                    appWrapper.style.position = 'fixed';
+                    appWrapper.style.top = vv.pageTop + 'px';
+                    appWrapper.style.left = '0';
+                    appWrapper.style.right = '0';
+                    appWrapper.style.bottom = 'auto';
+                    
+                    // 滚动到最新消息
+                    setTimeout(() => {
+                        chatContainer.scrollTop = chatContainer.scrollHeight;
+                    }, 100);
+                } else {
+                    // 键盘收起：恢复布局
+                    document.body.classList.remove('keyboard-open');
+                    appWrapper.style.height = '';
+                    appWrapper.style.position = '';
+                    appWrapper.style.top = '';
+                    appWrapper.style.left = '';
+                    appWrapper.style.right = '';
+                    appWrapper.style.bottom = '';
+                }
+                
+                lastViewportHeight = vv.height;
+            }
+            
+            window.visualViewport.addEventListener('resize', handleViewportChange);
+            window.visualViewport.addEventListener('scroll', handleViewportChange);
+            
+            // 输入框聚焦时确保可见
+            userInput.addEventListener('focus', () => {
+                setTimeout(() => {
+                    handleViewportChange();
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                }, 300);
+            });
+            
+            // 页面加载完成后初始化
+            window.addEventListener('load', handleViewportChange);
+        })();
+    </script>
 </body>
 </html>
