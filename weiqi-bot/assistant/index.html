@@ -56,7 +56,7 @@
             overflow-y: auto;
             background: #EDEDED;
             padding: 8px 0;
-            margin-top: 44px;
+            margin-top: 44px; /* 标题栏高度 */
             -webkit-overflow-scrolling: touch;
         }
         
@@ -425,66 +425,37 @@
 
     <script src="../shared/error-catch.js"></script>
     <script>
-        // 键盘适配：监听 Visual Viewport 变化，确保输入框不被键盘遮挡
+        // 键盘适配：监听 Android 端发送的键盘事件
         (function() {
-            if (!window.visualViewport) return;
-            
             const appWrapper = document.getElementById('appWrapper');
             const chatContainer = document.getElementById('chatContainer');
             const userInput = document.getElementById('userInput');
             
-            let lastViewportHeight = window.visualViewport.height;
-            
-            function handleViewportChange() {
-                const vv = window.visualViewport;
-                const isKeyboardOpen = vv.height < window.innerHeight * 0.75;
+            // 从 Android 接收键盘高度（单位：dp）
+            window.onKeyboardShow = function(keyboardHeightDp) {
+                // 将 dp 转换为 px（近似值）
+                const keyboardHeightPx = keyboardHeightDp * (window.devicePixelRatio || 1);
                 
-                if (isKeyboardOpen) {
-                    // 键盘弹出：调整布局
-                    document.body.classList.add('keyboard-open');
-                    
-                    // 计算键盘高度
-                    const keyboardHeight = window.innerHeight - vv.height;
-                    
-                    // 调整 app-wrapper 高度，使其在可见视口内
-                    appWrapper.style.height = vv.height + 'px';
-                    appWrapper.style.position = 'fixed';
-                    appWrapper.style.top = vv.pageTop + 'px';
-                    appWrapper.style.left = '0';
-                    appWrapper.style.right = '0';
-                    appWrapper.style.bottom = 'auto';
-                    
-                    // 滚动到最新消息
-                    setTimeout(() => {
-                        chatContainer.scrollTop = chatContainer.scrollHeight;
-                    }, 100);
-                } else {
-                    // 键盘收起：恢复布局
-                    document.body.classList.remove('keyboard-open');
-                    appWrapper.style.height = '';
-                    appWrapper.style.position = '';
-                    appWrapper.style.top = '';
-                    appWrapper.style.left = '';
-                    appWrapper.style.right = '';
-                    appWrapper.style.bottom = '';
-                }
+                // 调整 app-wrapper 高度，为键盘留出空间
+                appWrapper.style.height = 'calc(100dvh - ' + keyboardHeightPx + 'px)';
                 
-                lastViewportHeight = vv.height;
-            }
+                // 滚动到最新消息
+                setTimeout(() => {
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                }, 100);
+            };
             
-            window.visualViewport.addEventListener('resize', handleViewportChange);
-            window.visualViewport.addEventListener('scroll', handleViewportChange);
+            window.onKeyboardHide = function() {
+                // 恢复高度
+                appWrapper.style.height = '';
+            };
             
             // 输入框聚焦时确保可见
             userInput.addEventListener('focus', () => {
                 setTimeout(() => {
-                    handleViewportChange();
                     chatContainer.scrollTop = chatContainer.scrollHeight;
                 }, 300);
             });
-            
-            // 页面加载完成后初始化
-            window.addEventListener('load', handleViewportChange);
         })();
     </script>
 </body>
