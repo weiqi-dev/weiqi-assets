@@ -431,31 +431,61 @@
             const chatContainer = document.getElementById('chatContainer');
             const userInput = document.getElementById('userInput');
             
+            console.log('[KB] Web keyboard handler initialized');
+            console.log('[KB] window.innerHeight=' + window.innerHeight);
+            console.log('[KB] window.visualViewport=' + (window.visualViewport ? 'supported' : 'NOT supported'));
+            
             // 从 Android 接收键盘高度（单位：dp）
             window.onKeyboardShow = function(keyboardHeightDp) {
+                console.log('[KB] onKeyboardShow called, height=' + keyboardHeightDp + 'dp');
+                console.log('[KB] window.innerHeight=' + window.innerHeight + ', dpr=' + window.devicePixelRatio);
+                
                 // 将 dp 转换为 px（近似值）
                 const keyboardHeightPx = keyboardHeightDp * (window.devicePixelRatio || 1);
+                console.log('[KB] calculated keyboardHeightPx=' + keyboardHeightPx);
                 
                 // 调整 app-wrapper 高度，为键盘留出空间
-                appWrapper.style.height = 'calc(100dvh - ' + keyboardHeightPx + 'px)';
+                const newHeight = 'calc(100dvh - ' + keyboardHeightPx + 'px)';
+                console.log('[KB] setting appWrapper.height=' + newHeight);
+                appWrapper.style.height = newHeight;
+                console.log('[KB] appWrapper.style.height now=' + appWrapper.style.height);
                 
                 // 滚动到最新消息
                 setTimeout(() => {
+                    console.log('[KB] scrolling to bottom, scrollHeight=' + chatContainer.scrollHeight);
                     chatContainer.scrollTop = chatContainer.scrollHeight;
                 }, 100);
             };
             
             window.onKeyboardHide = function() {
+                console.log('[KB] onKeyboardHide called');
+                console.log('[KB] appWrapper.style.height before=' + appWrapper.style.height);
                 // 恢复高度
                 appWrapper.style.height = '';
+                console.log('[KB] appWrapper.style.height after=' + appWrapper.style.height);
             };
             
             // 输入框聚焦时确保可见
             userInput.addEventListener('focus', () => {
+                console.log('[KB] input focus event');
                 setTimeout(() => {
+                    console.log('[KB] focus scroll to bottom, scrollHeight=' + chatContainer.scrollHeight);
                     chatContainer.scrollTop = chatContainer.scrollHeight;
                 }, 300);
             });
+            
+            // 也监听 visualViewport 变化作为备用
+            if (window.visualViewport) {
+                console.log('[KB] visualViewport supported, adding listeners');
+                let lastH = window.visualViewport.height;
+                window.visualViewport.addEventListener('resize', () => {
+                    const vv = window.visualViewport;
+                    console.log('[KB] vv resize: vv.height=' + vv.height + ', lastH=' + lastH + ', innerH=' + window.innerHeight);
+                    lastH = vv.height;
+                });
+            }
+            
+            console.log('[KB] init complete');
         })();
     </script>
 </body>
