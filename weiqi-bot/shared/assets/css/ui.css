@@ -226,5 +226,5 @@
 
 /* ===== 状态栏安全区域适配 ===== */
 .page-header {
-  padding-top: calc(12px + env(safe-area-inset-top));
+  padding-top: env(safe-area-inset-top);
 }
