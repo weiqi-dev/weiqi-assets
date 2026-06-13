@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>围棋 AI 助理</title>
     
     <!-- ONNX Runtime Web (CDN) -->
@@ -24,7 +24,8 @@
         
         /* 微信风格标题栏 - 白色文字 */
         .wechat-header {
-            height: 44px;
+            height: calc(44px + env(safe-area-inset-top));
+            padding-top: env(safe-area-inset-top);
             background: transparent;
             display: flex;
             align-items: center;
@@ -46,7 +47,7 @@
         /* 聊天区域 - 全屏 + 限制宽度 */
         .chat-container {
             position: fixed;
-            top: 44px;
+            top: calc(44px + env(safe-area-inset-top));
             left: 0;
             right: 0;
             bottom: 50px; /* 输入框高度 */

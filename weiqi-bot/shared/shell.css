@@ -23,7 +23,7 @@ body {
 .glass-header {
   text-align: center;
   color: white;
-  padding: 24px 12px 20px;
+  padding: calc(24px + env(safe-area-inset-top)) 12px 20px;
   position: relative;
 }
 
@@ -173,4 +173,10 @@ footer {
 .error-box {
   background: #ffebee; color: #c62828; border-radius: 8px;
   padding: 12px; margin: 20px 0; font-size: 13px;
+}
+
+/* ===== 状态栏安全区域适配 ===== */
+/* edge-to-edge 模式下，sticky/fixed 定位的 header 需要避开状态栏 */
+.page-header {
+  padding-top: calc(12px + env(safe-area-inset-top));
 }
