@@ -23,7 +23,8 @@ body {
 .glass-header {
   text-align: center;
   color: white;
-  padding: env(safe-area-inset-top) 12px 20px;
+  padding: 24px 12px 20px;
+  margin-top: env(safe-area-inset-top);
   position: relative;
 }
 
