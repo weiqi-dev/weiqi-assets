@@ -32,7 +32,7 @@
     .page-header {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
-      padding: 12px 16px;
+      padding: calc(12px + env(safe-area-inset-top)) 16px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -508,6 +508,5 @@
       }
     });
   </script>
-  <script src="../shared/status-bar.js"></script>
 </body>
 </html>
