@@ -7,10 +7,17 @@
   <style>
     /* detail 特有样式 */
     
+    /* 防止水平溢出 */
+    html, body {
+      overflow-x: hidden;
+    }
+    
     /* 覆盖容器宽度 */
     .glass-content {
       max-width: 100%;
       padding: 0 12px 20px;
+      width: 100%;
+      box-sizing: border-box;
     }
     @media (min-width: 768px) {
       .glass-content {
