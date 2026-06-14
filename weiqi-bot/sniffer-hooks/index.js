@@ -151,10 +151,12 @@
      * 加载 HTTP hook 模块
      */
     async function loadHttpHook() {
+        console.log(`[${TAG}] Loading HTTP hook from: ${HOOK_BASE_URL}/http-hook.js`);
         try {
             await loadScript(`${HOOK_BASE_URL}/http-hook.js`);
+            console.log(`[${TAG}] HTTP hook loaded successfully`);
         } catch (e) {
-            console.warn(`[${TAG}] HTTP hook not loaded, using WebSocket only`);
+            console.warn(`[${TAG}] HTTP hook not loaded, using WebSocket only:`, e);
         }
     }
 
