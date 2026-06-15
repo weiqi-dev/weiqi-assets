@@ -1,1 +1,0 @@
-import{y as e}from"./Bootstrap-GZ6akvEJ.js";export{e as getWebRoot};

@@ -228,6 +228,7 @@
       align-items: center;
       gap: 8px;
       flex: 1;
+      min-width: 0; /* 防止 flex 子元素溢出 */
     }
     
     .main-controls {
@@ -238,6 +239,8 @@
     
     #moveSlider {
       flex: 1;
+      max-width: 200px; /* 限制滑条最大宽度 */
+      min-width: 80px; /* 保证最小可用宽度 */
       height: 6px;
       -webkit-appearance: none;
       appearance: none;
@@ -598,13 +601,13 @@
       }
     }
   </style>
-  <script type="module" crossorigin src="../assets/review/index-Dd-p7Qy0.js"></script>
+  <script type="module" crossorigin src="../assets/review/index-CtGmQbV3.js"></script>
   <link rel="modulepreload" crossorigin href="../assets/FavoriteService-C9LkU7xv.js">
-  <link rel="modulepreload" crossorigin href="../assets/Bootstrap-GZ6akvEJ.js">
-  <link rel="modulepreload" crossorigin href="../assets/ai-7DBmVLMS.js">
+  <link rel="modulepreload" crossorigin href="../assets/Bootstrap-BZZzFh5u.js">
+  <link rel="modulepreload" crossorigin href="../assets/ai-CQmsnCF6.js">
   <link rel="modulepreload" crossorigin href="../assets/modulepreload-polyfill-BVSDYCMZ.js">
   <link rel="modulepreload" crossorigin href="../assets/ResourceCache-CPiPuIzL.js">
-  <link rel="modulepreload" crossorigin href="../assets/ProgressManager-BHWbjkEM.js">
+  <link rel="modulepreload" crossorigin href="../assets/ProgressManager-De0ArJDh.js">
   <link rel="modulepreload" crossorigin href="../assets/Dialog-CoWYHROc.js">
   <link rel="modulepreload" crossorigin href="../assets/DecisionRules-JfrNnkGY.js">
   <link rel="modulepreload" crossorigin href="../assets/Board-CRw4FiUf.js">
@@ -614,7 +617,7 @@
   <link rel="modulepreload" crossorigin href="../assets/Game-tIhSALhm.js">
   <link rel="modulepreload" crossorigin href="../assets/SGFParser-X-x22zzA.js">
   <link rel="modulepreload" crossorigin href="../assets/ActivityLogService-B9a_dFSK.js">
-  <link rel="modulepreload" crossorigin href="../assets/adapters-D5vDPTif.js">
+  <link rel="modulepreload" crossorigin href="../assets/adapters-yE7zmgZV.js">
   <link rel="modulepreload" crossorigin href="../assets/BoardSyncer-CnKTWwAv.js">
   <link rel="stylesheet" crossorigin href="../assets/ui-BO4TLtxy.css">
 </head>
