@@ -359,8 +359,8 @@
     
     #chart-container {
       width: 100%;
-      height: 130px;
-      background: #f8f8fc;
+      height: 180px;  // 降低高度，从 256px 改为 180px
+      background: #fafafa;
       padding: 0 8px;
       box-sizing: border-box;
       position: relative;
@@ -440,7 +440,8 @@
       border: 4px solid #f3f3f3;
       border-top: 4px solid #667eea;
       border-radius: 50%;
-      animation: spin 1s linear infinite;
+      /* 性能优化：禁用旋转动画，避免持续渲染阻塞 GPU */
+      /* animation: spin 1s linear infinite; */
       margin-bottom: 20px;
     }
     
@@ -597,17 +598,23 @@
       }
       
       #chart-container {
-        height: 140px;
+        height: 180px;
       }
     }
   </style>
-  <script type="module" crossorigin src="../assets/review/index-CtGmQbV3.js"></script>
+  <script type="module" crossorigin src="../assets/review/index-BYfEU6R3.js"></script>
   <link rel="modulepreload" crossorigin href="../assets/FavoriteService-C9LkU7xv.js">
-  <link rel="modulepreload" crossorigin href="../assets/Bootstrap-BZZzFh5u.js">
-  <link rel="modulepreload" crossorigin href="../assets/ai-CQmsnCF6.js">
+  <link rel="modulepreload" crossorigin href="../assets/Bootstrap-MEa3TH0s.js">
+  <link rel="modulepreload" crossorigin href="../assets/ai-D5op3DcK.js">
   <link rel="modulepreload" crossorigin href="../assets/modulepreload-polyfill-BVSDYCMZ.js">
+  <link rel="modulepreload" crossorigin href="../assets/RecorderHistoryManager-B1Dpqhge.js">
   <link rel="modulepreload" crossorigin href="../assets/ResourceCache-CPiPuIzL.js">
-  <link rel="modulepreload" crossorigin href="../assets/ProgressManager-De0ArJDh.js">
+  <link rel="modulepreload" crossorigin href="../assets/ProgressManager-CnsyXP3G.js">
+  <link rel="modulepreload" crossorigin href="../assets/storage-DwSfOjNC.js">
+  <link rel="modulepreload" crossorigin href="../assets/HtmlParser-DUOuxQaH.js">
+  <link rel="modulepreload" crossorigin href="../assets/GameService-C14UwOTX.js">
+  <link rel="modulepreload" crossorigin href="../assets/game-CK-M9WsQ.js">
+  <link rel="modulepreload" crossorigin href="../assets/game-CDoKsatQ.js">
   <link rel="modulepreload" crossorigin href="../assets/Dialog-CoWYHROc.js">
   <link rel="modulepreload" crossorigin href="../assets/DecisionRules-JfrNnkGY.js">
   <link rel="modulepreload" crossorigin href="../assets/Board-CRw4FiUf.js">
@@ -617,7 +624,7 @@
   <link rel="modulepreload" crossorigin href="../assets/Game-tIhSALhm.js">
   <link rel="modulepreload" crossorigin href="../assets/SGFParser-X-x22zzA.js">
   <link rel="modulepreload" crossorigin href="../assets/ActivityLogService-B9a_dFSK.js">
-  <link rel="modulepreload" crossorigin href="../assets/adapters-yE7zmgZV.js">
+  <link rel="modulepreload" crossorigin href="../assets/adapters-z3rquAh5.js">
   <link rel="modulepreload" crossorigin href="../assets/BoardSyncer-CnKTWwAv.js">
   <link rel="stylesheet" crossorigin href="../assets/ui-BO4TLtxy.css">
 </head>
@@ -732,7 +739,6 @@
   
   <!-- 加载动画遮罩 -->
   <div id="loadingOverlay" style="display: none;">
-    <div class="loading-spinner"></div>
     <div class="loading-text" id="loadingText">AI 分析中...</div>
     <div class="loading-progress" id="loadingProgress">0%</div>
   </div>
