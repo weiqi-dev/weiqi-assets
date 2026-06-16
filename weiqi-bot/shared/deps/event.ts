@@ -43,7 +43,7 @@ export async function createEventDeps(ctx: WebShellContext): Promise<EventDeps> 
     const ipGeoService = new IpGeoService(ctx.network, ctx.logger);
     ipGeoQuerier = new IpGeoQuerier(ipGeoService);
   } catch (e) {
-    ctx.logger.warn?.('IpGeoService 初始化失败', { error: String(e) });
+    console.warn?.('IpGeoService 初始化失败', { error: String(e) });
   }
 
   return { querier, ipGeoQuerier, formatter, readMarkService };

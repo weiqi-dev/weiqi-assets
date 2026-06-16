@@ -1,9 +1,8 @@
 /**
  * Web Shell 引导程序
- * @description 一次性初始化所有通用基础设施（Logger、NetworkManager、Providers、ConfigProvider、AdapterFactory）
+ * @description 一次性初始化所有通用基础设施（NetworkManager、Providers、ConfigProvider、AdapterFactory）
  */
 
-import { LogManager, ConsoleTransport } from '../../../infrastructure/logger';
 import { NetworkManager } from '../../../infrastructure/network/core/NetworkManager';
 import { UserType } from '../../../infrastructure/network/interfaces/UserType';
 import { DirectProvider } from '../../../infrastructure/network/adapters/web/DirectProvider';
@@ -14,6 +13,9 @@ import { LocalStorageCacheAdapter } from '../../../infrastructure/storage/adapte
 import { FavoriteService } from '../../../services/favorite/FavoriteService';
 import { GameHistoryStorage } from '../../../services/game/GameHistoryStorage';
 import { WebAdapterFactory } from '../../../presentation/adapters/web/WebAdapterFactory';
+import { ConsoleCapture } from '../../../infrastructure/debug/ConsoleCapture';
+import { LogStorage } from '../../../infrastructure/debug/LogStorage';
+import { WebDebugAdapter } from '../../../infrastructure/debug/adapters/WebDebugAdapter';
 import { DEFAULT_PLAYER_CONFIG, DEFAULT_GAME_CONFIG, DEFAULT_EVENT_CONFIG } from './defaultConfig';
 import type { WebShellContext } from './Context';
 import type { IDocumentStorage } from '../../../infrastructure/storage/interfaces/IDocumentStorage';
@@ -108,11 +110,7 @@ export class WebBootstrap {
         ? 'http://localhost:8088/proxy'
         : 'https://api.weiqi.lol');
 
-    // 1. Logger
-    LogManager.registerTransport(new ConsoleTransport());
-    const logger = LogManager.createLogger('shell');
-
-    // 2. AdapterFactory + rootContainer
+    // 1. AdapterFactory + rootContainer
     const adapterFactory = new WebAdapterFactory();
     const rootContainer = document.getElementById(containerId);
     if (!rootContainer) {
@@ -120,6 +118,11 @@ export class WebBootstrap {
     }
     rootContainer.innerHTML = '';
     adapterFactory.setRootContainer(rootContainer);
+
+    // 2. 日志捕获系统
+    const logStorage = new LogStorage();
+    ConsoleCapture.init(logStorage);
+    WebDebugAdapter.setLogStorage(logStorage);
 
     // 3. NetworkManager + Providers
     const network = new NetworkManager({ defaultTimeout: 30000, retryCount: 2 });
@@ -164,6 +167,6 @@ export class WebBootstrap {
     // 8. 缓存存储工厂
     const createCacheStorage = () => new LocalStorageCacheAdapter('weiqi-session');
 
-    return { network, config, adapterFactory, logger, rootContainer, createCache, favoriteService, gameHistoryStorage, createCacheStorage };
+    return { network, config, adapterFactory, rootContainer, createCache, favoriteService, gameHistoryStorage, createCacheStorage };
   }
 }

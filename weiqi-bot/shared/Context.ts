@@ -1,7 +1,6 @@
 import type { IAdapterFactory } from '../../../core/interfaces';
 import type { IConfigProvider } from '../../../infrastructure/config/interfaces/IConfigProvider';
 import type { NetworkManager } from '../../../infrastructure/network/core/NetworkManager';
-import type { ILogger } from '../../../infrastructure/logger';
 import type { IDocumentStorage } from '../../../infrastructure/storage/interfaces/IDocumentStorage';
 import type { ICacheStorageAdapter } from '../../../infrastructure/storage/interfaces/ICacheStorage';
 import type { IFavoriteService } from '../../../services/favorite/IFavoriteService';
@@ -12,7 +11,6 @@ export interface WebShellContext {
   network: NetworkManager;
   config: IConfigProvider;
   adapterFactory: IAdapterFactory;
-  logger: ILogger;
   rootContainer: HTMLElement;
   /** 创建 IndexedDB 缓存存储 */
   createCache: <T extends { id: string }>(dbName: string, storeName: string) => Promise<IDocumentStorage<T>>;
