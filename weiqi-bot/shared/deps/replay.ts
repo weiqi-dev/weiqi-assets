@@ -32,7 +32,7 @@ export async function createReplayDeps(ctx: WebShellContext): Promise<ReplayDeps
   await cacheStorage.initialize();
   const sessionService = new SessionService(cacheStorage);
   
-  const replayApp = new ReplayApp(exportService, audioPlayer, ctx.logger, gameService, sessionService);
+  const replayApp = new ReplayApp(exportService, audioPlayer, gameService, sessionService);
   
   return { replayApp };
 }

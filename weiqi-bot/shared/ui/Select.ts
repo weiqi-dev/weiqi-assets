@@ -153,8 +153,37 @@ function createInstance(root: HTMLElement, init: SelectOptions): SelectInstance 
     trigger.setAttribute('aria-expanded', 'true');
     activeIndex = options.findIndex((o) => o.value === value);
     renderPanel();
+    
+    // 动态定位面板（使用 fixed 定位）
+    positionPanel();
+    
     document.addEventListener('mousedown', onDocDown, true);
     document.addEventListener('keydown', onKeyDown);
+    window.addEventListener('scroll', positionPanel, true);
+    window.addEventListener('resize', positionPanel);
+  }
+
+  function positionPanel() {
+    const triggerRect = trigger.getBoundingClientRect();
+    const panelHeight = panel.scrollHeight;
+    const viewportHeight = window.innerHeight;
+    
+    // 默认在按钮下方显示
+    let top = triggerRect.bottom + 4;
+    let left = triggerRect.left;
+    
+    // 如果下方空间不够，改为上方显示
+    if (top + panelHeight > viewportHeight - 20) {
+      top = triggerRect.top - panelHeight - 4;
+    }
+    
+    // 确保不超出屏幕左侧
+    if (left < 8) left = 8;
+    
+    // 设置面板宽度和位置
+    panel.style.width = `${Math.max(triggerRect.width, 100)}px`;
+    panel.style.left = `${left}px`;
+    panel.style.top = `${top}px`;
   }
 
   function close() {
@@ -164,6 +193,8 @@ function createInstance(root: HTMLElement, init: SelectOptions): SelectInstance 
     trigger.setAttribute('aria-expanded', 'false');
     document.removeEventListener('mousedown', onDocDown, true);
     document.removeEventListener('keydown', onKeyDown);
+    window.removeEventListener('scroll', positionPanel, true);
+    window.removeEventListener('resize', positionPanel);
   }
 
   function emitChange() {

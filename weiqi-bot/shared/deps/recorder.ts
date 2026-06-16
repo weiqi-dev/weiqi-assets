@@ -48,7 +48,6 @@ export async function createRecorderDeps(ctx: WebShellContext): Promise<Recorder
   const recorderApp = new RecorderApp(
     recorderService,
     exportService,
-    ctx.logger,
     historyManager,
     audioPlayer,
   );

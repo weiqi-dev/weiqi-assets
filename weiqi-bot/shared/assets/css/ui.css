@@ -171,10 +171,8 @@
 }
 
 .ui-select__panel {
-  position: absolute;
-  left: 0;
-  top: calc(100% + 4px);
-  min-width: 100%;
+  position: fixed;
+  min-width: 100px;
   max-width: 400px;
   background: #fff;
   border: 1px solid #e0e0e0;
