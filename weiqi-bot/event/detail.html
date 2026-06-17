@@ -68,8 +68,21 @@
 
     /* ===== 手机屏幕下优化 ===== */
     @media (max-width: 480px) {
+      .detail-header {
+        padding: 10px 8px;  /* 缩小左右 padding */
+      }
+      .detail-tabs {
+        gap: 3px;  /* 缩小间距 */
+      }
       .detail-tabs select {
-        max-width: 120px !important;
+        max-width: 85px !important;  /* 下拉框更短 */
+        font-size: 0.75em !important;  /* 下拉框字体也缩小 */
+      }
+      /* 小屏幕下按钮更紧凑 */
+      .detail-tab {
+        padding: 2px 5px;  /* 缩小 padding */
+        font-size: 0.7em;  /* 字体更小 */
+        margin-left: 0 !important;  /* 移除额外 margin */
       }
     }
 

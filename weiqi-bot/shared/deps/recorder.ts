@@ -40,7 +40,6 @@ export async function createRecorderDeps(ctx: WebShellContext): Promise<Recorder
   const historyManager = new RecorderHistoryManager(
     gameService,
     ctx.favoriteService,
-    ctx.logger,
   );
 
   // 创建记谱应用

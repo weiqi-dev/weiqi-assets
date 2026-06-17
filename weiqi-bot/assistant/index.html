@@ -380,7 +380,7 @@
             }
         }
     </style>
-  <script type="module" crossorigin src="../assets/assistant/index-Da1peE0u.js"></script>
+  <script type="module" crossorigin src="../assets/assistant/index-CdOW7wBf.js"></script>
   <link rel="modulepreload" crossorigin href="../assets/FavoriteService-D-_Lo8Jb.js">
   <link rel="modulepreload" crossorigin href="../assets/modulepreload-polyfill-BVSDYCMZ.js">
   <link rel="modulepreload" crossorigin href="../assets/SessionService-DRunhvDX.js">
@@ -395,7 +395,7 @@
     <div class="chat-container" id="chatContainer">
         <div class="status">
             <span>✅</span>
-            <span id="loadingText">AI助理准备就绪，试试快捷指令或输入你的需求！</span>
+            <span id="loadingText">AI助理已就绪</span>
         </div>
     </div>
     
@@ -403,7 +403,6 @@
     <div class="input-container">
         <textarea class="input-textarea" id="userInput" placeholder="输入您想做的事" disabled rows="1"></textarea>
         <input type="file" id="sgfUpload" accept=".sgf" style="display: none;">
-        <button class="toolbar-btn" id="sgfBtn" title="上传 SGF 文件" onclick="document.getElementById('sgfUpload').click()">📄</button>
         <button class="toolbar-btn send-btn" id="sendBtn" onclick="sendMessage()" disabled title="发送">➤</button>
         <button class="toolbar-btn" onclick="toggleCommandMenu()" title="更多">⋮</button>
     </div>
@@ -411,6 +410,10 @@
     <!-- Command Menu -->
     <div class="command-menu-overlay" id="commandMenuOverlay" onclick="toggleCommandMenu()"></div>
     <div class="command-menu" id="commandMenu">
+        <div class="command-item" onclick="document.getElementById('sgfUpload').click(); toggleCommandMenu();">
+            <div class="command-icon">📄</div>
+            <div class="command-title">导入 SGF 文件</div>
+        </div>
         <div class="command-item" onclick="clearAllHistory(); toggleCommandMenu();">
             <div class="command-icon">🗑️</div>
             <div class="command-title">清空历史</div>

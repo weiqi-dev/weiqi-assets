@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <title>人机对弈</title>
-  <script type="module" crossorigin src="../assets/play/hm-XiegbDdM.js"></script>
+  <script type="module" crossorigin src="../assets/play/hm-kW9Uz68y.js"></script>
   <link rel="modulepreload" crossorigin href="../assets/FavoriteService-D-_Lo8Jb.js">
   <link rel="modulepreload" crossorigin href="../assets/Bootstrap-5wsZ3f-G.js">
   <link rel="modulepreload" crossorigin href="../assets/ai-6BV8qQXQ.js">
@@ -28,8 +28,8 @@
   <link rel="modulepreload" crossorigin href="../assets/ActivityLogService-BB10hlkU.js">
   <link rel="modulepreload" crossorigin href="../assets/WebAudioPlayer-DCf_O51O.js">
   <link rel="modulepreload" crossorigin href="../assets/adapters-17GmAtKN.js">
-  <link rel="modulepreload" crossorigin href="../assets/InMemoryDocumentStorage-Da-FrGUH.js">
-  <link rel="stylesheet" crossorigin href="../assets/hm-D5QvDZbj.css">
+  <link rel="modulepreload" crossorigin href="../assets/InMemoryDocumentStorage-BuFiX-Cw.js">
+  <link rel="stylesheet" crossorigin href="../assets/hm-1CKtb-Ox.css">
   <link rel="stylesheet" crossorigin href="../assets/ui-mZp1P-7N.css">
 </head>
 <body>
@@ -48,6 +48,12 @@
         <div class="dropdown">
           <button class="menu-btn" id="menuBtn" title="菜单">⋮</button>
           <div class="dropdown-menu" id="dropdownMenu">
+            <!-- 后端信息（显示在菜单顶部）-->
+            <div class="backend-info-item" id="backendInfoItem" style="display:none;">
+              <span class="backend-label">引擎</span>
+              <span class="backend-status" id="backendStatus">-</span>
+            </div>
+            <div class="dropdown-divider" id="backendDivider" style="display:none;"></div>
             <button class="dropdown-item" id="menuUndoBtn" disabled>
               <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M9 14L4 9l5-5"/>

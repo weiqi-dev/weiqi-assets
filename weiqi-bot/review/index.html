@@ -339,16 +339,55 @@
     /* ========== 特殊模式功能按钮栏 ========== */
     .special-controls-bar {
       display: none;
+      flex-direction: column;
       align-items: center;
-      justify-content: center;
       padding: 8px 12px;
       background: #f0f4ff;
       border-bottom: 1px solid #e8e8e8;
-      gap: 12px;
+      gap: 8px;
     }
     
     .special-controls-bar.visible {
       display: flex;
+    }
+    
+    /* 功能按钮行 */
+    .special-controls-buttons {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+    }
+    
+    /* 探索深度指示器（底部，简洁） */
+    .depth-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      opacity: 0.6;
+    }
+    
+    .depth-cells {
+      display: flex;
+      gap: 2px;
+    }
+    
+    .depth-cell {
+      width: 8px;
+      height: 8px;
+      border-radius: 1px;
+      background: #e0e0e0;
+      transition: background 0.2s;
+    }
+    
+    .depth-cell.active {
+      background: #667eea;
+    }
+    
+    .depth-count {
+      font-size: 11px;
+      color: #666;
+      min-width: 16px;
     }
     
     /* ========== 胜率趋势图 ========== */
@@ -602,7 +641,7 @@
       }
     }
   </style>
-  <script type="module" crossorigin src="../assets/review/index-BxCnu3aB.js"></script>
+  <script type="module" crossorigin src="../assets/review/index-BPoxbSFF.js"></script>
   <link rel="modulepreload" crossorigin href="../assets/FavoriteService-D-_Lo8Jb.js">
   <link rel="modulepreload" crossorigin href="../assets/Bootstrap-5wsZ3f-G.js">
   <link rel="modulepreload" crossorigin href="../assets/ai-6BV8qQXQ.js">
@@ -685,13 +724,21 @@
     
     <!-- 特殊模式功能按钮栏（变化图/试下） -->
     <div class="special-controls-bar" id="specialControlsBar">
-      <button class="icon-btn" id="undoBtn" title="撤销">
-        <svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/></svg>
-      </button>
-      <button class="icon-btn" id="aiRecommendBtn" title="AI推荐" style="font-size: 12px; font-weight: 600;">AI</button>
-      <button class="icon-btn danger" id="exitBtn" title="退出">
-        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
+      <!-- 功能按钮行 -->
+      <div class="special-controls-buttons">
+        <button class="icon-btn" id="undoBtn" title="撤销">
+          <svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/></svg>
+        </button>
+        <button class="icon-btn" id="aiRecommendBtn" title="AI推荐" style="font-size: 12px; font-weight: 600;">AI</button>
+        <button class="icon-btn danger" id="exitBtn" title="退出">
+          <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <!-- 深度指示器（底部，简洁） -->
+      <div class="depth-indicator" id="depthIndicator">
+        <div class="depth-cells" id="depthCells"></div>
+        <div class="depth-count" id="depthCount">0</div>
+      </div>
     </div>
     
     <!-- 控制栏 -->

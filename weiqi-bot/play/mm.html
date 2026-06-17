@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>AI 自对弈</title>
-  <script type="module" crossorigin src="../assets/play/mm-CAzmF7Fv.js"></script>
+  <script type="module" crossorigin src="../assets/play/mm-m7IvE_ci.js"></script>
   <link rel="modulepreload" crossorigin href="../assets/FavoriteService-D-_Lo8Jb.js">
   <link rel="modulepreload" crossorigin href="../assets/Bootstrap-5wsZ3f-G.js">
   <link rel="modulepreload" crossorigin href="../assets/ai-6BV8qQXQ.js">
@@ -27,7 +27,7 @@
   <link rel="modulepreload" crossorigin href="../assets/ActivityLogService-BB10hlkU.js">
   <link rel="modulepreload" crossorigin href="../assets/WebAudioPlayer-DCf_O51O.js">
   <link rel="modulepreload" crossorigin href="../assets/adapters-17GmAtKN.js">
-  <link rel="modulepreload" crossorigin href="../assets/InMemoryDocumentStorage-Da-FrGUH.js">
+  <link rel="modulepreload" crossorigin href="../assets/InMemoryDocumentStorage-BuFiX-Cw.js">
   <link rel="stylesheet" crossorigin href="../assets/mm-DxgU6Voq.css">
   <link rel="stylesheet" crossorigin href="../assets/ui-mZp1P-7N.css">
 </head>
@@ -47,6 +47,12 @@
         <div class="dropdown">
           <button class="menu-btn" id="menuBtn" title="菜单">⋮</button>
           <div class="dropdown-menu" id="dropdownMenu">
+            <!-- 后端信息（显示在菜单顶部）-->
+            <div class="backend-info-item" id="backendInfoItem" style="display:none;">
+              <span class="backend-label">引擎</span>
+              <span class="backend-status" id="backendStatus">-</span>
+            </div>
+            <div class="dropdown-divider" id="backendDivider" style="display:none;"></div>
             <div class="dropdown-item" id="menuSituationBtn" style="display:none;">
               <svg viewBox="0 0 24 24" width="18" height="18">
                 <path d="M3 3v18h18" fill="none" stroke="currentColor" stroke-width="2"/>
@@ -59,11 +65,6 @@
                 <rect x="6" y="6" width="12" height="12" fill="currentColor"/>
               </svg>
               <span>结束对局</span>
-            </div>
-            <!-- 后端信息 -->
-            <div class="backend-info-item" id="backendInfoItem" style="display:none;">
-              <span class="backend-label">引擎</span>
-              <span class="backend-status" id="backendStatus">-</span>
             </div>
           </div>
         </div>
