@@ -29,7 +29,9 @@
             background: transparent;
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: space-between;
+            padding-left: 16px;
+            padding-right: 16px;
             position: fixed;
             top: 0;
             left: 0;
@@ -42,6 +44,19 @@
             font-weight: 600;
             color: white;
             text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        /* PC端标题栏宽度适配 */
+        @media (min-width: 600px) {
+            .wechat-header {
+                left: 50%;
+                right: auto;
+                transform: translateX(-50%);
+                width: 100%;
+                max-width: 520px;
+                border-left: 1px solid rgba(0,0,0,0.1);
+                border-right: 1px solid rgba(0,0,0,0.1);
+            }
         }
         
         /* 聊天区域 - 全屏 + 限制宽度 */
@@ -211,7 +226,7 @@
             justify-content: center;
             font-size: 18px;
             background: transparent;
-            color: #000;
+            color: #FFF;
             flex-shrink: 0;
             padding: 0;
         }
@@ -256,7 +271,7 @@
         
         .command-menu {
             position: fixed;
-            bottom: 60px;
+            top: 60px;
             right: 10px;
             width: 260px;
             background: #FFF;
@@ -268,10 +283,11 @@
             animation: slideUp 0.2s ease;
         }
         
-        /* PC端菜单位置调整，与输入框对齐 */
+        /* PC端菜单宽度适配 */
         @media (min-width: 600px) {
             .command-menu {
                 right: calc((100vw - 520px) / 2 + 10px);
+                max-width: 300px;
             }
         }
         
@@ -380,7 +396,7 @@
             }
         }
     </style>
-  <script type="module" crossorigin src="../assets/assistant/index-CdOW7wBf.js"></script>
+  <script type="module" crossorigin src="../assets/assistant/index-C5UWl7Gp.js"></script>
   <link rel="modulepreload" crossorigin href="../assets/FavoriteService-D-_Lo8Jb.js">
   <link rel="modulepreload" crossorigin href="../assets/modulepreload-polyfill-BVSDYCMZ.js">
   <link rel="modulepreload" crossorigin href="../assets/SessionService-DRunhvDX.js">
@@ -389,6 +405,7 @@
     <!-- 微信风格标题栏 -->
     <div class="wechat-header">
         <h1 class="wechat-title">围棋 AI 助理</h1>
+        <button class="toolbar-btn" onclick="toggleCommandMenu()" title="更多">⋮</button>
     </div>
     
     <!-- 聊天区域 - 全屏 -->
@@ -404,7 +421,6 @@
         <textarea class="input-textarea" id="userInput" placeholder="输入您想做的事" disabled rows="1"></textarea>
         <input type="file" id="sgfUpload" accept=".sgf" style="display: none;">
         <button class="toolbar-btn send-btn" id="sendBtn" onclick="sendMessage()" disabled title="发送">➤</button>
-        <button class="toolbar-btn" onclick="toggleCommandMenu()" title="更多">⋮</button>
     </div>
     
     <!-- Command Menu -->
