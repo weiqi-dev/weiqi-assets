@@ -62,34 +62,68 @@
       gap: 6px;
       flex-shrink: 0;
       flex-wrap: nowrap;
-      align-items: center;
+      align-items: flex-end;  /* 底部对齐 */
     }
     .detail-tabs::-webkit-scrollbar { display: none; }
+
+    /* 大屏幕下统一样式 */
+    .detail-tabs .ui-select__trigger {
+      box-sizing: border-box;
+      height: 32px;
+      min-height: 32px;
+      padding: 6px 30px 6px 10px;
+      font-size: 13px;
+    }
+    .detail-tabs .ui-select__option {
+      padding: 6px 10px;
+      font-size: 13px;
+    }
+    .detail-tab {
+      box-sizing: border-box;
+      height: 32px;
+      min-height: 32px;
+      padding: 6px 10px;
+      font-size: 13px;
+      line-height: 1.4;
+    }
 
     /* ===== 手机屏幕下优化 ===== */
     @media (max-width: 480px) {
       .detail-header {
-        padding: 10px 8px;  /* 缩小左右 padding */
+        padding: 8px 6px;  /* 缩小左右 padding */
       }
       .detail-tabs {
-        gap: 3px;  /* 缩小间距 */
+        gap: 1px;  /* 缩小间距 */
       }
-      .detail-tabs select {
-        max-width: 85px !important;  /* 下拉框更短 */
-        font-size: 0.75em !important;  /* 下拉框字体也缩小 */
+      /* 下拉框样式：字体和按钮一致 */
+      .detail-tabs .ui-select {
+        font-size: 12px;  /* 统一字体大小 */
       }
-      /* 小屏幕下按钮更紧凑 */
+      .detail-tabs .ui-select__trigger {
+        box-sizing: border-box;  /* 确保边框不影响高度 */
+        padding: 4px 24px 4px 8px;  /* 缩小 padding */
+        height: 28px;  /* 固定高度 */
+        min-height: 28px;  /* 缩小高度 */
+        font-size: 12px;  /* 统一字体大小 */
+      }
+      .detail-tabs .ui-select__option {
+        padding: 4px 8px;  /* 缩小 padding */
+        font-size: 12px;  /* 统一字体大小 */
+      }
+      /* 按钮样式：字体和下拉框一致 */
       .detail-tab {
-        padding: 2px 5px;  /* 缩小 padding */
-        font-size: 0.7em;  /* 字体更小 */
+        box-sizing: border-box;  /* 确保边框不影响高度 */
+        padding: 4px 8px;  /* 和下拉框 trigger 一致 */
+        height: 28px;  /* 固定高度，和下拉框一致 */
+        min-height: 28px;  /* 和下拉框一致 */
+        font-size: 12px;  /* 统一字体大小 */
+        line-height: 1.4;  /* 统一行高 */
         margin-left: 0 !important;  /* 移除额外 margin */
       }
     }
 
-    /* ===== 筛选按钮，完全照搬 events.html ===== */
+    /* ===== 筛选按钮样式 ===== */
     .detail-tab {
-      padding: 3px 8px;
-      font-size: 0.8em;
       border: none;
       border-radius: 4px;
       cursor: pointer;
@@ -132,7 +166,7 @@
       cursor: not-allowed;
     }
   </style>
-  <script type="module" crossorigin src="../assets/event/detail-CZkIs5Ae.js"></script>
+  <script type="module" crossorigin src="../assets/event/detail-kdNDrjJT.js"></script>
   <link rel="modulepreload" crossorigin href="../assets/FavoriteService-D-_Lo8Jb.js">
   <link rel="modulepreload" crossorigin href="../assets/modulepreload-polyfill-BVSDYCMZ.js">
   <link rel="modulepreload" crossorigin href="../assets/Bootstrap-CdD0-LeW.js">
@@ -141,7 +175,7 @@
   <link rel="modulepreload" crossorigin href="../assets/HtmlParser-DUOuxQaH.js">
   <link rel="modulepreload" crossorigin href="../assets/tokens-CPDFbbBV.js">
   <link rel="modulepreload" crossorigin href="../assets/ReadMarkService-CElEZswd.js">
-  <link rel="modulepreload" crossorigin href="../assets/event-Dcf-C3sd.js">
+  <link rel="modulepreload" crossorigin href="../assets/event-zmtUcZsZ.js">
   <link rel="modulepreload" crossorigin href="../assets/SessionPageCache-BlnVpBHS.js">
   <link rel="stylesheet" crossorigin href="../assets/shell-Be7DMAyz.css">
 </head>
