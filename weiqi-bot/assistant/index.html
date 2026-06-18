@@ -264,7 +264,7 @@
         
         .command-menu {
             position: absolute;
-            top: 50px;
+            top: calc(50px + env(safe-area-inset-top));
             right: 10px;
             width: 260px;
             background: #FFF;
@@ -418,15 +418,15 @@
             </div>
             <div class="command-item" onclick="clearAllHistory(); toggleCommandMenu();">
                 <div class="command-icon">🗑️</div>
-                <div class="command-title">清空历史</div>
+                <div class="command-title">清空聊天记录</div>
             </div>
             <div class="command-item" onclick="exportHistory(); toggleCommandMenu();">
                 <div class="command-icon">📤</div>
-                <div class="command-title">导出历史</div>
+                <div class="command-title">导出聊天记录</div>
             </div>
             <div class="command-item" onclick="window.location.href='../home/index.html'">
-                <div class="command-icon">⊞</div>
-                <div class="command-title">切换到传统模式</div>
+                <div class="command-icon">🖥️</div>
+                <div class="command-title">切换到应用模式</div>
             </div>
         </div>
     </div>
