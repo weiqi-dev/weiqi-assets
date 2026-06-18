@@ -437,5 +437,32 @@
     <script src="../shared/error-catch.js"></script>
 
     <script src="../shared/status-bar.js"></script>
+    
+    <!-- 移动端键盘适配 -->
+    <script>
+    // 处理虚拟键盘遮挡输入框问题
+    if (window.visualViewport) {
+        const pageContainer = document.querySelector('.page-container');
+        const inputContainer = document.querySelector('.input-container');
+        
+        function handleViewportChange() {
+            // 计算键盘高度 = 视口高度 - 可视视口高度
+            const keyboardHeight = window.innerHeight - visualViewport.height;
+            
+            if (keyboardHeight > 0) {
+                // 键盘弹起：缩小页面容器，让输入框上移
+                pageContainer.style.height = `calc(100dvh - ${keyboardHeight}px)`;
+                // 或者使用 padding-bottom
+                // inputContainer.style.marginBottom = `${keyboardHeight}px`;
+            } else {
+                // 键盘收起：恢复原始高度
+                pageContainer.style.height = '';
+            }
+        }
+        
+        visualViewport.addEventListener('resize', handleViewportChange);
+        visualViewport.addEventListener('scroll', handleViewportChange);
+    }
+    </script>
 </body>
 </html>
