@@ -1,0 +1,1 @@
+import{i as e}from"./FavoriteService-D-_Lo8Jb.js";export{e as IndexedDBAdapter};

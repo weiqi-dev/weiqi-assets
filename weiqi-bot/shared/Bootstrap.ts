@@ -99,29 +99,34 @@ class DefaultConfigProvider implements IConfigProvider {
  */
 export class WebBootstrap {
   /**
-   * 初始化基础设施（不依赖页面容器）
-   * @description 用于后台任务或其他不需要页面容器的场景
-   * @param options - 基础设施选项
-   * @returns Shell 上下文（不包含 adapterFactory 和 rootContainer）
+   * 初始化 Web Shell
+   * @param options - Bootstrap 选项
+   * @returns Shell 上下文
    */
-  static async initInfrastructure(options?: {
-    proxyUrl?: string;
-    moduleConfigs?: Record<string, Record<string, unknown>>;
-    userContext?: WebBootstrapOptions['userContext'];
-  }): Promise<WebShellContext> {
-    const proxyUrl = options?.proxyUrl ??
+  static async init(options: WebBootstrapOptions): Promise<WebShellContext> {
+    const containerId = options.containerId;
+    const proxyUrl = options.proxyUrl ??
       (typeof navigator !== 'undefined' && navigator.userAgent.includes('WeiqiApp')
         ? 'http://localhost:8088/proxy'
         : 'https://api.weiqi.lol');
 
-    // 1. 日志捕获系统
+    // 1. AdapterFactory + rootContainer
+    const adapterFactory = new WebAdapterFactory();
+    const rootContainer = document.getElementById(containerId);
+    if (!rootContainer) {
+      throw new Error(`Container #${containerId} not found`);
+    }
+    rootContainer.innerHTML = '';
+    adapterFactory.setRootContainer(rootContainer);
+
+    // 2. 日志捕获系统
     const logStorage = new LogStorage();
     ConsoleCapture.init(logStorage);
     WebDebugAdapter.setLogStorage(logStorage);
 
-    // 2. NetworkManager + Providers
+    // 3. NetworkManager + Providers
     const network = new NetworkManager({ defaultTimeout: 30000, retryCount: 2 });
-    network.setUserContext(options?.userContext ?? {
+    network.setUserContext(options.userContext ?? {
       getUserType: async () => UserType.GUEST,
       hasPaidToken: async () => false,
       getAuthToken: async () => null,
@@ -131,74 +136,37 @@ export class WebBootstrap {
     network.registerProvider(new ProxyProvider({ proxyUrl }));
     await network.initialize();
 
-    // 3. ConfigProvider - 合并 proxyUrl 到模块配置
+    // 4. ConfigProvider - 合并 proxyUrl 到模块配置
     const mergedModuleConfigs = {
       player: { ...DEFAULT_PLAYER_CONFIG, proxyUrl },
       game: { ...DEFAULT_GAME_CONFIG, proxyUrl },
       event: { ...DEFAULT_EVENT_CONFIG, proxyUrl },
-      ...options?.moduleConfigs,  // 允许外部覆盖
+      ...options.moduleConfigs,  // 允许外部覆盖
     };
     const config = new DefaultConfigProvider(mergedModuleConfigs);
 
-    // 4. 缓存工厂
+    // 5. 缓存工厂
     const createCache = async <T extends { id: string }>(dbName: string, storeName: string): Promise<IDocumentStorage<T>> => {
       const adapter = new IndexedDBAdapter<T>(dbName, storeName);
       await adapter.initialize();
       return adapter;
     };
 
-    // 5. 收藏服务（单例）
+    // 6. 收藏服务（单例）
     const favoriteStorage = new IndexedDBAdapter<IFavoriteItem>('weiqi-bot-favorite', 'items');
     await favoriteStorage.initialize();
     const favoriteService = new FavoriteService(favoriteStorage);
 
-    // 6. 棋谱历史归档服务（单例）
+    // 7. 棋谱历史归档服务（单例）
     const gameIndexStorage = new IndexedDBAdapter<GameHistoryIndex>('weiqi-bot-game-history', 'index');
     await gameIndexStorage.initialize();
     const gameFileStorage = new IndexedDBFileAdapter('weiqi-bot-game-files');
     await gameFileStorage.initialize();
     const gameHistoryStorage = new GameHistoryStorage(gameIndexStorage, gameFileStorage);
 
-    // 7. 缓存存储工厂
+    // 8. 缓存存储工厂
     const createCacheStorage = () => new LocalStorageCacheAdapter('weiqi-session');
 
-    return {
-      network,
-      config,
-      createCache,
-      favoriteService,
-      gameHistoryStorage,
-      createCacheStorage,
-      // adapterFactory 和 rootContainer 在 initInfrastructure 中不可用
-      adapterFactory: null as any,
-      rootContainer: null as any,
-    };
-  }
-
-  /**
-   * 初始化 Web Shell
-   * @param options - Bootstrap 选项
-   * @returns Shell 上下文
-   */
-  static async init(options: WebBootstrapOptions): Promise<WebShellContext> {
-    const containerId = options.containerId;
-
-    // 1. 初始化基础设施
-    const ctx = await this.initInfrastructure(options);
-
-    // 2. AdapterFactory + rootContainer
-    const adapterFactory = new WebAdapterFactory();
-    const rootContainer = document.getElementById(containerId);
-    if (!rootContainer) {
-      throw new Error(`Container #${containerId} not found`);
-    }
-    rootContainer.innerHTML = '';
-    adapterFactory.setRootContainer(rootContainer);
-
-    // 3. 添加页面相关属性
-    ctx.adapterFactory = adapterFactory;
-    ctx.rootContainer = rootContainer;
-
-    return ctx;
+    return { network, config, adapterFactory, rootContainer, createCache, favoriteService, gameHistoryStorage, createCacheStorage };
   }
 }
