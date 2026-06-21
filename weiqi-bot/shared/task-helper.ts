@@ -89,10 +89,25 @@ export class TaskHelper {
   ): Promise<void> {
     console.log('[TaskHelper] Handling schedule:', scheduleId);
     
-    // 如果 TaskBridge 不存在，直接执行（无环境依赖）
+    // 如果 TaskBridge 不存在，从 URL 参数中提取 params
     if (!window.TaskBridge) {
-      console.log('[TaskHelper] TaskBridge not available, executing directly');
-      await handlers.onExecuteSchedule?.({}, scheduleId);
+      console.log('[TaskHelper] TaskBridge not available, extracting params from URL');
+      
+      // 从 URL 参数中提取业务参数
+      const urlParams = new URLSearchParams(window.location.search);
+      const params: Record<string, any> = {};
+      
+      // 提取常见参数
+      const paramKeys = ['player', 'limit', 'dateOffset', 'name'];
+      for (const key of paramKeys) {
+        const value = urlParams.get(key);
+        if (value) {
+          params[key] = key === 'limit' || key === 'dateOffset' ? parseInt(value, 10) : value;
+        }
+      }
+      
+      console.log('[TaskHelper] Extracted params from URL:', params);
+      await handlers.onExecuteSchedule?.(params, scheduleId);
       return;
     }
     
