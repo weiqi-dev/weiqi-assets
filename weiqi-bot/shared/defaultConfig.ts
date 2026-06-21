@@ -28,3 +28,12 @@ export const DEFAULT_EVENT_CONFIG = {
   eventCacheTTL: 1800000,
   enableEventCache: true,
 };
+
+export const DEFAULT_MANAGEMENT_CONFIG = {
+  proxyUrl: 'https://api.weiqi.lol',
+  // versionUrl 由 ManagementService 根据环境自动判断：
+  // - Web 环境使用相对路径（支持子目录部署）
+  // - App 环境使用本地路径
+  versionUrl: '',
+  timeout: 30000,
+};
