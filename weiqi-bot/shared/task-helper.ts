@@ -59,21 +59,21 @@ export class TaskHelper {
     params: TaskParams,
     handlers: TaskHandlers
   ): Promise<boolean> {
-    // 1. 处理周期性任务
+    // 1. 先处理返回参数（优先级最高）
+    if (params.returnTo === 'home') {
+      this.setupReturnHandler();
+    }
+    
+    // 2. 处理周期性任务
     if (params.scheduleId) {
       await this.handleSchedule(params.scheduleId, handlers);
       return true;
     }
     
-    // 2. 处理查看收藏
+    // 3. 处理查看收藏
     if (params.view === 'favorite' && params.favoriteKey) {
       await handlers.onViewFavorite?.(params.favoriteKey);
       return true;
-    }
-    
-    // 3. 处理返回参数
-    if (params.returnTo === 'home') {
-      this.setupReturnHandler();
     }
     
     // 4. 返回 false 表示未完全处理，页面应继续执行
