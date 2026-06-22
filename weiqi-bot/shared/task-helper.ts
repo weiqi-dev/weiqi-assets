@@ -191,25 +191,20 @@ export class TaskHelper {
   ): Promise<void> {
     if (!taskId) return;
     
-    console.log(`[TaskHelper] Sending complete: taskId=${taskId}, title=${title}, message=${message}`);
+    console.log(`[TaskHelper] Sending complete: taskId=${taskId}, title=${title}`);
     
     // 检查是否是周期性任务（通过检查 URL 参数中的 scheduleId）
     const urlParams = new URLSearchParams(window.location.search);
     const scheduleId = urlParams.get('scheduleId');
     
-    console.log(`[TaskHelper] URL scheduleId=${scheduleId}, taskId=${taskId}, match=${scheduleId === taskId}`);
-    
     let finalDetailUrl = detailUrl;
     
     if (scheduleId && scheduleId === taskId) {
-      console.log(`[TaskHelper] Detected schedule task, updating scheduleStore...`);
-      
       // 周期性任务：更新 scheduleStore 的 lastResult，并修改 detailUrl
       try {
         // 检查 TaskBridge 是否可用
         if (window.TaskBridge) {
           const config = await window.TaskBridge.getSchedule(scheduleId);
-          console.log(`[TaskHelper] Got schedule config:`, config);
           
           if (config) {
             const updatedConfig = ScheduleManager.markAsExecuted(config, {
@@ -217,17 +212,13 @@ export class TaskHelper {
               title,
               message,
             });
-            console.log(`[TaskHelper] Updated config:`, updatedConfig);
             
             await window.TaskBridge.updateSchedule(scheduleId, updatedConfig);
-            console.log(`[TaskHelper] Updated schedule lastResult: ${scheduleId}`);
           } else {
             console.error(`[TaskHelper] Schedule not found: ${scheduleId}`);
           }
         } else {
           // TaskBridge 不可用（隐藏的 GeckoSession），通过 prompt 直接调用
-          console.log(`[TaskHelper] TaskBridge not available, using prompt to update schedule`);
-          
           const configStr = prompt(`task:schedule:get:${scheduleId}`);
           if (configStr) {
             try {
@@ -240,11 +231,10 @@ export class TaskHelper {
                 });
                 
                 // 通过 prompt 调用 schedule:update
-                const updateResult = prompt(`task:schedule:update:${JSON.stringify({
+                prompt(`task:schedule:update:${JSON.stringify({
                   id: scheduleId,
                   config: updatedConfig,
                 })}`);
-                console.log(`[TaskHelper] Updated schedule via prompt: ${updateResult}`);
               } else {
                 console.error(`[TaskHelper] Schedule not found via prompt: ${scheduleId}`);
               }
@@ -259,8 +249,6 @@ export class TaskHelper {
       
       // 修改 detailUrl 为周期性任务的格式
       finalDetailUrl = `/assistant?scheduleId=${scheduleId}`;
-    } else {
-      console.log(`[TaskHelper] Not a schedule task or scheduleId mismatch`);
     }
     
     prompt('task:complete:' + JSON.stringify({
