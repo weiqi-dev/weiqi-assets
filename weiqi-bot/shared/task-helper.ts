@@ -197,20 +197,30 @@ export class TaskHelper {
     const urlParams = new URLSearchParams(window.location.search);
     const scheduleId = urlParams.get('scheduleId');
     
+    console.log(`[TaskHelper] URL scheduleId=${scheduleId}, taskId=${taskId}, match=${scheduleId === taskId}`);
+    
     let finalDetailUrl = detailUrl;
     
     if (scheduleId && scheduleId === taskId) {
+      console.log(`[TaskHelper] Detected schedule task, updating scheduleStore...`);
+      
       // 周期性任务：更新 scheduleStore 的 lastResult，并修改 detailUrl
       try {
         const config = await window.TaskBridge?.getSchedule(scheduleId);
+        console.log(`[TaskHelper] Got schedule config:`, config);
+        
         if (config) {
           const updatedConfig = ScheduleManager.markAsExecuted(config, {
             status: 'completed',
             title,
             message,
           });
+          console.log(`[TaskHelper] Updated config:`, updatedConfig);
+          
           await window.TaskBridge?.updateSchedule(scheduleId, updatedConfig);
           console.log(`[TaskHelper] Updated schedule lastResult: ${scheduleId}`);
+        } else {
+          console.error(`[TaskHelper] Schedule not found: ${scheduleId}`);
         }
       } catch (error) {
         console.error('[TaskHelper] Failed to update schedule lastResult:', error);
@@ -218,6 +228,8 @@ export class TaskHelper {
       
       // 修改 detailUrl 为周期性任务的格式
       finalDetailUrl = `/assistant?scheduleId=${scheduleId}`;
+    } else {
+      console.log(`[TaskHelper] Not a schedule task or scheduleId mismatch`);
     }
     
     prompt('task:complete:' + JSON.stringify({
