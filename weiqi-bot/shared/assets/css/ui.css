@@ -226,3 +226,22 @@
 .page-header {
   padding-top: calc(12px + env(safe-area-inset-top));
 }
+
+/* ===== 识别参数样式 ===== */
+.entity-list {
+  margin-top: 8px;
+  padding: 8px;
+  background: #f9f9f9;
+  border-radius: 4px;
+}
+
+.entity-item {
+  margin: 4px 0;
+  padding-left: 12px;
+  font-size: 14px;
+  color: #555;
+  /* 防止长参数值越过消息块边界 */
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-all;
+}
