@@ -183,21 +183,48 @@ export class TaskHelper {
   /**
    * 发送任务完成通知
    */
-  static notifyComplete(
+  static async notifyComplete(
     taskId: string | undefined,
     title: string,
     message: string,
     detailUrl: string
-  ): void {
+  ): Promise<void> {
     if (!taskId) return;
     
     console.log(`[TaskHelper] Sending complete: taskId=${taskId}, title=${title}, message=${message}`);
+    
+    // 检查是否是周期性任务（通过检查 URL 参数中的 scheduleId）
+    const urlParams = new URLSearchParams(window.location.search);
+    const scheduleId = urlParams.get('scheduleId');
+    
+    let finalDetailUrl = detailUrl;
+    
+    if (scheduleId && scheduleId === taskId) {
+      // 周期性任务：更新 scheduleStore 的 lastResult，并修改 detailUrl
+      try {
+        const config = await window.TaskBridge?.getSchedule(scheduleId);
+        if (config) {
+          const updatedConfig = ScheduleManager.markAsExecuted(config, {
+            status: 'completed',
+            title,
+            message,
+          });
+          await window.TaskBridge?.updateSchedule(scheduleId, updatedConfig);
+          console.log(`[TaskHelper] Updated schedule lastResult: ${scheduleId}`);
+        }
+      } catch (error) {
+        console.error('[TaskHelper] Failed to update schedule lastResult:', error);
+      }
+      
+      // 修改 detailUrl 为周期性任务的格式
+      finalDetailUrl = `/assistant?scheduleId=${scheduleId}`;
+    }
     
     prompt('task:complete:' + JSON.stringify({
       taskId,
       title,
       message,
-      detailUrl,
+      detailUrl: finalDetailUrl,
     }));
   }
   
