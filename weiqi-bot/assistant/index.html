@@ -120,6 +120,8 @@
             padding: 10px 12px;
             border-radius: 4px;
             word-wrap: break-word;
+            overflow-wrap: break-word;
+            word-break: break-word;
             line-height: 1.4;
             font-size: 16px;
             position: relative;
@@ -137,6 +139,11 @@
             background: #f5f5f5;
             color: #333;
             border: 1px solid #e0e0e0;
+        }
+        
+        /* 最后一个消息块 - 预留输入框高度 */
+        .message:last-child {
+            scroll-margin-bottom: 80px;
         }
         
         /* 意图标签 - 紫色风格 */
@@ -319,6 +326,9 @@
         /* Markdown 内容样式 - 紫色链接 */
         .markdown-content {
             line-height: 1.4;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            word-break: break-word;
         }
         
         .markdown-content h1,
@@ -449,7 +459,7 @@
             margin-top: 2px;
         }
     </style>
-  <script type="module" crossorigin src="../assets/assistant/index-DgITySwj.js"></script>
+  <script type="module" crossorigin src="../assets/assistant/index-KSgX3KYf.js"></script>
   <link rel="modulepreload" crossorigin href="../assets/FavoriteService-D-_Lo8Jb.js">
   <link rel="modulepreload" crossorigin href="../assets/modulepreload-polyfill-BVSDYCMZ.js">
   <link rel="modulepreload" crossorigin href="../assets/ScheduleManager-DNSULGOT.js">
