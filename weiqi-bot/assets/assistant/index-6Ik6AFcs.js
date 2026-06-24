@@ -23,11 +23,11 @@ import"../modulepreload-polyfill-BVSDYCMZ.js";import{a as e,i as t,n,o as r,t as
 
 已清理缓存数据
 
-页面即将刷新...`),setTimeout(()=>{if(typeof navigator<`u`&&navigator.userAgent.includes(`WeiqiApp`)){let e=prompt(`debug:refresh`);console.log(`[CommandHandler] refresh result:`,e)}else window.location.reload()},500)}catch(e){let n=e instanceof Error?e.message:String(e);if(n.includes(`closed database`)||n.includes(`InvalidStateError`)){if(console.log(`[CommandHandler] Cache cleared (with IndexedDB closed warning), calling refresh...`),await t.renderMessage(`✅ 缓存已清空
+页面即将刷新...`),setTimeout(()=>{if(typeof navigator<`u`&&navigator.userAgent.includes(`WeiqiApp`)){let e=prompt(`debug:refresh`);console.log(`[CommandHandler] refresh result:`,e)}else window.location.reload()},500)}catch(e){let n=e instanceof Error?e.message:String(e);if(n.includes(`closed database`)||n.includes(`InvalidStateError`)){if(console.log(`[CommandHandler] Cache cleared (with IndexedDB closed warning), calling refresh...`),console.log(`[CommandHandler] userAgent:`,navigator.userAgent),console.log(`[CommandHandler] isApp:`,navigator.userAgent.includes(`WeiqiApp`)),typeof navigator<`u`&&navigator.userAgent.includes(`WeiqiApp`)){console.log(`[CommandHandler] Calling prompt debug:refresh...`);try{let e=prompt(`debug:refresh`);console.log(`[CommandHandler] refresh result:`,e)}catch(e){console.error(`[CommandHandler] refresh prompt failed:`,e)}}else console.log(`[CommandHandler] Not App environment, using reload()`),setTimeout(()=>window.location.reload(),500);try{await t.renderMessage(`✅ 缓存已清空
 
 已清理缓存数据
 
-页面即将刷新...`),console.log(`[CommandHandler] userAgent:`,navigator.userAgent),console.log(`[CommandHandler] isApp:`,navigator.userAgent.includes(`WeiqiApp`)),typeof navigator<`u`&&navigator.userAgent.includes(`WeiqiApp`)){console.log(`[CommandHandler] Calling prompt debug:refresh...`);try{let e=prompt(`debug:refresh`);console.log(`[CommandHandler] refresh result:`,e)}catch(e){console.error(`[CommandHandler] refresh prompt failed:`,e)}}else console.log(`[CommandHandler] Not App environment, using reload()`),setTimeout(()=>window.location.reload(),500);return}console.error(`[CommandHandler] Failed to clear cache:`,e),await t.renderMessage(`❌ 清空缓存失败: ${n}`)}return}try{let e=await t.storageService.getStorageInfo(),n=typeof navigator<`u`&&navigator.userAgent.includes(`WeiqiApp`),r=`## 💾 存储概览
+页面即将刷新...`)}catch(e){console.log(`[CommandHandler] renderMessage failed (expected):`,e)}return}console.error(`[CommandHandler] Failed to clear cache:`,e),await t.renderMessage(`❌ 清空缓存失败: ${n}`)}return}try{let e=await t.storageService.getStorageInfo(),n=typeof navigator<`u`&&navigator.userAgent.includes(`WeiqiApp`),r=`## 💾 存储概览
 
 `;if(r+=`| 存储类型 | 大小 |
 `,r+=`|---------|------|
