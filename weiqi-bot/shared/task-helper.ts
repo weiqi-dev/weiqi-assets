@@ -248,7 +248,7 @@ export class TaskHelper {
       }
       
       // 修改 detailUrl 为周期性任务的格式
-      finalDetailUrl = `/assistant/index.html?scheduleId=${scheduleId}`;
+      finalDetailUrl = `/assistant?scheduleId=${scheduleId}`;
     }
     
     prompt('task:complete:' + JSON.stringify({
