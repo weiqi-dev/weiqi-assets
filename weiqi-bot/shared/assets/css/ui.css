@@ -23,7 +23,7 @@
   background: #fff;
   border-radius: 16px;
   padding: 24px;
-  max-width: 340px;
+  max-width: 320px;
   width: 90%;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   animation: dialog-zoom-in 0.18s ease-out;
@@ -244,51 +244,4 @@
   word-wrap: break-word;
   overflow-wrap: break-word;
   word-break: break-all;
-}
-
-
-/* ===== Slider 滑条控件 ===== */
-.slider-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 4px 0;
-}
-
-.slider-row input[type="range"] {
-  flex: 1;
-  height: 2px;
-  -webkit-appearance: none;
-  appearance: none;
-  background: #e0e0e0;
-  border-radius: 1px;
-  outline: none;
-  cursor: pointer;
-}
-
-.slider-row input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: #667eea;
-  cursor: pointer;
-  box-shadow: 0 1px 4px rgba(102,126,234,0.3);
-}
-
-.slider-row input[type="range"]::-moz-range-thumb {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: #667eea;
-  cursor: pointer;
-  border: none;
-  box-shadow: 0 1px 4px rgba(102,126,234,0.3);
-}
-
-.slider-num {
-  font-size: 14px;
-  font-weight: 600;
-  color: #667eea;
-  min-width: 45px;
 }
