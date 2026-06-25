@@ -384,19 +384,29 @@
         }
         
         .markdown-content code {
-            background: #f5f5f5;
+            background: #e8e8e8;
             padding: 2px 4px;
             border-radius: 4px;
             font-family: monospace;
             font-size: 0.9em;
+            border: 1px solid #d0d0d0;
+        }
+        
+        /* 多行代码块中的代码不需要边框和padding */
+        .markdown-content pre code {
+            background: transparent;
+            padding: 0;
+            border: none;
+            font-size: 0.85em;
         }
         
         .markdown-content pre {
-            background: #f5f5f5;
+            background: #e8e8e8;
             padding: 8px;
             border-radius: 8px;
             overflow-x: auto;
             margin: 8px 0;
+            border: 1px solid #d0d0d0;
         }
         
         .markdown-content blockquote {
@@ -508,7 +518,7 @@
             margin-top: 2px;
         }
     </style>
-  <script type="module" crossorigin src="../assets/assistant/index-CezokVpl.js"></script>
+  <script type="module" crossorigin src="../assets/assistant/index-CCh5n-42.js"></script>
   <link rel="modulepreload" crossorigin href="../assets/FavoriteService-D-_Lo8Jb.js">
   <link rel="modulepreload" crossorigin href="../assets/modulepreload-polyfill-BVSDYCMZ.js">
   <link rel="modulepreload" crossorigin href="../assets/ScheduleManager-DNSULGOT.js">
