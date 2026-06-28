@@ -75,6 +75,7 @@
       box-shadow: 0 1px 3px rgba(0,0,0,0.04);
       user-select: none;
       -webkit-user-select: none;
+      position: relative; /* 为圆点定位 */
     }
     .quiz-card-wrapper:hover .quiz-card {
       background: #fafafa;
@@ -82,7 +83,23 @@
       transform: translateY(-1px);
       box-shadow: 0 3px 8px rgba(0,0,0,0.08);
     }
-    .quiz-card.visited { opacity: 0.6; }
+    /* 已读标记：左上角小勾号 */
+    .quiz-card.visited::before {
+      content: '✓';
+      position: absolute;
+      left: 4px;
+      top: 4px;
+      font-size: 8px;
+      color: #999;
+      background: #f0f0f0;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
     .quiz-header {
       display: flex;
       align-items: center;
@@ -182,10 +199,10 @@
       opacity: 0.5;
     }
   </style>
-  <script type="module" crossorigin src="../assets/decision/list-B1aBtcXC.js"></script>
+  <script type="module" crossorigin src="../assets/decision/list-C8H1Wx0U.js"></script>
   <link rel="modulepreload" crossorigin href="../assets/modulepreload-polyfill-eJgYjmQ8.js">
   <link rel="modulepreload" crossorigin href="../assets/FavoriteService-Eyx8DXNW.js">
-  <link rel="modulepreload" crossorigin href="../assets/Bootstrap-YGDmahXK.js">
+  <link rel="modulepreload" crossorigin href="../assets/Bootstrap-BYik4_Tu.js">
   <link rel="stylesheet" crossorigin href="../assets/shell-CLFvgmZB.css">
 </head>
 <body>
