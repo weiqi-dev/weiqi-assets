@@ -476,7 +476,7 @@
       .container { max-width: 500px; padding: 20px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
     }
   </style>
-  <script type="module" crossorigin src="../assets/decision/quiz-D75mHB8G.js"></script>
+  <script type="module" crossorigin src="../assets/decision/quiz-XXXHZ3Tj.js"></script>
   <link rel="modulepreload" crossorigin href="../assets/modulepreload-polyfill-eJgYjmQ8.js">
   <link rel="modulepreload" crossorigin href="../assets/FavoriteService-Eyx8DXNW.js">
   <link rel="modulepreload" crossorigin href="../assets/Bootstrap-YGDmahXK.js">
@@ -506,7 +506,7 @@
         <div class="dropdown">
           <button class="menu-btn" id="menuBtn" title="菜单">⋮</button>
           <div class="dropdown-menu" id="dropdownMenu">
-            <button class="dropdown-item" id="soundMenuItem">🔊 音效开关</button>
+            <button class="dropdown-item" id="soundMenuItem">✓ 音效</button>
             <button class="dropdown-item" id="downloadMenuItem">📥 下载SGF</button>
           </div>
         </div>
@@ -607,7 +607,7 @@
     soundMenuItem?.addEventListener('click', (e) => {
       e.stopPropagation();
       soundEnabled = !soundEnabled;
-      soundMenuItem.textContent = soundEnabled ? '🔊 音效开关' : '🔇 音效开关';
+      soundMenuItem.textContent = soundEnabled ? '✓ 音效' : '✗ 音效';
       dropdownMenu?.classList.remove('visible');
       // 通知 TypeScript 代码
       window.dispatchEvent(new CustomEvent('toggleSound', { detail: soundEnabled }));
