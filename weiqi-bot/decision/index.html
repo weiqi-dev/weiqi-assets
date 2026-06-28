@@ -210,7 +210,7 @@
     .empty-state { text-align: center; padding: 40px 20px; color: #888; }
     .empty-state-icon { font-size: 3em; margin-bottom: 12px; opacity: 0.5; }
   </style>
-  <script type="module" crossorigin src="../assets/decision/index-ZNkKPhKW.js"></script>
+  <script type="module" crossorigin src="../assets/decision/index-BwRSGvxw.js"></script>
   <link rel="modulepreload" crossorigin href="../assets/chunk-ZpsBkP5K.js">
   <link rel="modulepreload" crossorigin href="../assets/WebDebugAdapter-D6kSONJn.js">
   <link rel="modulepreload" crossorigin href="../assets/modulepreload-polyfill-eJgYjmQ8.js">
@@ -272,7 +272,7 @@
     <!-- 历史记录 -->
     <div id="history-tab" class="tab-content">
       <div class="card">
-        <h2>📋 历史记录 <button class="icon-btn" id="clear-btn" onclick="this.textContent='✓已点击';this.style.background='#4CAF50';this.style.color='white'" style="width:auto;margin-left:auto;">🗑️ 清空</button></h2>
+        <h2>📋 历史记录 <button class="icon-btn" id="clear-btn" onclick="window._decisionClear && window._decisionClear()" style="width:auto;margin-left:auto;">🗑️ 清空</button></h2>
         <div id="history-list" class="history-list">
           <div class="empty-state">
             <div class="empty-state-icon">📋</div>
