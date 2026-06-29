@@ -16,6 +16,11 @@
       "features": {
         "fastInference": true,
         "lowMemory": true
+      },
+      "nativeModel": {
+        "url": "models/katago-small.bin.gz",
+        "filename": "katago-small.bin.gz",
+        "sizeBytes": 3879731
       }
     },
     {
@@ -34,12 +39,17 @@
       "features": {
         "fastInference": false,
         "lowMemory": false
+      },
+      "nativeModel": {
+        "url": "models/g170-b10c128.bin.gz",
+        "filename": "g170-b10c128.bin.gz",
+        "sizeBytes": 11138987
       }
     }
   ],
   "metadata": {
     "version": "1.5.0",
-    "lastUpdated": "2026-06-04",
+    "lastUpdated": "2026-06-29",
     "source": "https://katagotraining.org/",
     "note": "所有模型已内置，无需外部下载"
   }
