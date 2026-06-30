@@ -3,8 +3,6 @@
  * @module clients/web/shared/task-helper
  */
 
-import { ScheduleManager } from '../../../domain/schedule';
-
 /**
  * 任务参数
  */
@@ -122,31 +120,12 @@ export class TaskHelper {
       
       console.log('[TaskHelper] Schedule config:', config);
       
-      // 判断是否需要执行
-      const shouldExecute = ScheduleManager.shouldExecute(config);
+      // 直接执行任务（判断逻辑已移到底层 TaskWorker）
+      console.log('[TaskHelper] Executing schedule...');
       
-      if (shouldExecute) {
-        console.log('[TaskHelper] Executing schedule...');
-        
-        // 执行任务
-        await handlers.onExecuteSchedule?.(config.params, scheduleId);
-        
-        // 更新计划配置，标记为已执行
-        const updatedConfig = ScheduleManager.markAsExecuted(config);
-        await window.TaskBridge.updateSchedule(scheduleId, updatedConfig);
-        
-        console.log('[TaskHelper] Schedule executed and updated');
-      } else {
-        console.log('[TaskHelper] Schedule not ready to execute');
-        console.log('  Current time:', new Date().toISOString());
-        console.log('  Config:', {
-          frequency: config.frequency,
-          hour: config.hour,
-          dayOfWeek: config.dayOfWeek,
-          dayOfMonth: config.dayOfMonth,
-          lastRunDate: config.lastRunDate,
-        });
-      }
+      await handlers.onExecuteSchedule?.(config.params, scheduleId);
+      
+      console.log('[TaskHelper] Schedule executed');
     } catch (error) {
       console.error('[TaskHelper] Failed to handle schedule execution:', error);
     }
