@@ -3,6 +3,8 @@
  * @module clients/web/shared/task-helper
  */
 
+import { ScheduleManager } from '../../../domain/schedule';
+
 /**
  * 任务参数
  */
@@ -125,7 +127,11 @@ export class TaskHelper {
       
       await handlers.onExecuteSchedule?.(config.params, scheduleId);
       
-      console.log('[TaskHelper] Schedule executed');
+      // 更新计划配置，标记为已执行
+      const updatedConfig = ScheduleManager.markAsExecuted(config);
+      await window.TaskBridge.updateSchedule(scheduleId, updatedConfig);
+      
+      console.log('[TaskHelper] Schedule executed and updated');
     } catch (error) {
       console.error('[TaskHelper] Failed to handle schedule execution:', error);
     }
