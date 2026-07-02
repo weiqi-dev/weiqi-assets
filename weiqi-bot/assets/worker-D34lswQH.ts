@@ -307,6 +307,17 @@ function ensureBoardSizeForWorker(boardSize: number): void {
   searchKey = null;
 }
 
+/**
+ * Initialize TensorFlow.js backend with fallback mechanism.
+ * Tries: WebGPU → WebGL → WASM → CPU
+ * 
+ * Note: TensorFlow.js may produce warnings during initialization:
+ * - 'The powerPreference option is currently ignored when calling requestAdapter() on Windows'
+ * - 'No available adapters'
+ * - 'Initialization of backend webgpu failed'
+ * These are expected warnings as part of the fallback mechanism.
+ * They indicate TensorFlow.js is trying different backends.
+ */
 async function initBackend(): Promise<void> {
   debugLog('log', 'Initializing backend');
   
@@ -316,7 +327,7 @@ async function initBackend(): Promise<void> {
   try {
     debugLog('log', 'Trying WebGPU backend');
     if (!navigator.gpu) {
-      debugLog('warn', 'WebGPU API not available (navigator.gpu is null)');
+      debugLog('log', 'WebGPU API not available (navigator.gpu is null)');
       throw new Error('WebGPU API not available');
     }
     await tf.setBackend('webgpu');
@@ -324,13 +335,13 @@ async function initBackend(): Promise<void> {
     await tf.ready();
     const actualBackend = tf.getBackend();
     if (actualBackend !== 'webgpu') {
-      debugLog('warn', `WebGPU initialization failed - actual backend is ${actualBackend}`);
+      debugLog('log', `WebGPU initialization failed - actual backend is ${actualBackend}`);
       throw new Error(`WebGPU initialization failed - actual backend is ${actualBackend}`);
     }
     debugLog('log', 'WebGPU backend initialized successfully');
     return;
   } catch (err) {
-    debugLog('warn', 'WebGPU backend failed, trying WebGL', err);
+    debugLog('log', 'WebGPU backend failed, trying WebGL', err);
   }
 
   // Try WebGL (best browser support and performance)
@@ -341,7 +352,7 @@ async function initBackend(): Promise<void> {
     debugLog('log', 'WebGL backend initialized successfully');
     return;
   } catch (err) {
-    debugLog('warn', 'WebGL backend failed, trying WASM', err);
+    debugLog('log', 'WebGL backend failed, trying WASM', err);
   }
 
   // Try WASM if WebGL fails
@@ -362,12 +373,12 @@ async function initBackend(): Promise<void> {
     debugLog('log', 'WASM backend initialized successfully');
     return;
   } catch (err) {
-    debugLog('warn', 'WASM backend failed, falling back to CPU', err);
+    debugLog('log', 'WASM backend failed, falling back to CPU', err);
     // Fall through to CPU
   }
 
   // Last resort: CPU backend
-  debugLog('warn', 'Using CPU backend (slow)');
+  debugLog('log', 'Using CPU backend (slow)');
   await tf.setBackend('cpu');
   await tf.ready();
   debugLog('log', 'CPU backend initialized');
@@ -430,7 +441,7 @@ async function ensureModel(modelUrl: string): Promise<void> {
 
       // 报告下载进度
       if (total > 0) {
-        const progress = (loaded / total) * 100;
+        const progress = Math.min((loaded / total) * 100, 100);  // 限制不超过 100%
         post({
           type: 'katago:progress',
           loaded,
