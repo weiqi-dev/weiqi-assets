@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://weiqi-dev.github.io/weiqi-assets/schema/plugin.schema.json",
+  "title": "weiqi-bot 插件工件元数据",
+  "description": "字段对齐 weiqi-bot domain/plugin/types.ts 的 PluginArtifact / PluginSpec。资源侧只声明契约，limits 与 hostApi 以宿主 spec 为准，不在此复制数值。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "id", "name", "type", "pointId", "specVersion", "entry", "code", "origin", "intent"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]*$" },
+    "name": { "type": "string", "minLength": 1 },
+    "type": { "type": "string", "const": "plugin" },
+    "pointId": { "type": "string", "minLength": 1 },
+    "specVersion": { "type": "integer", "minimum": 1 },
+    "entry": { "type": "string", "pattern": "^[A-Za-z_$][A-Za-z0-9_$]*$" },
+    "code": { "type": "string", "minLength": 1 },
+    "origin": { "type": "string", "enum": ["llm", "manual"] },
+    "intent": { "type": "string", "minLength": 1 },
+    "readme": { "type": "string" },
+    "license": { "type": "string" },
+    "tags": { "type": "array", "items": { "type": "string" } }
+  }
+}

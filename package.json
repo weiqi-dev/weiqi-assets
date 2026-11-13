@@ -1,0 +1,11 @@
+{
+  "name": "weiqi-assets",
+  "version": "1.0.0",
+  "private": true,
+  "description": "weiqi-bot 开放扩展资源库（插件工件与 LLM 工具声明）",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "validate": "node scripts/validate.mjs"
+  }
+}

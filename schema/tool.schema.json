@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://weiqi-dev.github.io/weiqi-assets/schema/tool.schema.json",
+  "title": "weiqi-bot LLM 工具声明",
+  "description": "definition 字段直接对齐 weiqi-bot application/model/IModelGateway.ts 的 ModelToolDefinition，可原样放进 ModelRequest.tools。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "id", "name", "type", "version", "definition"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]*$" },
+    "name": { "type": "string", "minLength": 1 },
+    "type": { "type": "string", "const": "tool" },
+    "version": { "type": "integer", "minimum": 1 },
+    "definition": { "$ref": "#/$defs/modelToolDefinition" },
+    "implementation": { "$ref": "#/$defs/implementation" },
+    "readme": { "type": "string" },
+    "tags": { "type": "array", "items": { "type": "string" } }
+  },
+  "$defs": {
+    "modelToolDefinition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "description", "parameters"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "description": { "type": "string", "minLength": 1 },
+        "parameters": { "type": "object" }
+      }
+    },
+    "implementation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": { "type": "string", "enum": ["host-builtin", "downloadable", "reference"] },
+        "source": { "type": "string" },
+        "note": { "type": "string" }
+      }
+    }
+  }
+}

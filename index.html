@@ -1,190 +1,109 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Weiqi Assets - 围棋静态资源</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 40px 20px;
-        }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 40px;
-            color: white;
-        }
-        .header h1 {
-            font-size: 32px;
-            margin-bottom: 10px;
-        }
-        .header p {
-            font-size: 16px;
-            opacity: 0.9;
-        }
-        .card {
-            background: white;
-            border-radius: 16px;
-            padding: 30px;
-            margin-bottom: 20px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-        }
-        .card h2 {
-            font-size: 20px;
-            color: #333;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #667eea;
-        }
-        .resource-list {
-            list-style: none;
-        }
-        .resource-list li {
-            padding: 15px 0;
-            border-bottom: 1px solid #eee;
-        }
-        .resource-list li:last-child {
-            border-bottom: none;
-        }
-        .resource-name {
-            font-size: 16px;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 5px;
-        }
-        .resource-url {
-            font-family: monospace;
-            font-size: 13px;
-            color: #667eea;
-            word-break: break-all;
-            background: #f5f5f5;
-            padding: 8px 12px;
-            border-radius: 6px;
-            margin: 8px 0;
-        }
-        .resource-desc {
-            font-size: 14px;
-            color: #666;
-            margin-top: 5px;
-        }
-        .code-block {
-            background: #2d3748;
-            color: #e2e8f0;
-            padding: 15px;
-            border-radius: 8px;
-            font-family: monospace;
-            font-size: 13px;
-            overflow-x: auto;
-            margin: 10px 0;
-        }
-        .btn {
-            display: inline-block;
-            padding: 10px 24px;
-            background: #667eea;
-            color: white;
-            text-decoration: none;
-            border-radius: 8px;
-            font-size: 14px;
-            transition: all 0.2s;
-        }
-        .btn:hover {
-            background: #5a6fd6;
-            transform: translateY(-1px);
-        }
-        .footer {
-            text-align: center;
-            color: white;
-            opacity: 0.8;
-            font-size: 14px;
-            margin-top: 40px;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weiqi Assets - weiqi-bot 开放扩展资源</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: linear-gradient(135deg, #1f2937 0%, #4c1d95 100%);
+    min-height: 100vh; padding: 40px 20px; color: #f8fafc;
+  }
+  .container { max-width: 880px; margin: 0 auto; }
+  .header { text-align: center; margin-bottom: 36px; }
+  .header h1 { font-size: 32px; margin-bottom: 10px; }
+  .header p { font-size: 16px; opacity: .85; line-height: 1.7; }
+  .card { background: #fff; color: #1f2937; border-radius: 16px; padding: 26px 30px;
+          margin-bottom: 20px; box-shadow: 0 10px 40px rgba(0,0,0,.22); }
+  .card h2 { font-size: 20px; margin-bottom: 14px; padding-bottom: 10px;
+             border-bottom: 2px solid #7c3aed; }
+  .card p { color: #4b5563; font-size: 14px; line-height: 1.8; }
+  .url { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px;
+         color: #6d28d9; background: #f5f3ff; padding: 8px 12px; border-radius: 6px;
+         word-break: break-all; margin: 8px 0; }
+  .item { padding: 14px 0; border-bottom: 1px solid #eee; }
+  .item:last-child { border-bottom: none; }
+  .item-title { font-weight: 600; margin-bottom: 4px; }
+  .badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px;
+           border-radius: 999px; background: #ede9fe; color: #6d28d9; margin-right: 8px; }
+  .badge.legacy { background: #fef3c7; color: #92400e; }
+  .item-desc { font-size: 13px; color: #6b7280; line-height: 1.7; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+         background: #f3f4f6; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+  pre { background: #111827; color: #e5e7eb; padding: 14px; border-radius: 8px;
+        overflow-x: auto; font-size: 12.5px; line-height: 1.7; margin: 10px 0; }
+  a { color: #6d28d9; }
+  .links a { display: inline-block; margin: 4px 12px 4px 0; font-size: 14px; }
+  .footer { text-align: center; opacity: .75; font-size: 13px; margin-top: 32px; line-height: 1.8; }
+</style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>⚫⚪ Weiqi Assets</h1>
-            <p>围棋静态资源库 - 二维码分享、棋谱编解码</p>
-        </div>
+<div class="container">
+  <div class="header">
+    <h1>⚫⚪ Weiqi Assets</h1>
+    <p>weiqi-bot 的开放扩展资源库<br>插件工件 · LLM 工具声明 · 按需下载</p>
+  </div>
 
-        <div class="card">
-            <h2>📦 资源列表</h2>
-            <ul class="resource-list">
-                <li>
-                    <div class="resource-name">share.js - 核心分享库</div>
-                    <div class="resource-url">https://weiqi-dev.github.io/weiqi-assets/js/share.js</div>
-                    <div class="resource-desc">提供二维码生成、棋谱编码解码功能</div>
-                </li>
-                <li>
-                    <div class="resource-name">share/ - 扫码下载页</div>
-                    <div class="resource-url">https://weiqi-dev.github.io/weiqi-assets/share/</div>
-                    <div class="resource-desc">扫码后自动下载 SGF 棋谱文件</div>
-                </li>
-            </ul>
-        </div>
+  <div class="card">
+    <h2>📥 下载入口</h2>
+    <p>宿主只认这一个入口，先取清单再按条目路径取资源：</p>
+    <div class="url">https://weiqi-dev.github.io/weiqi-assets/registry.json</div>
+    <pre>GET /registry.json
+ → 过滤 type / pointId / id
+ → GET &lt;entry.path&gt;
+ → 插件：GET &lt;manifest.code&gt; 取源码，构造 PluginArtifact
+ → 工具：取 definition，对齐 ModelToolDefinition</pre>
+    <p>所有路径都是仓库内相对路径，以 <code>registry.baseUrl</code> 为基准拼接。
+       下载 ≠ 安装 ≠ 启用；失败一律回落宿主内置实现。</p>
+  </div>
 
-        <div class="card">
-            <h2>🚀 快速开始</h2>
-            <p style="margin-bottom: 10px; color: #666;">在网页中引入分享库：</p>
-            <div class="code-block">&lt;script src="https://weiqi-dev.github.io/weiqi-assets/js/share.js"&gt;&lt;/script&gt;</div>
-            
-            <p style="margin: 15px 0 10px; color: #666;">生成二维码：</p>
-            <div class="code-block">WeiqiShare.generateQR(container, gameState)
-    .then(() => console.log('成功'))
-    .catch(err => console.error(err));</div>
-        </div>
-
-        <div class="card">
-            <h2>📖 API 文档</h2>
-            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-                <tr style="border-bottom: 2px solid #eee;">
-                    <th style="text-align: left; padding: 10px;">方法</th>
-                    <th style="text-align: left; padding: 10px;">说明</th>
-                </tr>
-                <tr style="border-bottom: 1px solid #f0f0f0;">
-                    <td style="padding: 10px; font-family: monospace;">isWechat()</td>
-                    <td style="padding: 10px;">检测微信浏览器</td>
-                </tr>
-                <tr style="border-bottom: 1px solid #f0f0f0;">
-                    <td style="padding: 10px; font-family: monospace;">encode(gameState)</td>
-                    <td style="padding: 10px;">编码棋谱为紧凑格式</td>
-                </tr>
-                <tr style="border-bottom: 1px solid #f0f0f0;">
-                    <td style="padding: 10px; font-family: monospace;">decode(base64)</td>
-                    <td style="padding: 10px;">解码 base64 为棋谱数据</td>
-                </tr>
-                <tr style="border-bottom: 1px solid #f0f0f0;">
-                    <td style="padding: 10px; font-family: monospace;">toSGF(data)</td>
-                    <td style="padding: 10px;">棋谱数据转 SGF 格式</td>
-                </tr>
-                <tr>
-                    <td style="padding: 10px; font-family: monospace;">generateQR(container, gameState)</td>
-                    <td style="padding: 10px;">生成二维码图片</td>
-                </tr>
-            </table>
-        </div>
-
-        <div class="card">
-            <h2>💡 示例项目</h2>
-            <p style="color: #666; margin-bottom: 15px;">使用本资源库的项目：</p>
-            <a href="https://github.com/zhangbin2025/weiqi-skills/tree/main/weiqi-recorder" class="btn" target="_blank">weiqi-recorder - 围棋记谱工具</a>
-        </div>
-
-        <div class="footer">
-            <p>Made with ❤️ for Go/Weiqi players</p>
-            <p style="margin-top: 5px;"><a href="https://github.com/weiqi-dev/weiqi-assets" style="color: white;">GitHub</a></p>
-        </div>
+  <div class="card">
+    <h2>📦 资源列表</h2>
+    <div class="item">
+      <div class="item-title"><span class="badge">plugin</span>示例：胜局优先的排名</div>
+      <div class="url">plugins/ranking.tiebreak/example-direct-win/plugin.json</div>
+      <div class="item-desc">扩展点 <code>ranking.tiebreak</code> / spec v1 / 入口 <code>rank</code>。
+        在 QuickJS 沙箱里按胜局数重排，演示最小可用工件。</div>
     </div>
+    <div class="item">
+      <div class="item-title"><span class="badge">tool</span>web_fetch 工具声明</div>
+      <div class="url">tools/web-fetch/v1/tool.json</div>
+      <div class="item-desc">对齐 <code>ModelToolDefinition</code> 的声明镜像；执行器由 weiqi-bot 内置，
+        本仓库不提供可执行代码。</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>🔒 Legacy：SGF 二维码分享（路径冻结）</h2>
+    <div class="item">
+      <div class="item-title"><span class="badge legacy">legacy</span>js/share.js · share/</div>
+      <div class="url">https://weiqi-dev.github.io/weiqi-assets/share/?d=&lt;encoded&gt;</div>
+      <div class="item-desc">weiqi-bot 的 SGF 二维码生成与扫码下载依赖这两个固定 URL。
+        二维码一旦打印/转发就无法召回，因此路径冻结、只修 bug，不纳入 registry。</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>📖 文档</h2>
+    <div class="links">
+      <a href="docs/architecture.md">架构与分工</a>
+      <a href="docs/extension-points.md">扩展点契约</a>
+      <a href="docs/contributing.md">贡献指南</a>
+      <a href="schema/registry.schema.json">registry schema</a>
+      <a href="schema/plugin.schema.json">plugin schema</a>
+      <a href="schema/tool.schema.json">tool schema</a>
+      <a href="https://github.com/weiqi-dev/weiqi-assets">GitHub</a>
+    </div>
+    <p style="margin-top:12px">契约数值全部来自 weiqi-bot 的具名常量，资源库不复制配额、不设经验阈值；
+       每个条目的 README 都写明来源文件。</p>
+  </div>
+
+  <div class="footer">
+    <p>纯静态资源 · 无构建 · 无依赖 · 不含内置数据</p>
+    <p>MIT License · Made for Go/Weiqi players</p>
+  </div>
+</div>
 </body>
 </html>

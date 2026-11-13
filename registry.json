@@ -1,0 +1,25 @@
+{
+  "$schema": "./schema/registry.schema.json",
+  "schemaVersion": 1,
+  "name": "weiqi-assets",
+  "description": "weiqi-bot 的开放扩展资源库：插件工件与 LLM 工具声明，供宿主按需下载。",
+  "baseUrl": "https://weiqi-dev.github.io/weiqi-assets/",
+  "resources": [
+    {
+      "id": "ranking.example-direct-win",
+      "type": "plugin",
+      "name": "示例：胜局优先的排名插件",
+      "summary": "按胜局数优先于积分重排名次，演示 ranking.tiebreak 扩展点的最小可用工件。",
+      "pointId": "ranking.tiebreak",
+      "specVersion": 1,
+      "path": "plugins/ranking.tiebreak/example-direct-win/plugin.json"
+    },
+    {
+      "id": "web-fetch.v1",
+      "type": "tool",
+      "name": "web_fetch",
+      "summary": "取回公开网页文本内容的工具声明镜像，对齐宿主的 ModelToolDefinition。",
+      "path": "tools/web-fetch/v1/tool.json"
+    }
+  ]
+}
