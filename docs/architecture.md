@@ -6,6 +6,7 @@ weiqi-assets 是 **weiqi-bot 的开放扩展资源仓库**，不是一个应用�
 
 它解决一件事：让插件与 LLM 工具能独立于 weiqi-bot 的发版节奏被发布、被发现、被下载。
 宿主不需要为了加一个排名口径或一条工具声明而重新构建整个 Web 资源包。
+此外它还托管 SGF 二维码分享所需的静态页面与库。
 
 三条边界：
 
@@ -24,7 +25,7 @@ weiqi-assets 是 **weiqi-bot 的开放扩展资源仓库**，不是一个应用�
 | 工具声明 | `application/model/IModelGateway.ts`（`ModelToolDefinition`） | `tools/` 的 `definition` 对齐它 |
 | 工具注册 | `application/chat/WebToolLoop.ts`（`TOOLS[]` / `EXECUTORS`） | 目前全部宿主内置 |
 | 资源下载 | `web-resources.zip` 预下载 + `remoteBase` 按需回源；`scripts/build-assets.mjs` 控制排除项 | 扩展资源天然属于「按需」，不进预加载包 |
-| SGF 分享/下载 | `services/share/ShareService.ts`（编码） + `js/share.js` / `share/`（解码着陆页） | **legacy 冻结路径**，见下 |
+| SGF 分享/下载 | `services/share/ShareService.ts`（编码） + `share/`（解码着陆页与库） | 站点能力，URL 契约见 `share/README.md` |
 
 ### 与按需下载机制的关系
 
@@ -39,18 +40,16 @@ weiqi-bot 的 Web 资源分两类：`web-resources.zip` 在客户端启动时预
 - 该客户端尚未实现时，本仓库的资源仍可被人工/脚本取用；`registry.json` 的 URL 是稳定入口。
 - 失败必须回落：清单取不到、条目解析失败、插件试跑不通过，都不能让页面白屏。
 
-## 为什么 share 资源不参与改造
+## `share/` 在架构里的位置
 
-`js/share.js` 生成的二维码内容指向 `https://weiqi-dev.github.io/weiqi-assets/share/?d=<encoded>`。
-这个 URL 会被打印、截图、转发到微信，一旦路径变更，所有历史二维码都失效 —— 而它们
-无法被召回。因此：
+`share/` 是**站点能力**，不是扩展资源，因此不进 `registry.json`：
 
-- 路径 `js/share.js`、`share/index.html` **冻结**；
-- 不纳入 `registry.json`，不作为「扩展资源」；
-- 只接受 bug 修复，不新增功能；若将来要出新版本，应另开路径并保留旧版兼容。
-
-weiqi-bot 侧的对应 URL 已收敛到单一常量（见 `clients/web/shared/constants/assets.ts`），
-以后要换域名或换路径只改一处。
+- 宿主直接拼 URL 引用它（`WEIQI_SHARE_DECODE_URL` + `?d=<encoded>`），不需要清单解析；
+- 二维码链路的两端分别在 weiqi-bot（编码生成链接）与本仓库（解码下载 SGF），
+  两处 `decodeUrl` 必须一致，由 `scripts/validate.mjs` 校验；
+- 库 `share/share.js` 是纯库，加载无副作用，解码只由 `share/index.html` 显式触发；
+- 本次整改把库从 `js/share.js` 收进 `share/`，删除了 `js/` 目录。
+  旧二维码兼容性按需求明确不予考虑，路径可随版本演进，但换路径须两仓同步。
 
 ## 版本策略
 
@@ -59,6 +58,7 @@ weiqi-bot 侧的对应 URL 已收敛到单一常量（见 `clients/web/shared/co
   自己申报的版本解释，不静默改变行为。
 - 工具条目带 `version`，同一 `name` 可并存多个版本目录（`tools/<name>/v<N>/`）。
 - 资源 ID 一旦发布即稳定，不复用、不改名；废弃用新条目 + `summary` 说明，不删文件。
+- `share/` 的 URL 契约变更按「两仓同步 + 校验通过」处理，不设不可变约束。
 
 ## 安全边界
 
@@ -67,3 +67,5 @@ weiqi-bot 侧的对应 URL 已收敛到单一常量（见 `clients/web/shared/co
   当前没有 `downloadable`。将来若开放，必须先在宿主 `WebToolLoop` 里定义外部执行器的
   隔离与注册规则，**不要把任意远程 JS 直接放进主线程**。
 - 所有 `path` / `code` / `readme` 都是仓库内相对路径，校验脚本阻止 `..` 逃逸与绝对路径。
+- `share/share.js` 从 CDN 按需加载 `qrcodejs` 仅用于生成二维码；不引入其他远程依赖，
+  解码下载链路完全本地。

@@ -1,13 +1,13 @@
 # weiqi-assets
 
-**weiqi-bot 的开放扩展资源库**：发布可下载的插件工件与 LLM 工具声明，供 weiqi-bot 按需发现、下载、安装。
+**weiqi-bot 的开放扩展资源库**：发布可下载的插件工件与 LLM 工具声明，供 weiqi-bot 按需发现、下载、安装；同时托管 SGF 二维码分享的站点能力。
 
 站点：<https://weiqi-dev.github.io/weiqi-assets/>
 
 > 本仓库是**纯静态资源**，不含构建产物、不含运行时依赖，也不内置任何棋谱/个人数据。
 > 宿主（weiqi-bot）决定下载什么、何时下载、是否启用；资源库只负责「能被找到、能被校验、能被取走」。
 
-## 两类资源
+## 两类扩展资源
 
 | 类型 | 目录 | 对齐的宿主契约 | 当前状态 |
 |---|---|---|---|
@@ -21,7 +21,7 @@
 
 ```
 weiqi-assets/
-├── registry.json              # 顶层资源清单（下载入口，先取这个文件）
+├── registry.json              # 顶层扩展资源清单（下载入口，先取这个文件）
 ├── schema/
 │   ├── registry.schema.json   # 清单契约
 │   ├── plugin.schema.json     # 插件元数据契约
@@ -36,27 +36,27 @@ weiqi-assets/
 │   └── web-fetch/v1/
 │       ├── tool.json
 │       └── README.md
-├── scripts/validate.mjs       # 清单/条目/代码一致性校验（零依赖）
+├── share/                     # SGF 二维码分享与下载（站点能力，见 share/README.md）
+│   ├── index.html             # 扫码着陆页
+│   ├── share.js               # 编解码 + 二维码库（纯库，无副作用）
+│   └── README.md              # URL 契约、数据格式、触发方式
+├── scripts/validate.mjs       # 清单/条目/代码/URL 契约一致性校验（零依赖）
 ├── docs/
 │   ├── architecture.md        # 定位、下载链路、与 weiqi-bot 的分工
 │   ├── extension-points.md    # 扩展点契约与宿主对照表
 │   └── contributing.md        # 新增插件 / 工具的完整步骤
-├── js/share.js                # 【legacy 冻结】SGF 二维码分享库
-├── share/index.html           # 【legacy 冻结】扫码下载 SGF 着陆页
-└── index.html                 # 站点导航页
+├── index.html                 # 站点导航页
+└── package.json
 ```
 
-### 为什么 `js/` 和 `share/` 不动
+### 关于 `share/`
 
-`js/share.js` 与 `share/` 是 weiqi-bot **SGF 二维码分享与下载**功能依赖的固定 URL：
+`registry.json` **只登记 plugin / tool**，`share/` 不进去。理由：registry 是「宿主按需下载的扩展资源」，
+而 share 是宿主直接拼 URL 引用的页面与脚本，塞进去只会让宿主多一层没必要的解析。
 
-```
-https://weiqi-dev.github.io/weiqi-assets/js/share.js
-https://weiqi-dev.github.io/weiqi-assets/share/?d=<encoded>
-```
-
-二维码一旦生成（打印、截图、转发），URL 就固化了；改路径会让所有历史二维码失效。
-因此这两个目录**路径冻结、只修 bug 不加功能**，不属于扩展资源体系，也不进 `registry.json`。
+历史上库放在 `js/share.js`；本次整改把它收进 `share/`，`js/` 目录随之删除。
+旧二维码的兼容性按需求明确不予考虑，因此 `decodeUrl` 仍用 `…/share/?d=` 是**当前选择**而非兼容包袱：
+以后换域名或换路径，两边同步改一处即可。详见 [share/README.md](share/README.md)。
 
 ## 下载链路（宿主侧）
 
@@ -80,7 +80,9 @@ npm run validate      # 或 node scripts/validate.mjs
 ```
 
 零依赖（Node 原生）。检查：JSON 合法、必填字段、路径不越界、registry 与条目 ID 一致、
-插件代码入口存在且不含宿主禁用的全局/动态求值/无界循环。
+插件代码入口存在且不含宿主禁用的全局/动态求值/无界循环，以及
+`share/share.js` 的 `decodeUrl` / `libUrl` 与站点 URL 契约一致。
+
 禁用规则与 `weiqi-bot/domain/plugin/PluginValidator.ts` **同源**——注意该校验器对全串做正则，
 **注释里出现禁用词也会被拦下**，示例插件因此刻意不写出那些词。
 
@@ -94,7 +96,8 @@ npm run validate      # 或 node scripts/validate.mjs
 | 工具声明形状 | `weiqi-bot/application/model/IModelGateway.ts`（`ModelToolDefinition`） |
 | 插件禁用规则 | `weiqi-bot/domain/plugin/PluginValidator.ts` |
 | 输出契约（rank / id） | `weiqi-bot/application/plugin/RankingPluginAdapter.ts` |
-| 分享编解码格式（legacy） | `js/share.js` 与 `weiqi-bot/domain/share/`（`GameEncoder`） |
+| 分享编解码格式 | `share/share.js` 与 `weiqi-bot/domain/share/`（`GameEncoder`） |
+| 分享 `decodeUrl` | `weiqi-bot/services/share/WeiqiAssetsUrls.ts`（`WEIQI_SHARE_DECODE_URL`） |
 
 资源侧只声明「遵守哪个 spec 版本」，宿主升级时以宿主为准，避免两份数值各自漂移。
 
@@ -103,6 +106,7 @@ npm run validate      # 或 node scripts/validate.mjs
 - [架构与分工](docs/architecture.md)
 - [扩展点契约](docs/extension-points.md)
 - [贡献指南](docs/contributing.md)
+- [SGF 分享能力](share/README.md)
 
 ## License
 

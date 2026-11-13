@@ -28,7 +28,7 @@
   .item-title { font-weight: 600; margin-bottom: 4px; }
   .badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px;
            border-radius: 999px; background: #ede9fe; color: #6d28d9; margin-right: 8px; }
-  .badge.legacy { background: #fef3c7; color: #92400e; }
+  .badge.site { background: #d1fae5; color: #065f46; }
   .item-desc { font-size: 13px; color: #6b7280; line-height: 1.7; }
   code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
          background: #f3f4f6; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
@@ -43,11 +43,11 @@
 <div class="container">
   <div class="header">
     <h1>⚫⚪ Weiqi Assets</h1>
-    <p>weiqi-bot 的开放扩展资源库<br>插件工件 · LLM 工具声明 · 按需下载</p>
+    <p>weiqi-bot 的开放扩展资源库<br>插件工件 · LLM 工具声明 · SGF 分享</p>
   </div>
 
   <div class="card">
-    <h2>📥 下载入口</h2>
+    <h2>📥 扩展资源下载入口</h2>
     <p>宿主只认这一个入口，先取清单再按条目路径取资源：</p>
     <div class="url">https://weiqi-dev.github.io/weiqi-assets/registry.json</div>
     <pre>GET /registry.json
@@ -76,12 +76,13 @@
   </div>
 
   <div class="card">
-    <h2>🔒 Legacy：SGF 二维码分享（路径冻结）</h2>
+    <h2>🔗 SGF 二维码分享（站点能力）</h2>
     <div class="item">
-      <div class="item-title"><span class="badge legacy">legacy</span>js/share.js · share/</div>
+      <div class="item-title"><span class="badge site">site</span>share/ · 扫码下载棋谱</div>
       <div class="url">https://weiqi-dev.github.io/weiqi-assets/share/?d=&lt;encoded&gt;</div>
-      <div class="item-desc">weiqi-bot 的 SGF 二维码生成与扫码下载依赖这两个固定 URL。
-        二维码一旦打印/转发就无法召回，因此路径冻结、只修 bug，不纳入 registry。</div>
+      <div class="item-desc">库 <code>share/share.js</code> 负责编解码与二维码生成，
+        <code>share/index.html</code> 是扫码落页。这是宿主直接拼 URL 引用的站点能力，
+        <strong>不进 registry</strong>；URL 契约与改动须知见 <a href="share/README.md">share/README.md</a>。</div>
     </div>
   </div>
 
@@ -91,6 +92,7 @@
       <a href="docs/architecture.md">架构与分工</a>
       <a href="docs/extension-points.md">扩展点契约</a>
       <a href="docs/contributing.md">贡献指南</a>
+      <a href="share/README.md">SGF 分享能力</a>
       <a href="schema/registry.schema.json">registry schema</a>
       <a href="schema/plugin.schema.json">plugin schema</a>
       <a href="schema/tool.schema.json">tool schema</a>

@@ -3,10 +3,12 @@
 ## 原则
 
 - **一个资源一个目录**，目录名即稳定 ID 的一部分，发布后不改名、不复用。
-- **manifest 是入口**：任何资源都必须能从 `registry.json` 找到。
+- **manifest 是入口**：任何扩展资源都必须能从 `registry.json` 找到。
+  `share/` 是站点能力，不进 registry，它的入口是 `share/README.md` 里的 URL 契约。
 - **数值有出处**：不引入经验阈值；契约数值一律引用 weiqi-bot 的具名常量，并在 README 里写明来源文件。
 - **代码要能跑**：插件源码必须能在宿主 QuickJS 沙箱里通过校验与试跑，不能只是示意。
-- **不碰 legacy**：`js/share.js`、`share/` 只修 bug，不改路径、不加功能。
+- **改 share 要两仓同步**：路径、URL、编解码格式任一变更，都要同时改本仓库与 weiqi-bot，
+  并跑 `npm run validate` + weiqi-bot 相关单测。
 
 ## 新增插件
 
@@ -34,7 +36,7 @@
    ```
 
    `id` 用小写字母/数字开头，只允许 `[a-z0-9._-]`。`$schema` / `code` / `readme`
-   都是**仓库根相对路径**，与目录层级无关（三层目录就写 `../../../`）。
+   都是**仓库根相对路径**（三层目录就写 `../../../`）。
 
 4. 写 `index.js`：全局函数 `rank(players)`，返回与输入等长、每行带 `id` 与数值 `rank` 的数组。
    不得引用宿主/浏览器全局，不得动态求值，不得无界循环；注释里也别写那些禁用词
@@ -79,6 +81,15 @@
 ⚠️ 除非 weiqi-bot 已经实现「外部执行器隔离与注册」，否则**不要**把 status 写成
 `downloadable`，也不要在本仓库放会被主线程直接执行的代码。
 
+## 修改 SGF 分享能力
+
+见 [share/README.md](../share/README.md)。要点：
+
+- `share/share.js` 是纯库，**不要加回任何基于路径的自动初始化**（会导致重复下载）；
+- `decodeUrl` / `libUrl` 改了，要同步 weiqi-bot 的 `WEIQI_SHARE_DECODE_URL` 与测试断言；
+- 编解码字节格式改了，要两端同时改并补测试；
+- 换路径不需要考虑旧二维码兼容，但仍需两仓同步 + 校验通过。
+
 ## 校验
 
 ```bash
@@ -86,8 +97,8 @@ node scripts/validate.mjs      # 或 npm run validate
 ```
 
 检查项：JSON 合法、必填字段、ID 命名与唯一性、路径在仓库内且不逃逸、
-registry 与条目 ID/版本一致、工具 `definition` 形状、插件代码入口存在且不含禁用规则。
-校验失败时 commit 不该通过评审。
+registry 与条目 ID/版本一致、工具 `definition` 形状、插件代码入口存在且不含禁用规则、
+`share/` 的 URL 契约一致。校验失败时 commit 不该通过评审。
 
 ## 提交与发布
 

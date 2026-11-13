@@ -141,6 +141,48 @@ function validateTool(manifestPath, entry) {
   }
 }
 
+/** SGF 分享站点的 URL 契约（见 share/README.md 与 weiqi-bot/services/share/WeiqiAssetsUrls.ts） */
+function validateShareUrls() {
+  const libPath = 'share/share.js';
+  const pagePath = 'share/index.html';
+  const expectedBase = 'https://weiqi-dev.github.io/weiqi-assets/';
+  const expectedDecode = `${expectedBase}share/`;
+  const expectedLib = `${expectedBase}share/share.js`;
+
+  for (const p of [libPath, pagePath, 'share/README.md']) {
+    if (!existsSync(resolve(ROOT, p))) fail(`share/ 能力缺少文件：${p}`);
+  }
+  if (existsSync(resolve(ROOT, 'js'))) fail('js/ 目录应已删除（share.js 已收编到 share/）');
+
+  const libAbs = resolve(ROOT, libPath);
+  if (!existsSync(libAbs)) return;
+  const lib = readFileSync(libAbs, 'utf8');
+  const decodeMatch = lib.match(/decodeUrl:\s*'([^']+)'/);
+  const libMatch = lib.match(/libUrl:\s*'([^']+)'/);
+  if (!decodeMatch) fail(`${libPath} 未声明 config.decodeUrl`);
+  else if (decodeMatch[1] !== expectedDecode) {
+    fail(`${libPath} config.decodeUrl 与契约不一致：期望 ${expectedDecode}，实际 ${decodeMatch[1]}`);
+  }
+  if (!libMatch) fail(`${libPath} 未声明 config.libUrl`);
+  else if (libMatch[1] !== expectedLib) {
+    fail(`${libPath} config.libUrl 与契约不一致：期望 ${expectedLib}，实际 ${libMatch[1]}`);
+  }
+  // 库必须是纯库：不得有基于 currentScript 路径的自动初始化
+  if (/currentScript[\s\S]{0,160}handleDecodePage|DOMContentLoaded[\s\S]{0,160}handleDecodePage/.test(lib)) {
+    fail(`${libPath} 含自动初始化解码的逻辑：库移入 share/ 后会与落页显式调用叠加，导致重复下载`);
+  }
+  if (/js\/share\.js/.test(lib)) fail(`${libPath} 仍有 js/share.js 残留引用`);
+
+  const pageAbs = resolve(ROOT, pagePath);
+  if (existsSync(pageAbs)) {
+    const page = readFileSync(pageAbs, 'utf8');
+    if (!/src=["']\.\/share\.js["']/.test(page)) fail(`${pagePath} 未以 ./share.js 引用库`);
+    if (!/WeiqiShare\.handleDecodePage\(\)/.test(page)) fail(`${pagePath} 未显式调用 handleDecodePage()`);
+    const calls = (page.match(/handleDecodePage\s*\(/g) || []).length;
+    if (calls !== 1) fail(`${pagePath} handleDecodePage 调用次数应为 1，实际 ${calls}`);
+  }
+}
+
 function main() {
   const registry = readJson('registry.json');
   if (!registry) return report();
@@ -179,13 +221,14 @@ function main() {
       }
     }
   }
+  validateShareUrls();
   report();
 }
 
 function report() {
   for (const w of warnings) console.warn(`⚠️  ${w}`);
   if (errors.length === 0) {
-    console.log('✅ weiqi-assets 校验通过：registry / schema / 条目 / 代码契约一致');
+    console.log('✅ weiqi-assets 校验通过：registry / schema / 条目 / 代码 / share URL 契约一致');
     process.exit(0);
   }
   for (const e of errors) console.error(`❌ ${e}`);

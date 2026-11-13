@@ -1,7 +1,11 @@
 /**
  * Weiqi Share - 围棋棋谱分享库
  * 提供二维码生成、编码解码功能
- * https://weiqi-dev.github.io/weiqi-assets/js/share.js
+ * https://weiqi-dev.github.io/weiqi-assets/share/share.js
+ *
+ * 本文件是纯库，加载后没有任何副作用：解码下载只由 share/index.html
+ * 显式调用 WeiqiShare.handleDecodePage() 触发。第三方按 libUrl 引入时
+ * 不会误弹「无效的棋谱链接」或重复下载。
  */
 
 const WeiqiShare = {
@@ -9,7 +13,7 @@ const WeiqiShare = {
     config: {
         decodeUrl: 'https://weiqi-dev.github.io/weiqi-assets/share/',
         cdnUrl: 'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js',
-        libUrl: 'https://weiqi-dev.github.io/weiqi-assets/js/share.js'
+        libUrl: 'https://weiqi-dev.github.io/weiqi-assets/share/share.js'
     },
 
     /**
@@ -180,7 +184,8 @@ const WeiqiShare = {
 
     /**
      * 处理解码页面（扫码后的着陆页）
-     * 自动下载 SGF 文件
+     * 由 share/index.html 显式调用一次，自动下载 SGF 文件。
+     * 库本身不做自动初始化，避免重复下载。
      */
     handleDecodePage() {
         const params = new URLSearchParams(location.search);
@@ -260,9 +265,8 @@ const WeiqiShare = {
     }
 };
 
-// 自动处理解码页面
-if (document.currentScript && document.currentScript.src.includes('/share/')) {
-    document.addEventListener('DOMContentLoaded', () => {
-        WeiqiShare.handleDecodePage();
-    });
-}
+// 纯库：不自动初始化。
+// 解码与下载由 share/index.html 显式调用 WeiqiShare.handleDecodePage()。
+// 历史版本曾用「script.src 是否包含 /share/」做启发式触发，库移入 share/
+// 后会误触发（与落页显式调用叠加导致重复下载），且第三方按 libUrl 引入时
+// 也会误弹提示，故移除。
