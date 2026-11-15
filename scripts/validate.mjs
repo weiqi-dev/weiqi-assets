@@ -55,6 +55,14 @@ function requireString(obj, key, ctx) {
 const ID_RE = /^[a-z0-9][a-z0-9._-]*$/;
 const ENTRY_RE = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
 
+/**
+ * 宿主已注册的扩展点白名单。来源：weiqi-bot/domain/plugin/types.ts 的
+ * RANKING_POINT_ID（当前唯一值 'ranking'）。资源侧不得自造 pointId，
+ * 否则宿主 PluginSystem.applyRanking 会过滤掉、装了也用不了。
+ * 宿主新增扩展点时，这里与 docs/extension-points.md 一起更新。
+ */
+const KNOWN_POINT_IDS = ['ranking'];
+
 /** 与 weiqi-bot/domain/plugin/PluginValidator.ts 的禁用规则同源 */
 const BROWSER_GLOBALS =
   /\bfetch\b|\bwindow\b|\bdocument\b|\blocalStorage\b|\bindexedDB\b|\bXMLHttpRequest\b|\bimportScripts\b|\brequire\b|\bpostMessage\b|\bself\b|\bnavigator\b|\bWebSocket\b/;
@@ -75,6 +83,12 @@ function validatePlugin(manifestPath, entry) {
   requireString(m, 'name', ctx);
   requireString(m, 'pointId', ctx);
   if (m.pointId !== entry.pointId) fail(`${ctx}.pointId 与 registry 不一致`);
+  if (!KNOWN_POINT_IDS.includes(m.pointId)) {
+    fail(`${ctx}.pointId (${m.pointId}) 不是宿主已注册的扩展点；仅允许：${KNOWN_POINT_IDS.join(', ')}`);
+  }
+  if (!KNOWN_POINT_IDS.includes(entry.pointId)) {
+    fail(`registry 条目 pointId (${entry.pointId}) 不是宿主已注册的扩展点；仅允许：${KNOWN_POINT_IDS.join(', ')}`);
+  }
   if (m.specVersion !== entry.specVersion) fail(`${ctx}.specVersion 与 registry 不一致`);
   if (!Number.isInteger(m.specVersion) || m.specVersion < 1) fail(`${ctx}.specVersion 必须是 >=1 的整数`);
   const entryName = requireString(m, 'entry', ctx);

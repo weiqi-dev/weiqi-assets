@@ -14,7 +14,7 @@
 
 1. 确认宿主已有对应扩展点 spec（见 [extension-points.md](extension-points.md)）。
    没有就先在 weiqi-bot 里做，别先发资源。
-2. 建目录：`plugins/<pointId>/<slug>/`。
+2. 建目录：`plugins/<pointId>/<slug>/`（当前 `<pointId>` 只能是 `ranking`）。
 3. 写 `plugin.json`：
 
    ```json
@@ -23,29 +23,32 @@
      "id": "ranking.my-plugin",
      "name": "我的排名口径",
      "type": "plugin",
-     "pointId": "ranking.tiebreak",
+     "pointId": "ranking",
      "specVersion": 1,
      "entry": "rank",
-     "code": "plugins/ranking.tiebreak/my-plugin/index.js",
+     "code": "plugins/ranking/my-plugin/index.js",
      "origin": "manual",
      "intent": "用户最初的需求原话",
-     "readme": "plugins/ranking.tiebreak/my-plugin/README.md",
+     "readme": "plugins/ranking/my-plugin/README.md",
      "license": "MIT",
      "tags": ["ranking"]
    }
    ```
 
    `id` 用小写字母/数字开头，只允许 `[a-z0-9._-]`。`$schema` / `code` / `readme`
-   都是**仓库根相对路径**（三层目录就写 `../../../`）。
+   都是**仓库根相对路径**（三层目录就写 `../../../`）。`pointId` 必须在宿主注册表里，
+   `scripts/validate.mjs` 的 `KNOWN_POINT_IDS` 白名单会拦截自造值。
 
-4. 写 `index.js`：全局函数 `rank(players)`，返回与输入等长、每行带 `id` 与数值 `rank` 的数组。
+4. 写 `index.js`：全局函数 `rank({ matches })`，返回 `{ columns, rows }`
+   （列名汉字、`cells` 数值或数值数组、`rows` 覆盖全部选手且 `id`/`name` 与对阵一致）。
    不得引用宿主/浏览器全局，不得动态求值，不得无界循环；注释里也别写那些禁用词
-   （`PluginValidator` 对整串做正则）。
+   （`PluginValidator` 对整串做正则）。参考 `plugins/ranking/total-score/index.js`。
 5. 写 `README.md`：说明契约来源（宿主哪个文件）、排序/业务口径的**明确选择**、安装形状。
    如果用了任何阈值或常数，必须说清是物理推导、具名准则还是明说的业务约束。
 6. 在 `registry.json` 的 `resources` 追加条目，`type: "plugin"`，带 `pointId` 与 `specVersion`，
    `path` 指向 `plugin.json`。
-7. 跑 `npm run validate`；再在 weiqi-bot 里用 `PluginValidator` + QuickJS 试跑一次。
+7. 跑 `npm run validate`；再在 weiqi-bot 里用 `PluginValidator` + QuickJS 试跑一次
+   （输出要能过 `validateRankingOutput`）。
 
 ## 新增工具声明
 

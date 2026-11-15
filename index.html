@@ -51,27 +51,29 @@
     <p>宿主只认这一个入口，先取清单再按条目路径取资源：</p>
     <div class="url">https://weiqi-dev.github.io/weiqi-assets/registry.json</div>
     <pre>GET /registry.json
- → 过滤 type / pointId / id
+ → 过滤 type / pointId / id（只装 plugin）
  → GET &lt;entry.path&gt;
  → 插件：GET &lt;manifest.code&gt; 取源码，构造 PluginArtifact
- → 工具：取 definition，对齐 ModelToolDefinition</pre>
+ → 工具：仅展示 definition，不注册执行器
+ → 校验：PluginValidator + QuickJS 试跑 + validateRankingOutput
+ → 写入工件（enabled=false，人工启用）</pre>
     <p>所有路径都是仓库内相对路径，以 <code>registry.baseUrl</code> 为基准拼接。
-       下载 ≠ 安装 ≠ 启用；失败一律回落宿主内置实现。</p>
+       默认源只读、由 git 发布；宿主可另加自定义源。下载 ≠ 安装 ≠ 启用；失败一律回落宿主内置实现。</p>
   </div>
 
   <div class="card">
     <h2>📦 资源列表</h2>
     <div class="item">
-      <div class="item-title"><span class="badge">plugin</span>示例：胜局优先的排名</div>
-      <div class="url">plugins/ranking.tiebreak/example-direct-win/plugin.json</div>
-      <div class="item-desc">扩展点 <code>ranking.tiebreak</code> / spec v1 / 入口 <code>rank</code>。
-        在 QuickJS 沙箱里按胜局数重排，演示最小可用工件。</div>
+      <div class="item-title"><span class="badge">plugin</span>总分排序</div>
+      <div class="url">plugins/ranking/total-score/plugin.json</div>
+      <div class="item-desc">扩展点 <code>ranking</code> / spec v1 / 入口 <code>rank({matches}) → {columns,rows}</code>。
+        按总得分（积分与对手分合成）排名，同分依次比较积分、直胜、对手分顺减；可在赛事详情页选用。</div>
     </div>
     <div class="item">
       <div class="item-title"><span class="badge">tool</span>web_fetch 工具声明</div>
       <div class="url">tools/web-fetch/v1/tool.json</div>
       <div class="item-desc">对齐 <code>ModelToolDefinition</code> 的声明镜像；执行器由 weiqi-bot 内置，
-        本仓库不提供可执行代码。</div>
+        本仓库不提供可执行代码，在线平台只展示、不安装。</div>
     </div>
   </div>
 

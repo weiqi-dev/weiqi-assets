@@ -14,14 +14,15 @@ weiqi-assets 是 **weiqi-bot 的开放扩展资源仓库**，不是一个应用�
 2. **不替宿主做决策**：下载什么、何时下载、是否启用、失败如何回落，全部由 weiqi-bot 决定。
 3. **不持有数据**：不含棋谱库、不含用户信息、不含需要鉴权的接口地址。
 
-## 宿主现状（2026-11-13 摸底）
+## 宿主现状（2026-11-15）
 
 | 能力 | weiqi-bot 里的位置 | 与资源库的关系 |
 |---|---|---|
 | 插件工件模型 | `domain/plugin/types.ts`（`PluginArtifact` / `PluginSpec`） | `plugins/` 的 manifest 对齐它 |
-| 插件校验 | `domain/plugin/PluginValidator.ts` | `scripts/validate.mjs` 复用同一套禁用规则 |
-| 插件执行 | `infrastructure/plugin-vm/QuickJsExecutor.ts`（QuickJS + wasm） | 插件源码必须能在零能力沙箱里跑 |
-| 扩展点接入 | `application/plugin/RankingPluginAdapter.ts`、`PluginSystem.applyRanking()` | 目前只有 `ranking.tiebreak` |
+| 插件校验 | `domain/plugin/PluginValidator.ts`、`domain/ranking/RankingTable.ts` | `scripts/validate.mjs` 复用同一套禁用规则 + 扩展点白名单 |
+| 插件执行 | `infrastructure/plugin-vm/QuickJsRuntime.ts`（QuickJS + wasm Worker） | 插件源码必须能在零能力沙箱里跑 |
+| 扩展点接入 | `application/plugin/RankingPluginAdapter.ts`、`PluginSystem.applyRanking()` → `computeRanking` | 目前只有 `ranking`，入口 `rank({matches}) → {columns,rows}` |
+| 在线插件平台 | `services/plugin-catalog/*`（取清单/装/更新）、助手页「插件」弹框的「在线插件」标签页 | 取 `registry.json`，只装 `type: plugin`，默认停用、人工启用 |
 | 工具声明 | `application/model/IModelGateway.ts`（`ModelToolDefinition`） | `tools/` 的 `definition` 对齐它 |
 | 工具注册 | `application/chat/WebToolLoop.ts`（`TOOLS[]` / `EXECUTORS`） | 目前全部宿主内置 |
 | 资源下载 | `web-resources.zip` 预下载 + `remoteBase` 按需回源；`scripts/build-assets.mjs` 控制排除项 | 扩展资源天然属于「按需」，不进预加载包 |
@@ -33,12 +34,14 @@ weiqi-bot 的 Web 资源分两类：`web-resources.zip` 在客户端启动时预
 （模型、定式库分块、题库、QuickJS wasm 等）留在远端，缓存未命中时按相对路径回源
 `remoteBase`，首次用到才下载。
 
-扩展资源属于第二类。宿主应通过 `registry.json` 拉取清单，而不是把 `plugins/` / `tools/`
-整个塞进预加载 zip —— 那等于把「按需」变回「全量预下载」。这也意味着：
+扩展资源属于第二类。宿主通过 `registry.json` 拉取清单，而不是把 `plugins/` / `tools/`
+整个塞进预加载 zip —— 那等于把「按需」变回「全量预下载」。
 
-- 宿主侧需要一个「资源清单客户端」（取 `registry.json` → 过滤 → 取条目 → 安装）。
-- 该客户端尚未实现时，本仓库的资源仍可被人工/脚本取用；`registry.json` 的 URL 是稳定入口。
-- 失败必须回落：清单取不到、条目解析失败、插件试跑不通过，都不能让页面白屏。
+宿主侧 `services/plugin-catalog/*` 已实现「资源清单客户端」（取 `registry.json` → 过滤 → 取条目 → 安装），
+默认源是 `services/share/WeiqiAssetsUrls.ts` 的 `WEIQI_ASSETS_REGISTRY_URL`，用户可另加自定义源
+（默认源只读、由 git 发布，自定义源由用户自行承担信任）。安装写入 `PluginArtifactStore`（IndexedDB），
+并带 `catalogRef` 记录来源，用来比对更新。失败必须回落：清单取不到、条目解析失败、插件试跑不通过，
+都不能让页面白屏。
 
 ## `share/` 在架构里的位置
 

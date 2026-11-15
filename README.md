@@ -11,11 +11,15 @@
 
 | 类型 | 目录 | 对齐的宿主契约 | 当前状态 |
 |---|---|---|---|
-| 插件工件 | `plugins/` | `weiqi-bot/domain/plugin/types.ts` 的 `PluginArtifact` / `PluginSpec`（QuickJS 沙箱执行） | 示例 1 个：`ranking.tiebreak` |
+| 插件工件 | `plugins/` | `weiqi-bot/domain/plugin/types.ts` 的 `PluginArtifact` / `PluginSpec`（QuickJS 沙箱执行） | 可用 1 个：`ranking` 的「总分排序」 |
 | LLM 工具声明 | `tools/` | `weiqi-bot/application/model/IModelGateway.ts` 的 `ModelToolDefinition` | 镜像 1 个：`web_fetch` |
 
 插件是**可执行代码**（在宿主 QuickJS 沙箱里跑，零宿主能力）；工具目前是**声明镜像**（执行器由宿主内置，见各条目 `README.md`）。
 两者都通过顶层 `registry.json` 索引，`schema/` 给出 JSON Schema 契约，`scripts/validate.mjs` 做一致性校验。
+
+宿主的在线插件平台**只安装 `type: plugin`**；`type: tool` 只在列表里展示，不提供安装按钮。
+默认源 `https://weiqi-dev.github.io/weiqi-assets/registry.json` 只读、由本仓库 git 发布；
+宿主可另加自定义源，但默认源不可被覆盖。
 
 ## 目录结构
 
@@ -27,8 +31,8 @@ weiqi-assets/
 │   ├── plugin.schema.json     # 插件元数据契约
 │   └── tool.schema.json       # 工具声明契约
 ├── plugins/                   # 插件工件，按扩展点分目录
-│   └── ranking.tiebreak/
-│       └── example-direct-win/
+│   └── ranking/
+│       └── total-score/       # 总分排序（可用工件）
 │           ├── plugin.json    # 元数据（含 code 相对路径）
 │           ├── index.js       # 完整源码（永远全量，不是 diff）
 │           └── README.md      # 契约来源与安装形状
@@ -62,16 +66,19 @@ weiqi-assets/
 
 ```
 1. GET  /registry.json                     ← 唯一入口，schemaVersion 决定后续解析
-2. 按 type / pointId / id 过滤资源
+2. 按 type / pointId / id 过滤资源（只装 plugin）
 3. GET  <entry.path>                       ← 相对 registry.baseUrl 或本站点根
 4. 插件：GET  <manifest.code> 取源码 → 构造 PluginArtifact 写入工件存储
-   工具：取 definition → 对齐宿主 ModelToolDefinition 后决定是否注册
-5. 校验（宿主侧）：PluginValidator + QuickJS 沙箱试跑；任何失败回落到内置实现
+   工具：仅展示 definition，不注册执行器
+5. 校验（宿主侧）：PluginValidator + QuickJS 沙箱试跑 + validateRankingOutput；任何失败回落到内置实现
 6. enabled 由用户决定；下载 ≠ 安装 ≠ 启用
+7. 工件记录 catalogRef（来源源 URL + 资源 id）；远端 code 与本地 code 不同时按钮变「更新」，
+   走本地 revise(trigger:'manual') 保留 history，不新建副本
 ```
 
 `registry.json` 里每个 `path` 都是**仓库内相对路径**，`code` / `readme` 同理，
 宿主拼接时以 `registry.baseUrl` 为基准；不要硬编码单条资源的绝对 URL。
+路径用 `new URL(rel, base)` 解析并断言同源，阻止 `..` 越界与绝对外链。
 
 ## 校验
 
@@ -95,7 +102,8 @@ npm run validate      # 或 node scripts/validate.mjs
 | `pointId` / `specVersion` / `entry` / hostApi / 资源配额 | `weiqi-bot/domain/plugin/types.ts`（`RANKING_SPEC`、`DEFAULT_PLUGIN_LIMITS`） |
 | 工具声明形状 | `weiqi-bot/application/model/IModelGateway.ts`（`ModelToolDefinition`） |
 | 插件禁用规则 | `weiqi-bot/domain/plugin/PluginValidator.ts` |
-| 输出契约（rank / id） | `weiqi-bot/application/plugin/RankingPluginAdapter.ts` |
+| 输出契约（columns / rows / cells） | `weiqi-bot/domain/ranking/RankingTable.ts`（`validateRankingOutput`） |
+| 在线平台默认源 URL | `weiqi-bot/services/share/WeiqiAssetsUrls.ts`（`WEIQI_ASSETS_REGISTRY_URL`） |
 | 分享编解码格式 | `share/share.js` 与 `weiqi-bot/domain/share/`（`GameEncoder`） |
 | 分享 `decodeUrl` | `weiqi-bot/services/share/WeiqiAssetsUrls.ts`（`WEIQI_SHARE_DECODE_URL`） |
 

@@ -6,13 +6,13 @@
   "baseUrl": "https://weiqi-dev.github.io/weiqi-assets/",
   "resources": [
     {
-      "id": "ranking.example-direct-win",
+      "id": "ranking.total-score",
       "type": "plugin",
-      "name": "示例：胜局优先的排名插件",
-      "summary": "按胜局数优先于积分重排名次，演示 ranking.tiebreak 扩展点的最小可用工件。",
-      "pointId": "ranking.tiebreak",
+      "name": "总分排序",
+      "summary": "按「总得分」综合积分与对手分排名，同分依次比较积分、直胜、对手分顺减，演示 ranking 扩展点的完整工件。",
+      "pointId": "ranking",
       "specVersion": 1,
-      "path": "plugins/ranking.tiebreak/example-direct-win/plugin.json"
+      "path": "plugins/ranking/total-score/plugin.json"
     },
     {
       "id": "web-fetch.v1",

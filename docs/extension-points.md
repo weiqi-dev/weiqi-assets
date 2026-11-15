@@ -7,26 +7,38 @@
 
 | pointId | specVersion | 入口 | 输入 | 输出契约 | 宿主接入点 |
 |---|---|---|---|---|---|
-| `ranking.tiebreak` | 1 | `rank` | `PlayerRanking[]`（只读 JSON 拷贝） | 与输入等长的数组，每行至少 `{ id: number, rank: number }` | `application/plugin/RankingPluginAdapter.ts` |
+| `ranking` | 1 | `rank` | `{ matches: MatchData[] }`（原始对阵表的只读 JSON 拷贝） | `{ columns: { key, label }[], rows: { id, name, rank, cells }[] }` | `application/plugin/RankingPluginAdapter.ts` → `domain/ranking/RankingPipeline.ts` |
 
-来源：`weiqi-bot/domain/plugin/types.ts` 的 `RANKING_SPEC` 与 `RankingPluginAdapter.ts`。
-新增扩展点须先在 weiqi-bot 里落地 spec 与适配层，再来本仓库登记 —— 不要先发资源再等宿主支持。
+来源：
+
+- `weiqi-bot/domain/plugin/types.ts` 的 `RANKING_POINT_ID` 与 `RANKING_SPEC`（pointId / version / entry / hostApi / limits）；
+- `weiqi-bot/domain/ranking/types.ts` 的 `RankingInput` / `RankingOutput`（输入与输出结构）；
+- `weiqi-bot/domain/ranking/RankingTable.ts` 的 `validateRankingOutput`（列名汉字、`cells` 只能是数值/数值数组、`rows` 覆盖全部选手且 `id`/`name` 与对阵一致）。
+
+**只有 `ranking` 一个扩展点，`specVersion` 当前为 1。** `registry.json` 的 `pointId` 与
+`plugin.json` 的 `pointId` 都受 `scripts/validate.mjs` 的 `KNOWN_POINT_IDS` 白名单约束，
+防止出现「资源先发、宿主不认」的漂移（历史上曾误写 `ranking.tiebreak`）。
+
+新增扩展点须先在 weiqi-bot 里落地 spec 与适配层，再来本仓库登记，并同步：
+`schema/plugin.schema.json` 的 `pointId.enum`、`scripts/validate.mjs` 的 `KNOWN_POINT_IDS`、
+本文档、`docs/architecture.md`。不要先发资源再等宿主支持。
 
 ## `PluginSpec` 与资源侧 manifest 的对照
 
 | PluginSpec 字段 | 资源侧 manifest | 说明 |
 |---|---|---|
-| `pointId` | `pointId` | 必填，必须与宿主注册的一致 |
+| `pointId` | `pointId` | 必填，必须在宿主注册表里 |
 | `version` | `specVersion` | 必填，宿主据此解释旧工件 |
-| `entry` | `entry` | 必填，合法 JS 标识符；宿主以 `JSON.stringify(entry(JSON.parse(__PLUGIN_INPUT__)))` 调用 |
+| `entry` | `entry` | 必填，合法 JS 标识符；宿主以 `JSON.stringify(rank(JSON.parse(__PLUGIN_INPUT__)))` 调用 |
 | `hostApi` | 不声明 | 由宿主 spec 决定，资源侧不得要求注入能力 |
 | `limits` | 不声明 | 配额来自宿主 `DEFAULT_PLUGIN_LIMITS`，资源侧不复制数值 |
 | `PluginArtifact.code` | `code` 指向的源码文件 | 永远全量源码，不是 diff |
-| `PluginArtifact.intent` | `intent` | 用户最初的自然语言需求，便于后续修订 |
+| `PluginArtifact.intent` | `intent` | 需求原话，便于后续修订 |
 | `origin` | `origin` | `manual`（人工提交）/ `llm`（模型生成） |
 
 资源侧 manifest 是**元数据包**，不是 `PluginArtifact` 本身：它没有 `enabled` / `version`（工件修订号）/
-`createdAt` / `history`，这些是宿主安装时生成的状态，不属于可发布资源。
+`createdAt` / `history` / `catalogRef`，这些是宿主安装时生成的状态，不属于可发布资源。
+`catalogRef` 由宿主写入工件，记录来源 registry URL 与资源 id，用来识别「同一个插件」是否有更新。
 
 ### 配额为什么不写进资源
 
@@ -42,7 +54,7 @@
   `XMLHttpRequest`、`importScripts`、`require`、`postMessage`、`self`、`navigator`、`WebSocket`；
 - 不得动态求值、动态模块加载、无界循环；
 - 代码必须能被 `ctx.evalCode` 编译，入口必须是全局可解析的标识符；
-- 入口返回值必须可 JSON 序列化（无循环引用 / 函数 / BigInt）。
+- 入口返回值必须可 JSON 序列化（无循环引用 / 函数 / BigInt），且能被 `validateRankingOutput` 接受。
 
 ⚠️ `PluginValidator` 是**对整串源码做正则**，注释与字符串里出现上述禁用词同样会被拦截。
 `scripts/validate.mjs` 复刻了这一点，示例插件的注释因此刻意规避了这些词。
@@ -74,8 +86,12 @@ interface ModelToolDefinition {
 当前所有条目都是 `host-builtin`。这不是能力缺失，而是刻意的安全边界：
 声明可以被自由发布，执行器的注入权限仍牢牢留在宿主手里。
 
+**在线插件平台第一版只安装 `type: plugin` 的条目**；`type: tool` 的声明镜像只在列表里展示、
+不提供安装按钮（避免把任意远程 JS 放进主线程）。
+
 ## 新增扩展点的顺序
 
 1. weiqi-bot：`domain/plugin/types.ts` 加 spec 常量 → 写适配层 → 接入页面/用例 → 补测试；
-2. 本仓库：`docs/extension-points.md` 登记 → `schema/` 若需新字段则更新 → 加示例条目；
+2. 本仓库：`docs/extension-points.md` 登记 → `schema/` 的 `pointId.enum` 与
+   `scripts/validate.mjs` 的 `KNOWN_POINT_IDS` 同步 → 加示例条目；
 3. 两边都 commit 后再发布资源，避免「资源先到、宿主不认」。
