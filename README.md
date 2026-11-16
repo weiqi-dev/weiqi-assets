@@ -1,31 +1,39 @@
 # weiqi-assets
 
-**weiqi-bot 的开放扩展资源库**：发布可下载的插件工件与 LLM 工具声明，供 weiqi-bot 按需发现、下载、安装；同时托管 SGF 二维码分享的站点能力。
+**weiqi-bot 的开放扩展资源库**：发布可下载的插件工件、LLM 工具声明与技能配方，供 weiqi-bot 按需发现、下载、安装；同时托管 SGF 二维码分享的站点能力。
 
 站点：<https://weiqi-dev.github.io/weiqi-assets/>
 
 > 本仓库是**纯静态资源**，不含构建产物、不含运行时依赖，也不内置任何棋谱/个人数据。
 > 宿主（weiqi-bot）决定下载什么、何时下载、是否启用；资源库只负责「能被找到、能被校验、能被取走」。
 
-## 两类扩展资源
+## 三类扩展资源
 
-| 类型 | 目录 | 对齐的宿主契约 | 当前状态 |
-|---|---|---|---|
-| 插件工件 | `plugins/` | `weiqi-bot/domain/plugin/types.ts` 的 `PluginArtifact` / `PluginSpec`（QuickJS 沙箱执行） | 可用 1 个：`ranking` 的「总分排序」 |
-| LLM 工具声明 | `tools/` | `weiqi-bot/application/model/IModelGateway.ts` 的 `ModelToolDefinition` | 镜像 1 个：`web_fetch` |
+| 类型 | 目录 | 清单入口 | 对齐的宿主契约 | 当前状态 |
+|---|---|---|---|---|
+| 插件工件 | `plugins/` | 顶层 `registry.json` | `weiqi-bot/domain/plugin/types.ts` 的 `PluginArtifact` / `PluginSpec`（QuickJS 沙箱执行） | 可用 1 个：`ranking` 的「总分排序」 |
+| LLM 工具声明 | `tools/` | 顶层 `registry.json` | `weiqi-bot/application/model/IModelGateway.ts` 的 `ModelToolDefinition` | 镜像 1 个：`web_fetch` |
+| 技能配方 | `skills/` | **`skills/registry.json`（独立清单）** | `weiqi-bot/application/skill/SkillRecipe.ts` / `SkillTypes.ts` 的 `SkillRecipe` | 4 条：做题、对阵图片导入、查天气、查股价 |
 
-插件是**可执行代码**（在宿主 QuickJS 沙箱里跑，零宿主能力）；工具目前是**声明镜像**（执行器由宿主内置，见各条目 `README.md`）。
-两者都通过顶层 `registry.json` 索引，`schema/` 给出 JSON Schema 契约，`scripts/validate.mjs` 做一致性校验。
+插件是**可执行代码**（在宿主 QuickJS 沙箱里跑，零宿主能力）；工具目前是**声明镜像**（执行器由宿主内置，见各条目 `README.md`）；
+技能配方是**纯声明 JSON**，只引用宿主已注册的原语名，永远不含可执行代码。
+插件与工具通过顶层 `registry.json` 索引，`schema/` 给出 JSON Schema 契约，`scripts/validate.mjs` 做一致性校验。
+**技能配方不进顶层 `registry.json`**：它是另一份清单，结构契约在 weiqi-bot 的 `SkillRecipe.ts`，
+本仓库没有对应 schema，`scripts/validate.mjs` 也不校验它（只校验顶层 registry / 条目 / 代码 / share URL 契约）。
 
 宿主的在线插件平台**只安装 `type: plugin`**；`type: tool` 只在列表里展示，不提供安装按钮。
-默认源 `https://weiqi-dev.github.io/weiqi-assets/registry.json` 只读、由本仓库 git 发布；
-宿主可另加自定义源，但默认源不可被覆盖。
+插件默认源 `https://weiqi-dev.github.io/weiqi-assets/registry.json` 只读、由本仓库 git 发布，宿主可另加自定义源但默认源不可覆盖。
+技能源是**单源模型**，默认源 `…/skills/registry.json` 是宿主代码常量（`SkillCatalogSources.DEFAULT_SKILL_REGISTRY_URL`），
+用户可在「🧠 技能」面板改成任意 https 源或一键恢复（自定义源内容未经审核，信任自担）——这点与插件不同。
+
+技能是**安装制**：在线配方不会自动生效，必须经面板「安装」写进本地技能库；只有本地库里启用的条目才会被 LLM 调用。
+引用宿主注册表里没有的原语的配方只展示、不可安装。安装即启用（纯声明零代码，不设插件那道「默认停用」闸门）。
 
 ## 目录结构
 
 ```
 weiqi-assets/
-├── registry.json              # 顶层扩展资源清单（下载入口，先取这个文件）
+├── registry.json              # 顶层扩展资源清单（插件 / 工具，先取这个文件）
 ├── schema/
 │   ├── registry.schema.json   # 清单契约
 │   ├── plugin.schema.json     # 插件元数据契约
@@ -40,6 +48,8 @@ weiqi-assets/
 │   └── web-fetch/v1/
 │       ├── tool.json
 │       └── README.md
+├── skills/                    # 技能配方，单文件清单
+│   └── registry.json          # 纯声明配方：只引用宿主原语，不含代码
 ├── share/                     # SGF 二维码分享与下载（站点能力，见 share/README.md）
 │   ├── index.html             # 扫码着陆页
 │   ├── share.js               # 编解码 + 二维码库（纯库，无副作用）
@@ -55,7 +65,8 @@ weiqi-assets/
 
 ### 关于 `share/`
 
-`registry.json` **只登记 plugin / tool**，`share/` 不进去。理由：registry 是「宿主按需下载的扩展资源」，
+顶层 `registry.json` **只登记 plugin / tool**（技能配方走独立的 `skills/registry.json`，见上文「三类扩展资源」），`share/` 也不进去。
+理由：顶层 registry 是「宿主按需下载的扩展资源」，
 而 share 是宿主直接拼 URL 引用的页面与脚本，塞进去只会让宿主多一层没必要的解析。
 
 历史上库放在 `js/share.js`；本次整改把它收进 `share/`，`js/` 目录随之删除。
@@ -80,6 +91,21 @@ weiqi-assets/
 宿主拼接时以 `registry.baseUrl` 为基准；不要硬编码单条资源的绝对 URL。
 路径用 `new URL(rel, base)` 解析并断言同源，阻止 `..` 越界与绝对外链。
 
+### 技能配方的独立链路（宿主侧）
+
+```
+1. GET  /skills/registry.json           ← 独立入口，与顶层 registry 无关
+2. 逐条解析 SkillRecipe（schemaVersion / id / version / triggers / primitives / prompt）
+3. 用户点「安装」→ 校验配方合法 + 引用的原语在宿主注册表里存在
+4. 写进本地技能库（LocalStorageAdapter('weiqi-bot')），安装即启用
+5. 对话时 loadSkills() 只取本地库 enabled 条目；在线源可达与否对对话无影响
+6. 同 id 的 version 不等 → 「有更新」；更新按同 id 覆盖、保留启停状态
+7. 缺原语 → 只展示不可安装；失败转成中文结果，绝不抛到对话 / 面板
+```
+
+配方只组合宿主已有能力，新增 / 修订一条配方改 `skills/registry.json` 即可，无需重建 Web 资源包。
+「下载」不等于「生效」：装进本地库、且启用，才会被 LLM 调用。
+
 ## 校验
 
 ```bash
@@ -89,6 +115,7 @@ npm run validate      # 或 node scripts/validate.mjs
 零依赖（Node 原生）。检查：JSON 合法、必填字段、路径不越界、registry 与条目 ID 一致、
 插件代码入口存在且不含宿主禁用的全局/动态求值/无界循环，以及
 `share/share.js` 的 `decodeUrl` / `libUrl` 与站点 URL 契约一致。
+**不校验 `skills/registry.json`**：技能清单的结构契约在宿主 `SkillRecipe.ts`，由宿主安装时逐条解析。
 
 禁用规则与 `weiqi-bot/domain/plugin/PluginValidator.ts` **同源**——注意该校验器对全串做正则，
 **注释里出现禁用词也会被拦下**，示例插件因此刻意不写出那些词。
@@ -104,6 +131,9 @@ npm run validate      # 或 node scripts/validate.mjs
 | 插件禁用规则 | `weiqi-bot/domain/plugin/PluginValidator.ts` |
 | 输出契约（columns / rows / cells） | `weiqi-bot/domain/ranking/RankingTable.ts`（`validateRankingOutput`） |
 | 在线平台默认源 URL | `weiqi-bot/services/share/WeiqiAssetsUrls.ts`（`WEIQI_ASSETS_REGISTRY_URL`） |
+| 技能配方结构 / 解析 | `weiqi-bot/application/skill/SkillRecipe.ts`（`parseSkillRecipe`）、`SkillTypes.ts`（`SkillRecipe`） |
+| 技能源默认 URL / 改源 | `weiqi-bot/services/skill-catalog/SkillCatalogSources.ts`（`DEFAULT_SKILL_REGISTRY_URL` / `setCurrent` / `reset`） |
+| 技能安装 / 生效口径 | `weiqi-bot/services/skill-catalog/SkillCatalogService.ts`（`loadSkills` / `browse` / `install`） |
 | 分享编解码格式 | `share/share.js` 与 `weiqi-bot/domain/share/`（`GameEncoder`） |
 | 分享 `decodeUrl` | `weiqi-bot/services/share/WeiqiAssetsUrls.ts`（`WEIQI_SHARE_DECODE_URL`） |
 

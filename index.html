@@ -43,12 +43,12 @@
 <div class="container">
   <div class="header">
     <h1>⚫⚪ Weiqi Assets</h1>
-    <p>weiqi-bot 的开放扩展资源库<br>插件工件 · LLM 工具声明 · SGF 分享</p>
+    <p>weiqi-bot 的开放扩展资源库<br>插件工件 · LLM 工具声明 · 技能配方 · SGF 分享</p>
   </div>
 
   <div class="card">
-    <h2>📥 扩展资源下载入口</h2>
-    <p>宿主只认这一个入口，先取清单再按条目路径取资源：</p>
+    <h2>📥 扩展资源下载入口（插件 / 工具）</h2>
+    <p>插件与 LLM 工具声明走这个清单，先取清单再按条目路径取资源：</p>
     <div class="url">https://weiqi-dev.github.io/weiqi-assets/registry.json</div>
     <pre>GET /registry.json
  → 过滤 type / pointId / id（只装 plugin）
@@ -59,6 +59,22 @@
  → 写入工件（enabled=false，人工启用）</pre>
     <p>所有路径都是仓库内相对路径，以 <code>registry.baseUrl</code> 为基准拼接。
        默认源只读、由 git 发布；宿主可另加自定义源。下载 ≠ 安装 ≠ 启用；失败一律回落宿主内置实现。</p>
+  </div>
+
+  <div class="card">
+    <h2>🧠 技能配方入口（独立清单）</h2>
+    <p>技能配方是<strong>另一套清单</strong>，不经过上面的 <code>registry.json</code>。宿主单独取这个地址：</p>
+    <div class="url">https://weiqi-dev.github.io/weiqi-assets/skills/registry.json</div>
+    <pre>GET /skills/registry.json
+ → 解析纯声明配方（schemaVersion / id / version / triggers / primitives / prompt）
+ → 配方只引用宿主已注册的原语名，不含任何可执行代码
+ → 用户在「🧠 技能」→「在线技能」点安装，写进本地技能库
+ → 只有本地库里启用的条目才会被 LLM 调用（装了才生效）
+ → 引用宿主没有的原语 → 只展示、不可安装</pre>
+    <p>结构契约在 weiqi-bot 的 <code>application/skill/SkillRecipe.ts</code> / <code>SkillTypes.ts</code>；
+       本仓库没有对应 schema，<code>scripts/validate.mjs</code> 也不校验这份清单。
+       默认源是宿主代码常量，用户可在面板改成任意 https 源或一键恢复（内容未经官方审核时需自担信任）。
+       当前 4 条配方见下方「技能配方列表」。</p>
   </div>
 
   <div class="card">
@@ -78,13 +94,39 @@
   </div>
 
   <div class="card">
+    <h2>🧩 技能配方列表（纯声明 · 装了才生效）</h2>
+    <div class="item">
+      <div class="item-title"><span class="badge">skill</span>图片对阵表导入赛事 <code>event.import-pairing-image</code> · v1</div>
+      <div class="item-desc">触发「对阵表 / 导入比赛 …」，引用 <code>event_parse_draft</code> + <code>event_commit_draft</code>。
+        把图片对阵表整理成可编辑表格，用户确认后宿主再写库。</div>
+    </div>
+    <div class="item">
+      <div class="item-title"><span class="badge">skill</span>做题练习 <code>puzzle.tsumego</code> · v4</div>
+      <div class="item-desc">触发「死活题 / 做一道 / 手筋 / 官子 …」，引用 <code>navigate_to</code>。
+        每轮按题型 / 难度重算；链接由宿主渲染成按钮，模型正文里不写任何网址。</div>
+    </div>
+    <div class="item">
+      <div class="item-title"><span class="badge">skill</span>查天气 <code>weather.wttr</code> · v1</div>
+      <div class="item-desc">触发「查天气 / 天气怎么样 / 今天天气」，引用 <code>web_fetch</code>。
+        取 wttr.in 的公开 JSON 归纳中文播报；取不到如实说明、不编造数据。</div>
+    </div>
+    <div class="item">
+      <div class="item-title"><span class="badge">skill</span>查股价 <code>stock.quote</code> · v2</div>
+      <div class="item-desc">触发「查股价 / 查股票 / 股票价格 …」，引用 <code>web_fetch</code>。
+        取腾讯公开行情文本归纳中文报价播报；仅供参考，取不到不编造价格。</div>
+    </div>
+    <p style="margin-top:12px">配方都是纯 JSON、只组合宿主原语；新增 / 修订配方改 <code>skills/registry.json</code> 即可，
+       无需重建 Web 资源包。与插件「默认停用、人工启用」不同，技能安装即启用（纯声明零代码）。</p>
+  </div>
+
+  <div class="card">
     <h2>🔗 SGF 二维码分享（站点能力）</h2>
     <div class="item">
       <div class="item-title"><span class="badge site">site</span>share/ · 扫码下载棋谱</div>
       <div class="url">https://weiqi-dev.github.io/weiqi-assets/share/?d=&lt;encoded&gt;</div>
       <div class="item-desc">库 <code>share/share.js</code> 负责编解码与二维码生成，
         <code>share/index.html</code> 是扫码落页。这是宿主直接拼 URL 引用的站点能力，
-        <strong>不进 registry</strong>；URL 契约与改动须知见 <a href="share/README.md">share/README.md</a>。</div>
+        <strong>不进顶层 registry</strong>；URL 契约与改动须知见 <a href="share/README.md">share/README.md</a>。</div>
     </div>
   </div>
 
@@ -95,6 +137,7 @@
       <a href="docs/extension-points.md">扩展点契约</a>
       <a href="docs/contributing.md">贡献指南</a>
       <a href="share/README.md">SGF 分享能力</a>
+      <a href="skills/registry.json">技能配方清单</a>
       <a href="schema/registry.schema.json">registry schema</a>
       <a href="schema/plugin.schema.json">plugin schema</a>
       <a href="schema/tool.schema.json">tool schema</a>
