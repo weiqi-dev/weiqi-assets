@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "name": "weiqi-bot skills",
-  "description": "围棋能力配方：只组合宿主已注册的原语，不含可执行代码。",
+  "description": "通用能力配方：只组合宿主已注册的原语，不含可执行代码。",
   "skills": [
     {
       "schemaVersion": 1,
@@ -35,6 +35,22 @@
         "navigate_to"
       ],
       "prompt": "仅当用户明确想做题时（如「做一道死活题」「做8K手筋题」）才走下面流程；只是聊围棋知识或术语就正常回答，不要调用 navigate_to。先从用户原话里抽出两个可选参数：题型只能取 布局/死活/官子/中盘/对杀/手筋/棋理 之一（说「手筋题」就取「手筋」），难度取「数字+K」或「数字+D」（如 8K、3D）；没提到的就不传，不要臆造条件。每一轮做题请求都必须重新调用 navigate_to（不能沿用上一轮的链接或条件）：path 固定为 /puzzle/index.html，把本轮抽到的值放进 query 对象（键名 type、difficulty，值都是字符串），label 写成「做8K手筋题」这类短文字。两个参数都没有就只传 path 和 label。工具会由宿主直接把链接显示在这条回复下方，所以你的回复里绝对不要写任何链接、网址、markdown 链接或括号里的地址，也不要复述工具返回的说明；只写一句简短引导语（比如点出这类题的要点），然后停笔，不要编造具体题目或答案。"
+    },
+    {
+      "schemaVersion": 1,
+      "id": "weather.wttr",
+      "version": 1,
+      "name": "查天气",
+      "summary": "用户说「查天气＋城市」时，取回 wttr.in 的公开 JSON 天气数据并归纳成简洁中文播报",
+      "triggers": [
+        "查天气",
+        "天气怎么样",
+        "今天天气"
+      ],
+      "primitives": [
+        "web_fetch"
+      ],
+      "prompt": "用户想查某个城市的天气。把城市名转成英文或汉语拼音（如 北京→Beijing、上海→Shanghai、广州→Guangzhou），拼成 wttr.in 的公开 JSON 接口路径，形如 https://wttr.in/城市拼音?format=j1，用 web_fetch 取回。从返回的 current_condition 中读取 temp_C、天气描述、FeelsLikeC、humidity、windspeedKmph、观测时间；再从 weather 数组第一天的 hourly 里挑几个关键时段（如早、午、晚）补充趋势，以及当天 maxtempC / mintempC。用简洁自然的中文播报，标注数据来自 wttr.in。若用户没说城市，默认北京；接口取不到或返回异常时如实说明，不要编造天气数据。"
     }
   ]
 }
