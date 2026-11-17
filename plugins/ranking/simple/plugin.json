@@ -1,0 +1,18 @@
+{
+  "$schema": "../../../schema/plugin.schema.json",
+  "id": "ranking.simple",
+  "name": "简易",
+  "type": "plugin",
+  "pointId": "ranking",
+  "specVersion": 1,
+  "entry": "rank",
+  "code": "plugins/ranking/simple/index.js",
+  "origin": "manual",
+  "intent": "按积分→对手分→逆减排名，不展示累进分；对应赛事详情页原先内置的「简易」口径。",
+  "readme": "plugins/ranking/simple/README.md",
+  "license": "MIT",
+  "tags": [
+    "ranking",
+    "simple"
+  ]
+}

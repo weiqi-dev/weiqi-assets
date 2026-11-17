@@ -15,6 +15,24 @@
       "path": "plugins/ranking/total-score/plugin.json"
     },
     {
+      "id": "ranking.direct-win",
+      "type": "plugin",
+      "name": "直胜",
+      "summary": "积分→对手分→直胜→逆减，展示直胜列；对应赛事详情页原先内置的「直胜」口径。",
+      "pointId": "ranking",
+      "specVersion": 1,
+      "path": "plugins/ranking/direct-win/plugin.json"
+    },
+    {
+      "id": "ranking.simple",
+      "type": "plugin",
+      "name": "简易",
+      "summary": "积分→对手分→逆减，不展示累进分；对应赛事详情页原先内置的「简易」口径。",
+      "pointId": "ranking",
+      "specVersion": 1,
+      "path": "plugins/ranking/simple/plugin.json"
+    },
+    {
       "id": "web-fetch.v1",
       "type": "tool",
       "name": "web_fetch",

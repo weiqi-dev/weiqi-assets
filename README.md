@@ -11,7 +11,7 @@
 
 | 类型 | 目录 | 清单入口 | 对齐的宿主契约 | 当前状态 |
 |---|---|---|---|---|
-| 插件工件 | `plugins/` | 顶层 `registry.json` | `weiqi-bot/domain/plugin/types.ts` 的 `PluginArtifact` / `PluginSpec`（QuickJS 沙箱执行） | 可用 1 个：`ranking` 的「总分排序」 |
+| 插件工件 | `plugins/` | 顶层 `registry.json` | `weiqi-bot/domain/plugin/types.ts` 的 `PluginArtifact` / `PluginSpec`（QuickJS 沙箱执行） | 可用 3 个：`ranking` 的「总分排序」「直胜」「简易」 |
 | LLM 工具声明 | `tools/` | 顶层 `registry.json` | `weiqi-bot/application/model/IModelGateway.ts` 的 `ModelToolDefinition` | 镜像 1 个：`web_fetch` |
 | 技能配方 | `skills/` | **`skills/registry.json`（独立清单）** | `weiqi-bot/application/skill/SkillRecipe.ts` / `SkillTypes.ts` 的 `SkillRecipe` | 4 条：做题、对阵图片导入、查天气、查股价 |
 
@@ -40,10 +40,18 @@ weiqi-assets/
 │   └── tool.schema.json       # 工具声明契约
 ├── plugins/                   # 插件工件，按扩展点分目录
 │   └── ranking/
-│       └── total-score/       # 总分排序（可用工件）
-│           ├── plugin.json    # 元数据（含 code 相对路径）
-│           ├── index.js       # 完整源码（永远全量，不是 diff）
-│           └── README.md      # 契约来源与安装形状
+│       ├── total-score/       # 总分排序（可用工件）
+│       │   ├── plugin.json    # 元数据（含 code 相对路径）
+│       │   ├── index.js       # 完整源码（永远全量，不是 diff）
+│       │   └── README.md      # 契约来源与安装形状
+│       ├── direct-win/        # 直胜口径（原详情页内置规则外置）
+│       │   ├── plugin.json
+│       │   ├── index.js
+│       │   └── README.md
+│       └── simple/            # 简易口径（原详情页内置规则外置）
+│           ├── plugin.json
+│           ├── index.js
+│           └── README.md
 ├── tools/                     # LLM 工具声明，按工具名/版本分目录
 │   └── web-fetch/v1/
 │       ├── tool.json

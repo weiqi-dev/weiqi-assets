@@ -1,0 +1,18 @@
+{
+  "$schema": "../../../schema/plugin.schema.json",
+  "id": "ranking.direct-win",
+  "name": "直胜",
+  "type": "plugin",
+  "pointId": "ranking",
+  "specVersion": 1,
+  "entry": "rank",
+  "code": "plugins/ranking/direct-win/index.js",
+  "origin": "manual",
+  "intent": "按积分→对手分→直胜→逆减排名，展示直胜列；对应赛事详情页原先内置的「直胜」口径。",
+  "readme": "plugins/ranking/direct-win/README.md",
+  "license": "MIT",
+  "tags": [
+    "ranking",
+    "direct-win"
+  ]
+}
