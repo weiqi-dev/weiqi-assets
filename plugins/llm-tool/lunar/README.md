@@ -72,6 +72,9 @@
 | 方法名只认 `exposes[]` 白名单 | `weiqi-bot/application/plugin/LlmToolKit.ts` |
 | 安装前静态预检 + 沙箱试跑 | `weiqi-bot/services/plugin-catalog/PluginCatalogService.ts` |
 
+`smoke[]` 每条可带 `method`（省略时用 `exposes[0].name`）：多方法库要为不同方法的样例
+各自写明，宿主按该字段组装 `call({method,args})` 并逐字段比对 `expect`。
+
 资源侧**不复制**配额数值：宿主升级 spec 时以宿主为准，本仓库只声明遵守哪个版本。
 
 ## 安装形状

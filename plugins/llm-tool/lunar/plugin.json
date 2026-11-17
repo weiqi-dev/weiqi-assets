@@ -32,10 +32,12 @@
   ],
   "smoke": [
     {
+      "method": "toLunar",
       "args": [{ "date": "2026-11-17" }],
       "expect": { "from": "2026-11-17", "to": "2026-11-17", "count": 1, "days": [{ "solar": "2026-11-17", "lunar": { "year": 2026, "month": 10, "day": 9, "isLeap": false }, "lunarText": "十月初九" }] }
     },
     {
+      "method": "toLunar",
       "args": [{ "from": "2026-11-17", "to": "2026-11-19" }],
       "expect": { "from": "2026-11-17", "to": "2026-11-19", "count": 3, "days": [
         { "solar": "2026-11-17", "lunar": { "year": 2026, "month": 10, "day": 9, "isLeap": false }, "lunarText": "十月初九" },
@@ -44,6 +46,7 @@
       ] }
     },
     {
+      "method": "toLunar",
       "args": [{ "date": "2025-07-25" }],
       "expect": { "from": "2025-07-25", "to": "2025-07-25", "count": 1, "days": [{ "solar": "2025-07-25", "lunar": { "year": 2025, "month": 6, "day": 1, "isLeap": true }, "lunarText": "闰六月初一" }] }
     }

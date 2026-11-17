@@ -152,6 +152,9 @@ function validateLlmToolPlugin(m, ctx, entryName) {
       if (!s || typeof s !== 'object') { fail(`${sc} 必须是对象`); continue; }
       if (!Array.isArray(s.args) || s.args.length !== 1) fail(`${sc}.args 必须是含一个参数对象的数组`);
       if (s.expect === undefined) fail(`${sc}.expect 缺失`);
+      if (s.method !== undefined && (typeof s.method !== 'string' || !ENTRY_RE.test(s.method))) {
+        fail(`${sc}.method 不是合法方法标识符`);
+      }
     }
   }
 }

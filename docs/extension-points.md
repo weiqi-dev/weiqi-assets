@@ -72,7 +72,7 @@
 | 输出 | 严格 `{ columns, rows }`，由 `validateRankingOutput` 校验 | 任意可 JSON 序列化值，宿主不解读语义 |
 | 生效位置 | 赛事详情页排名管线 | 对话页 chat / skill-dev 角色的 `llm_tool_call` 工具 |
 | 方法白名单 | 无（只有一个入口） | `plugin.json` 的 `exposes[]`，宿主只放行这里声明的 `method` |
-| 安装前试跑 | `SAMPLE_RANKING_INPUT` + 排名契约 | `smoke[]` 样例逐字段比对 `expect` |
+| 安装前试跑 | `SAMPLE_RANKING_INPUT` + 排名契约 | `smoke[]` 样例（可带 method）逐字段比对 `expect` |
 
 关键安全边界（与 skill 配方「system 给声明 + 宿主内置执行器」同构）：
 

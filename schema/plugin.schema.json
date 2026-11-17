@@ -35,11 +35,12 @@
     },
     "smoke": {
       "type": "array",
-      "description": "llm-tool 专用：安装前沙箱自检样例。每项 {args:[一个参数对象], expect:与 call 返回值逐字段相等}。",
+      "description": "llm-tool 专用：安装前沙箱自检样例。每项 {method?, args:[一个参数对象], expect:与 call 返回值逐字段相等}。",
       "items": {
         "type": "object",
         "required": ["args", "expect"],
         "properties": {
+          "method": { "type": "string", "description": "该样例调用的方法名；省略时用 exposes[0].name" },
           "args": { "type": "array", "minItems": 1, "maxItems": 1 },
           "expect": {}
         }
