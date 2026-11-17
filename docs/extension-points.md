@@ -85,6 +85,23 @@
   因为沙箱里的时间来自宿主真实时钟，逐次运行结果会变。
 - 工件默认停用，人工启用后模型才看得到；缓存命中即零网络下载，每次仍是一次性 Worker。
 
+### 两条落地路径：在线安装与模型自建
+
+`llm-tool` 工件有两种来源，落到**同一张工件表、同一个 IndexedDB、同一套版本历史与启用闸门**：
+
+| 来源 | 触发方式 | origin | 契约从哪来 |
+|---|---|---|---|
+| 在线安装（人工） | 插件面板「在线插件」从 `registry.json` 安装 | `manual`（带 `catalogRef`） | 随 `plugin.json` 一起下载的 `exposes[] / smoke[]` |
+| 模型自建 | 插件开发角色用 `plugin_write` 给 `pointId:"llm-tool"` + `exposes[]` + `smoke[]` | `llm` | 模型当次提交的参数，随源码一起落进工件 |
+
+两条路径都先经 QuickJS 沙箱逐条跑 `smoke[]` 并与 `expect` 逐字段比对（能跑但算错同样拒），
+通过后默认 `enabled:false`，**必须人工在「本地插件」页启用**才对模型可见。模型自建不绕过
+这道闸门；启用后闲聊 / 技能开发角色通过 `llm_tool_call` 跨会话复用。
+
+`plugin_write` 省略 `pointId` 时仍是原来的 ranking 排名插件（行为逐字不变），只有给了
+`"llm-tool"` 才走能力库分支。修订能力库时契约随源码版本同步；回滚也按工件 `pointId`
+分派试跑，不会拿排名样例去跑 `call`。
+
 ## 工具声明契约
 
 `tools/<name>/v<N>/tool.json` 的 `definition` 直接对齐

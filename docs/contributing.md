@@ -55,6 +55,11 @@ manifest 还要给 `exposes[]`（方法名 + 说明 + 参数 JSON Schema）与 `
 库必须是经典脚本或 `module.exports` 形态，不得用 ESM `export`；不要依赖 `new Date()`
 这类非确定性结果做自检断言。完整示例见 `plugins/llm-tool/lunar/`。
 
+以上是「把库随资源发布、人工安装」的路径。也可以让模型在对话里自建能力库：插件开发
+角色的 `plugin_write` 带 `pointId:"llm-tool"` + `exposes[]` + `smoke[]` 即可，宿主用同一套
+沙箱逐条自检、落进同一张工件表，默认停用、人工启用后跨会话复用。详见 `docs/extension-points.md`
+的 `llm-tool` 专节。
+
 ## 新增工具声明
 
 1. 建目录：`tools/<tool-name>/v<N>/`（同一工具多版本并存，不覆盖）。
