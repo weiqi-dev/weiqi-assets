@@ -8,23 +8,92 @@
   "entry": "call",
   "code": "plugins/llm-tool/lunar/index.js",
   "origin": "manual",
-  "intent": "让对话里的模型能把公历日期或日期范围换算成农历，不联网、不依赖运行时时钟；作为 llm-tool 扩展点的首个示例工件。",
+  "intent": "让对话里的模型能把公历日期或日期范围换算成农历，并查 24 节气与传统节日；不联网、不依赖运行时时钟。节气用 HKO 1901-2100 逐年事实表，传统节日按明说的民俗约定判定。",
   "readme": "plugins/llm-tool/lunar/README.md",
   "license": "MIT",
-  "tags": ["llm-tool", "calendar", "lunar", "date-range"],
+  "tags": [
+    "llm-tool",
+    "calendar",
+    "lunar",
+    "date-range",
+    "solar-term",
+    "festival"
+  ],
   "exposes": [
     {
       "name": "toLunar",
-      "description": "公历转农历。传 {date:'YYYY-MM-DD'} 查单日，或 {from:'YYYY-MM-DD',to:'YYYY-MM-DD'} 查连续日期范围，也可用 {year,month,day} 数字形式。返回 {from,to,count,days[]}，days 每项含 solar（公历）、lunar（农历年月日与是否闰月）、lunarText（中文月日）。",
+      "description": "公历转农历。传 {date:YYYY-MM-DD} 或 {from,to} 或 {year,month,day}。返回 {from,to,count,days[]}；days 每项含 solar、lunar{年月日,isLeap}、lunarText、solarTerm（当日节气名或 null）、festival（当日传统节日名或 null）。",
       "params": {
         "type": "object",
         "properties": {
-          "date": { "type": "string", "description": "单日 YYYY-MM-DD；与 from/to、year/month/day 三选一" },
-          "from": { "type": "string", "description": "范围起始 YYYY-MM-DD，需与 to 同时给出" },
-          "to": { "type": "string", "description": "范围结束 YYYY-MM-DD，需与 from 同时给出" },
-          "year": { "type": "number", "description": "数字形式单日的公历年" },
-          "month": { "type": "number", "description": "数字形式单日的公历月" },
-          "day": { "type": "number", "description": "数字形式单日的公历日" }
+          "date": {
+            "type": "string",
+            "description": "单日 YYYY-MM-DD"
+          },
+          "from": {
+            "type": "string",
+            "description": "范围起始 YYYY-MM-DD"
+          },
+          "to": {
+            "type": "string",
+            "description": "范围结束 YYYY-MM-DD"
+          },
+          "year": {
+            "type": "number",
+            "description": "数字形式单日的公历年"
+          },
+          "month": {
+            "type": "number",
+            "description": "数字形式单日的公历月"
+          },
+          "day": {
+            "type": "number",
+            "description": "数字形式单日的公历日"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "solarTerms",
+      "description": "查 24 节气。传 {year:2027} 或 {from:2025,to:2027}（数字年份，含首尾）。返回 {years:[{year,terms:[{name,solar}]}],count}，每年恰好 24 个节气，日期来自 HKO 逐年事实表；1901-2100 之外的年份明确报错。",
+      "params": {
+        "type": "object",
+        "properties": {
+          "year": {
+            "type": "number",
+            "description": "单个公历年（1901-2100）"
+          },
+          "from": {
+            "type": "number",
+            "description": "连续年份范围起始"
+          },
+          "to": {
+            "type": "number",
+            "description": "连续年份范围结束"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "festivals",
+      "description": "查传统节日。传 {date:YYYY-MM-DD} 或 {from,to}。返回 {from,to,count,days[]}，只含命中节日的日期；days 每项 {solar,lunar,festival}。规则：春节正月初一、元宵正月十五、端午五月初五、七夕七月初七、中元七月十五、中秋八月十五、重阳九月初九、腊八腊月初八、除夕=该腊月最后一天（廿九或三十）；闰月不算节日。",
+      "params": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "description": "单日 YYYY-MM-DD"
+          },
+          "from": {
+            "type": "string",
+            "description": "范围起始 YYYY-MM-DD"
+          },
+          "to": {
+            "type": "string",
+            "description": "范围结束 YYYY-MM-DD"
+          }
         },
         "additionalProperties": false
       }
@@ -33,22 +102,436 @@
   "smoke": [
     {
       "method": "toLunar",
-      "args": [{ "date": "2026-11-17" }],
-      "expect": { "from": "2026-11-17", "to": "2026-11-17", "count": 1, "days": [{ "solar": "2026-11-17", "lunar": { "year": 2026, "month": 10, "day": 9, "isLeap": false }, "lunarText": "十月初九" }] }
+      "args": [
+        {
+          "date": "2026-11-17"
+        }
+      ],
+      "expect": {
+        "from": "2026-11-17",
+        "to": "2026-11-17",
+        "count": 1,
+        "days": [
+          {
+            "solar": "2026-11-17",
+            "lunar": {
+              "year": 2026,
+              "month": 10,
+              "day": 9,
+              "isLeap": false
+            },
+            "lunarText": "十月初九",
+            "solarTerm": null,
+            "festival": null
+          }
+        ]
+      }
     },
     {
       "method": "toLunar",
-      "args": [{ "from": "2026-11-17", "to": "2026-11-19" }],
-      "expect": { "from": "2026-11-17", "to": "2026-11-19", "count": 3, "days": [
-        { "solar": "2026-11-17", "lunar": { "year": 2026, "month": 10, "day": 9, "isLeap": false }, "lunarText": "十月初九" },
-        { "solar": "2026-11-18", "lunar": { "year": 2026, "month": 10, "day": 10, "isLeap": false }, "lunarText": "十月初十" },
-        { "solar": "2026-11-19", "lunar": { "year": 2026, "month": 10, "day": 11, "isLeap": false }, "lunarText": "十月十一" }
-      ] }
+      "args": [
+        {
+          "from": "2026-11-17",
+          "to": "2026-11-19"
+        }
+      ],
+      "expect": {
+        "from": "2026-11-17",
+        "to": "2026-11-19",
+        "count": 3,
+        "days": [
+          {
+            "solar": "2026-11-17",
+            "lunar": {
+              "year": 2026,
+              "month": 10,
+              "day": 9,
+              "isLeap": false
+            },
+            "lunarText": "十月初九",
+            "solarTerm": null,
+            "festival": null
+          },
+          {
+            "solar": "2026-11-18",
+            "lunar": {
+              "year": 2026,
+              "month": 10,
+              "day": 10,
+              "isLeap": false
+            },
+            "lunarText": "十月初十",
+            "solarTerm": null,
+            "festival": null
+          },
+          {
+            "solar": "2026-11-19",
+            "lunar": {
+              "year": 2026,
+              "month": 10,
+              "day": 11,
+              "isLeap": false
+            },
+            "lunarText": "十月十一",
+            "solarTerm": null,
+            "festival": null
+          }
+        ]
+      }
     },
     {
       "method": "toLunar",
-      "args": [{ "date": "2025-07-25" }],
-      "expect": { "from": "2025-07-25", "to": "2025-07-25", "count": 1, "days": [{ "solar": "2025-07-25", "lunar": { "year": 2025, "month": 6, "day": 1, "isLeap": true }, "lunarText": "闰六月初一" }] }
+      "args": [
+        {
+          "date": "2025-07-25"
+        }
+      ],
+      "expect": {
+        "from": "2025-07-25",
+        "to": "2025-07-25",
+        "count": 1,
+        "days": [
+          {
+            "solar": "2025-07-25",
+            "lunar": {
+              "year": 2025,
+              "month": 6,
+              "day": 1,
+              "isLeap": true
+            },
+            "lunarText": "闰六月初一",
+            "solarTerm": null,
+            "festival": null
+          }
+        ]
+      }
+    },
+    {
+      "method": "solarTerms",
+      "args": [
+        {
+          "year": 2027
+        }
+      ],
+      "expect": {
+        "years": [
+          {
+            "year": 2027,
+            "terms": [
+              {
+                "name": "小寒",
+                "solar": "2027-01-05"
+              },
+              {
+                "name": "大寒",
+                "solar": "2027-01-20"
+              },
+              {
+                "name": "立春",
+                "solar": "2027-02-04"
+              },
+              {
+                "name": "雨水",
+                "solar": "2027-02-19"
+              },
+              {
+                "name": "惊蛰",
+                "solar": "2027-03-06"
+              },
+              {
+                "name": "春分",
+                "solar": "2027-03-21"
+              },
+              {
+                "name": "清明",
+                "solar": "2027-04-05"
+              },
+              {
+                "name": "谷雨",
+                "solar": "2027-04-20"
+              },
+              {
+                "name": "立夏",
+                "solar": "2027-05-06"
+              },
+              {
+                "name": "小满",
+                "solar": "2027-05-21"
+              },
+              {
+                "name": "芒种",
+                "solar": "2027-06-06"
+              },
+              {
+                "name": "夏至",
+                "solar": "2027-06-21"
+              },
+              {
+                "name": "小暑",
+                "solar": "2027-07-07"
+              },
+              {
+                "name": "大暑",
+                "solar": "2027-07-23"
+              },
+              {
+                "name": "立秋",
+                "solar": "2027-08-08"
+              },
+              {
+                "name": "处暑",
+                "solar": "2027-08-23"
+              },
+              {
+                "name": "白露",
+                "solar": "2027-09-08"
+              },
+              {
+                "name": "秋分",
+                "solar": "2027-09-23"
+              },
+              {
+                "name": "寒露",
+                "solar": "2027-10-08"
+              },
+              {
+                "name": "霜降",
+                "solar": "2027-10-23"
+              },
+              {
+                "name": "立冬",
+                "solar": "2027-11-07"
+              },
+              {
+                "name": "小雪",
+                "solar": "2027-11-22"
+              },
+              {
+                "name": "大雪",
+                "solar": "2027-12-07"
+              },
+              {
+                "name": "冬至",
+                "solar": "2027-12-22"
+              }
+            ]
+          }
+        ],
+        "count": 1
+      }
+    },
+    {
+      "method": "solarTerms",
+      "args": [
+        {
+          "from": 1901,
+          "to": 1901
+        }
+      ],
+      "expect": {
+        "years": [
+          {
+            "year": 1901,
+            "terms": [
+              {
+                "name": "小寒",
+                "solar": "1901-01-06"
+              },
+              {
+                "name": "大寒",
+                "solar": "1901-01-21"
+              },
+              {
+                "name": "立春",
+                "solar": "1901-02-04"
+              },
+              {
+                "name": "雨水",
+                "solar": "1901-02-19"
+              },
+              {
+                "name": "惊蛰",
+                "solar": "1901-03-06"
+              },
+              {
+                "name": "春分",
+                "solar": "1901-03-21"
+              },
+              {
+                "name": "清明",
+                "solar": "1901-04-05"
+              },
+              {
+                "name": "谷雨",
+                "solar": "1901-04-21"
+              },
+              {
+                "name": "立夏",
+                "solar": "1901-05-06"
+              },
+              {
+                "name": "小满",
+                "solar": "1901-05-22"
+              },
+              {
+                "name": "芒种",
+                "solar": "1901-06-06"
+              },
+              {
+                "name": "夏至",
+                "solar": "1901-06-22"
+              },
+              {
+                "name": "小暑",
+                "solar": "1901-07-08"
+              },
+              {
+                "name": "大暑",
+                "solar": "1901-07-23"
+              },
+              {
+                "name": "立秋",
+                "solar": "1901-08-08"
+              },
+              {
+                "name": "处暑",
+                "solar": "1901-08-24"
+              },
+              {
+                "name": "白露",
+                "solar": "1901-09-08"
+              },
+              {
+                "name": "秋分",
+                "solar": "1901-09-24"
+              },
+              {
+                "name": "寒露",
+                "solar": "1901-10-09"
+              },
+              {
+                "name": "霜降",
+                "solar": "1901-10-24"
+              },
+              {
+                "name": "立冬",
+                "solar": "1901-11-08"
+              },
+              {
+                "name": "小雪",
+                "solar": "1901-11-23"
+              },
+              {
+                "name": "大雪",
+                "solar": "1901-12-08"
+              },
+              {
+                "name": "冬至",
+                "solar": "1901-12-22"
+              }
+            ]
+          }
+        ],
+        "count": 1
+      }
+    },
+    {
+      "method": "festivals",
+      "args": [
+        {
+          "from": "2027-02-01",
+          "to": "2027-02-28"
+        }
+      ],
+      "expect": {
+        "from": "2027-02-01",
+        "to": "2027-02-28",
+        "count": 3,
+        "days": [
+          {
+            "solar": "2027-02-05",
+            "lunar": {
+              "year": 2026,
+              "month": 12,
+              "day": 29,
+              "isLeap": false
+            },
+            "festival": "除夕"
+          },
+          {
+            "solar": "2027-02-06",
+            "lunar": {
+              "year": 2027,
+              "month": 1,
+              "day": 1,
+              "isLeap": false
+            },
+            "festival": "春节"
+          },
+          {
+            "solar": "2027-02-20",
+            "lunar": {
+              "year": 2027,
+              "month": 1,
+              "day": 15,
+              "isLeap": false
+            },
+            "festival": "元宵"
+          }
+        ]
+      }
+    },
+    {
+      "method": "festivals",
+      "args": [
+        {
+          "date": "2026-09-25"
+        }
+      ],
+      "expect": {
+        "from": "2026-09-25",
+        "to": "2026-09-25",
+        "count": 1,
+        "days": [
+          {
+            "solar": "2026-09-25",
+            "lunar": {
+              "year": 2026,
+              "month": 8,
+              "day": 15,
+              "isLeap": false
+            },
+            "festival": "中秋"
+          }
+        ]
+      }
+    },
+    {
+      "method": "toLunar",
+      "args": [
+        {
+          "date": "1900-02-01"
+        }
+      ],
+      "expect": {
+        "from": "1900-02-01",
+        "to": "1900-02-01",
+        "count": 1,
+        "days": [
+          {
+            "solar": "1900-02-01",
+            "lunar": {
+              "year": 1900,
+              "month": 1,
+              "day": 2,
+              "isLeap": false
+            },
+            "lunarText": "正月初二",
+            "solarTerm": null,
+            "festival": null
+          }
+        ]
+      }
     }
   ]
 }

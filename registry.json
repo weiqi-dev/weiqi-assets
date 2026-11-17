@@ -42,8 +42,8 @@
     {
       "id": "llm-tool.lunar",
       "type": "plugin",
-      "name": "公历转农历",
-      "summary": "把公历单日或日期范围换算成农历（含闰月），llm-tool 扩展点首个示例工件；不联网、不依赖运行时时钟。",
+      "name": "农历 · 节气 · 传统节日",
+      "summary": "公历转农历（含闰月），附 1901-2100 全量 24 节气（HKO 逐年事实表）与春节/元宵/端午/七夕/中元/中秋/重阳/腊八/除夕等传统节日判定；零网络、不依赖运行时时钟。",
       "pointId": "llm-tool",
       "specVersion": 1,
       "path": "plugins/llm-tool/lunar/plugin.json"
