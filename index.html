@@ -98,6 +98,13 @@
         积分→对手分→逆减，不展示累进分；对应赛事详情页原先内置的「简易」口径，现在由插件提供。</div>
     </div>
     <div class="item">
+      <div class="item-title"><span class="badge">plugin</span>公历转农历 <code>llm-tool.lunar</code></div>
+      <div class="url">plugins/llm-tool/lunar/plugin.json</div>
+      <div class="item-desc">扩展点 <code>llm-tool</code> / spec v1 / 入口 <code>call({method,args})</code>。
+        把公历单日或日期范围换算成农历（含闰月），模型在对话里通过 <code>llm_tool_call</code> 调用；
+        装好启用后零网络。含 <code>exposes[]</code> 方法白名单与 <code>smoke[]</code> 安装自检。</div>
+    </div>
+    <div class="item">
       <div class="item-title"><span class="badge">tool</span>web_fetch 工具声明</div>
       <div class="url">tools/web-fetch/v1/tool.json</div>
       <div class="item-desc">对齐 <code>ModelToolDefinition</code> 的声明镜像；执行器由 weiqi-bot 内置，

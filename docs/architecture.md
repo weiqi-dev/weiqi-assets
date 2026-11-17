@@ -21,8 +21,8 @@ weiqi-assets 是 **weiqi-bot 的开放扩展资源仓库**，不是一个应用�
 | 插件工件模型 | `domain/plugin/types.ts`（`PluginArtifact` / `PluginSpec`） | `plugins/` 的 manifest 对齐它 |
 | 插件校验 | `domain/plugin/PluginValidator.ts`、`domain/ranking/RankingTable.ts` | `scripts/validate.mjs` 复用同一套禁用规则 + 扩展点白名单 |
 | 插件执行 | `infrastructure/plugin-vm/QuickJsRuntime.ts`（QuickJS + wasm Worker） | 插件源码必须能在零能力沙箱里跑 |
-| 扩展点接入 | `application/plugin/RankingPluginAdapter.ts`、`PluginSystem.applyRanking()` → `computeRanking` | 目前只有 `ranking`，入口 `rank({matches}) → {columns,rows}` |
-| 在线插件平台 | `services/plugin-catalog/*`（取清单/装/更新）、助手页「插件」弹框的「在线插件」标签页 | 取 `registry.json`，只装 `type: plugin`，默认停用、人工启用 |
+| 扩展点接入 | `application/plugin/RankingPluginAdapter.ts`（ranking）、`LlmToolKit.ts`（llm-tool） | 注册表 `PLUGIN_SPECS` 两个扩展点：`ranking` 走赛事页排名管线，`llm-tool` 走对话页 `llm_tool_call` |
+| 在线插件平台 | `services/plugin-catalog/*`（取清单/装/更新）、助手页「插件」弹框的「在线插件」标签页 | 取 `registry.json`，按 `pointId` 查 spec 分别试跑，只装 `type: plugin`，默认停用、人工启用 |
 | 工具声明 | `application/model/IModelGateway.ts`（`ModelToolDefinition`） | `tools/` 的 `definition` 对齐它 |
 | 工具注册 | `application/chat/WebToolLoop.ts`（`TOOLS[]` / `EXECUTORS`） | 目前全部宿主内置 |
 | 技能配方模型 | `application/skill/SkillRecipe.ts`（`parseSkillRecipe`）、`SkillTypes.ts`（`SkillRecipe`） | `skills/registry.json` 的纯声明配方对齐它 |
@@ -75,6 +75,8 @@ weiqi-bot 的 Web 资源分两类：`web-resources.zip` 在客户端启动时预
 ## 安全边界
 
 - 插件代码只在宿主 QuickJS 沙箱里执行，默认零 hostApi；资源库不提供任何提权途径。
+- `llm-tool` 工件把「能力」带给模型，但不改变这条边界：源码不进主线程、不进模型上下文，
+  `method` 只认 `exposes[]` 白名单，`args` 只作为 JSON 数据进入沙箱；模型给的文本永远不参与代码拼接。
 - 工具条目的 `implementation.status` 明确区分「声明镜像」与「可下载实现」；
   当前没有 `downloadable`。将来若开放，必须先在宿主 `WebToolLoop` 里定义外部执行器的
   隔离与注册规则，**不要把任意远程 JS 直接放进主线程**。

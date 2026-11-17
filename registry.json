@@ -38,6 +38,15 @@
       "name": "web_fetch",
       "summary": "取回公开网页文本内容的工具声明镜像，对齐宿主的 ModelToolDefinition。",
       "path": "tools/web-fetch/v1/tool.json"
+    },
+    {
+      "id": "llm-tool.lunar",
+      "type": "plugin",
+      "name": "公历转农历",
+      "summary": "把公历单日或日期范围换算成农历（含闰月），llm-tool 扩展点首个示例工件；不联网、不依赖运行时时钟。",
+      "pointId": "llm-tool",
+      "specVersion": 1,
+      "path": "plugins/llm-tool/lunar/plugin.json"
     }
   ]
 }

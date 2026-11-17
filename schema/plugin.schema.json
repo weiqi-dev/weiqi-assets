@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://weiqi-dev.github.io/weiqi-assets/schema/plugin.schema.json",
   "title": "weiqi-bot 插件工件元数据",
-  "description": "字段对齐 weiqi-bot domain/plugin/types.ts 的 PluginArtifact / PluginSpec。入口 rank({ matches }) → { columns, rows }，输出契约见 domain/ranking/RankingTable.ts。资源侧只声明契约，limits 与 hostApi 以宿主 spec 为准，不在此复制数值。",
+  "description": "字段对齐 weiqi-bot domain/plugin/types.ts 的 PluginArtifact / PluginSpec。ranking 入口 rank({matches})→{columns,rows}；llm-tool 入口 call({method,args})→任意可 JSON 序列化值。资源侧只声明契约，limits 与 hostApi 以宿主 spec 为准，不在此复制数值。",
   "type": "object",
   "additionalProperties": false,
   "required": ["$schema", "id", "name", "type", "pointId", "specVersion", "entry", "code", "origin", "intent"],
@@ -11,14 +11,45 @@
     "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]*$" },
     "name": { "type": "string", "minLength": 1 },
     "type": { "type": "string", "const": "plugin" },
-    "pointId": { "type": "string", "enum": ["ranking"], "description": "宿主已注册的扩展点，来源 weiqi-bot/domain/plugin/types.ts 的 RANKING_POINT_ID；不允许自造。" },
+    "pointId": { "type": "string", "enum": ["ranking", "llm-tool"], "description": "宿主已注册的扩展点，来源 weiqi-bot/domain/plugin/types.ts 的 PLUGIN_SPECS；不允许自造。" },
     "specVersion": { "type": "integer", "minimum": 1 },
-    "entry": { "type": "string", "pattern": "^[A-Za-z_$][A-Za-z0-9_$]*$" },
+    "entry": { "type": "string", "pattern": "^[A-Za-z_$][A-Za-z0-9_$]*$", "description": "入口函数名；ranking 为 rank，llm-tool 为 call。" },
     "code": { "type": "string", "minLength": 1 },
     "origin": { "type": "string", "enum": ["llm", "manual"] },
     "intent": { "type": "string", "minLength": 1 },
     "readme": { "type": "string" },
     "license": { "type": "string" },
-    "tags": { "type": "array", "items": { "type": "string" } }
-  }
+    "tags": { "type": "array", "items": { "type": "string" } },
+    "exposes": {
+      "type": "array",
+      "description": "llm-tool 专用：对外暴露的方法白名单。每项含 name / description / params(JSON Schema)。",
+      "items": {
+        "type": "object",
+        "required": ["name", "description", "params"],
+        "properties": {
+          "name": { "type": "string", "pattern": "^[A-Za-z_$][A-Za-z0-9_$]*$" },
+          "description": { "type": "string" },
+          "params": { "type": "object" }
+        }
+      }
+    },
+    "smoke": {
+      "type": "array",
+      "description": "llm-tool 专用：安装前沙箱自检样例。每项 {args:[一个参数对象], expect:与 call 返回值逐字段相等}。",
+      "items": {
+        "type": "object",
+        "required": ["args", "expect"],
+        "properties": {
+          "args": { "type": "array", "minItems": 1, "maxItems": 1 },
+          "expect": {}
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "pointId": { "const": "llm-tool" } } },
+      "then": { "required": ["exposes", "smoke"] }
+    }
+  ]
 }

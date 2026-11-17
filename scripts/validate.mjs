@@ -57,11 +57,11 @@ const ENTRY_RE = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
 
 /**
  * 宿主已注册的扩展点白名单。来源：weiqi-bot/domain/plugin/types.ts 的
- * RANKING_POINT_ID（当前唯一值 'ranking'）。资源侧不得自造 pointId，
- * 否则宿主 PluginSystem.applyRanking 会过滤掉、装了也用不了。
+ * PLUGIN_SPECS 注册表（当前 'ranking' / 'llm-tool'）。资源侧不得自造 pointId，
+ * 否则宿主 resolvePluginSpec 找不到 spec、装了也用不了。
  * 宿主新增扩展点时，这里与 docs/extension-points.md 一起更新。
  */
-const KNOWN_POINT_IDS = ['ranking'];
+const KNOWN_POINT_IDS = ['ranking', 'llm-tool'];
 
 /** 与 weiqi-bot/domain/plugin/PluginValidator.ts 的禁用规则同源 */
 const BROWSER_GLOBALS =
@@ -122,6 +122,36 @@ function validatePlugin(manifestPath, entry) {
   if (m.readme !== undefined) {
     if (!safePath(m.readme) || !existsSync(resolve(ROOT, m.readme))) {
       fail(`${ctx}.readme 指向的文件不存在：${m.readme}`);
+    }
+  }
+  if (m.pointId === 'llm-tool') validateLlmToolPlugin(m, ctx, entryName);
+}
+
+/** llm-tool 扩展点的额外契约：入口固定 call、方法白名单、安装自检样例 */
+function validateLlmToolPlugin(m, ctx, entryName) {
+  if (entryName && entryName !== 'call') fail(`${ctx}.entry 必须是 "call"（llm-tool 扩展点约定）`);
+  if (!Array.isArray(m.exposes) || m.exposes.length === 0) {
+    fail(`${ctx}.exposes 必须是非空数组`);
+  } else {
+    const names = new Set();
+    for (const [i, e] of m.exposes.entries()) {
+      const ec = `${ctx}.exposes[${i}]`;
+      if (!e || typeof e !== 'object') { fail(`${ec} 必须是对象`); continue; }
+      if (typeof e.name !== 'string' || !ENTRY_RE.test(e.name)) fail(`${ec}.name 不是合法方法标识符`);
+      if (names.has(e.name)) fail(`${ec}.name 重复：${e.name}`);
+      if (e.name) names.add(e.name);
+      if (typeof e.description !== 'string' || !e.description.trim()) fail(`${ec}.description 必须是非空字符串`);
+      if (!e.params || typeof e.params !== 'object' || Array.isArray(e.params)) fail(`${ec}.params 必须是对象`);
+    }
+  }
+  if (!Array.isArray(m.smoke) || m.smoke.length === 0) {
+    fail(`${ctx}.smoke 必须是非空数组`);
+  } else {
+    for (const [i, s] of m.smoke.entries()) {
+      const sc = `${ctx}.smoke[${i}]`;
+      if (!s || typeof s !== 'object') { fail(`${sc} 必须是对象`); continue; }
+      if (!Array.isArray(s.args) || s.args.length !== 1) fail(`${sc}.args 必须是含一个参数对象的数组`);
+      if (s.expect === undefined) fail(`${sc}.expect 缺失`);
     }
   }
 }

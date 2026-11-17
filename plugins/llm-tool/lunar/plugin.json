@@ -1,0 +1,51 @@
+{
+  "$schema": "../../../schema/plugin.schema.json",
+  "id": "llm-tool.lunar",
+  "name": "公历转农历",
+  "type": "plugin",
+  "pointId": "llm-tool",
+  "specVersion": 1,
+  "entry": "call",
+  "code": "plugins/llm-tool/lunar/index.js",
+  "origin": "manual",
+  "intent": "让对话里的模型能把公历日期或日期范围换算成农历，不联网、不依赖运行时时钟；作为 llm-tool 扩展点的首个示例工件。",
+  "readme": "plugins/llm-tool/lunar/README.md",
+  "license": "MIT",
+  "tags": ["llm-tool", "calendar", "lunar", "date-range"],
+  "exposes": [
+    {
+      "name": "toLunar",
+      "description": "公历转农历。传 {date:'YYYY-MM-DD'} 查单日，或 {from:'YYYY-MM-DD',to:'YYYY-MM-DD'} 查连续日期范围，也可用 {year,month,day} 数字形式。返回 {from,to,count,days[]}，days 每项含 solar（公历）、lunar（农历年月日与是否闰月）、lunarText（中文月日）。",
+      "params": {
+        "type": "object",
+        "properties": {
+          "date": { "type": "string", "description": "单日 YYYY-MM-DD；与 from/to、year/month/day 三选一" },
+          "from": { "type": "string", "description": "范围起始 YYYY-MM-DD，需与 to 同时给出" },
+          "to": { "type": "string", "description": "范围结束 YYYY-MM-DD，需与 from 同时给出" },
+          "year": { "type": "number", "description": "数字形式单日的公历年" },
+          "month": { "type": "number", "description": "数字形式单日的公历月" },
+          "day": { "type": "number", "description": "数字形式单日的公历日" }
+        },
+        "additionalProperties": false
+      }
+    }
+  ],
+  "smoke": [
+    {
+      "args": [{ "date": "2026-11-17" }],
+      "expect": { "from": "2026-11-17", "to": "2026-11-17", "count": 1, "days": [{ "solar": "2026-11-17", "lunar": { "year": 2026, "month": 10, "day": 9, "isLeap": false }, "lunarText": "十月初九" }] }
+    },
+    {
+      "args": [{ "from": "2026-11-17", "to": "2026-11-19" }],
+      "expect": { "from": "2026-11-17", "to": "2026-11-19", "count": 3, "days": [
+        { "solar": "2026-11-17", "lunar": { "year": 2026, "month": 10, "day": 9, "isLeap": false }, "lunarText": "十月初九" },
+        { "solar": "2026-11-18", "lunar": { "year": 2026, "month": 10, "day": 10, "isLeap": false }, "lunarText": "十月初十" },
+        { "solar": "2026-11-19", "lunar": { "year": 2026, "month": 10, "day": 11, "isLeap": false }, "lunarText": "十月十一" }
+      ] }
+    },
+    {
+      "args": [{ "date": "2025-07-25" }],
+      "expect": { "from": "2025-07-25", "to": "2025-07-25", "count": 1, "days": [{ "solar": "2025-07-25", "lunar": { "year": 2025, "month": 6, "day": 1, "isLeap": true }, "lunarText": "闰六月初一" }] }
+    }
+  ]
+}

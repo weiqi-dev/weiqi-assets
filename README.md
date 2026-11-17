@@ -11,7 +11,7 @@
 
 | 类型 | 目录 | 清单入口 | 对齐的宿主契约 | 当前状态 |
 |---|---|---|---|---|
-| 插件工件 | `plugins/` | 顶层 `registry.json` | `weiqi-bot/domain/plugin/types.ts` 的 `PluginArtifact` / `PluginSpec`（QuickJS 沙箱执行） | 可用 3 个：`ranking` 的「总分排序」「直胜」「简易」 |
+| 插件工件 | `plugins/` | 顶层 `registry.json` | `weiqi-bot/domain/plugin/types.ts` 的 `PluginArtifact` / `PluginSpec`（QuickJS 沙箱执行） | 可用 4 个：`ranking` 三个口径 + `llm-tool` 的「公历转农历」 |
 | LLM 工具声明 | `tools/` | 顶层 `registry.json` | `weiqi-bot/application/model/IModelGateway.ts` 的 `ModelToolDefinition` | 镜像 1 个：`web_fetch` |
 | 技能配方 | `skills/` | **`skills/registry.json`（独立清单）** | `weiqi-bot/application/skill/SkillRecipe.ts` / `SkillTypes.ts` 的 `SkillRecipe` | 4 条：做题、对阵图片导入、查天气、查股价 |
 
@@ -39,19 +39,24 @@ weiqi-assets/
 │   ├── plugin.schema.json     # 插件元数据契约
 │   └── tool.schema.json       # 工具声明契约
 ├── plugins/                   # 插件工件，按扩展点分目录
-│   └── ranking/
-│       ├── total-score/       # 总分排序（可用工件）
+│   ├── ranking/
+│   │   ├── total-score/       # 总分排序（可用工件）
 │       │   ├── plugin.json    # 元数据（含 code 相对路径）
 │       │   ├── index.js       # 完整源码（永远全量，不是 diff）
 │       │   └── README.md      # 契约来源与安装形状
-│       ├── direct-win/        # 直胜口径（原详情页内置规则外置）
-│       │   ├── plugin.json
-│       │   ├── index.js
-│       │   └── README.md
-│       └── simple/            # 简易口径（原详情页内置规则外置）
-│           ├── plugin.json
-│           ├── index.js
-│           └── README.md
+│   │   ├── direct-win/        # 直胜口径（原详情页内置规则外置）
+│   │   │   ├── plugin.json
+│   │   │   ├── index.js
+│   │   │   └── README.md
+│   │   └── simple/            # 简易口径（原详情页内置规则外置）
+│   │       ├── plugin.json
+│   │       ├── index.js
+│   │       └── README.md
+│   └── llm-tool/              # 模型能力插件（chat / skill-dev 角色可调用）
+│       └── lunar/             # 公历转农历（单日 + 日期范围）
+│           ├── plugin.json    # 含 exposes[] / smoke[]
+│           ├── index.js       # 经典脚本 + call({method,args}) 入口
+│           └── README.md      # 数据源、核验锚点、契约来源
 ├── tools/                     # LLM 工具声明，按工具名/版本分目录
 │   └── web-fetch/v1/
 │       ├── tool.json
@@ -89,7 +94,7 @@ weiqi-assets/
 3. GET  <entry.path>                       ← 相对 registry.baseUrl 或本站点根
 4. 插件：GET  <manifest.code> 取源码 → 构造 PluginArtifact 写入工件存储
    工具：仅展示 definition，不注册执行器
-5. 校验（宿主侧）：PluginValidator + QuickJS 沙箱试跑 + validateRankingOutput；任何失败回落到内置实现
+5. 校验（宿主侧）：PluginValidator + QuickJS 沙箱试跑（按 pointId 分派：ranking 验排名契约、llm-tool 比对 smoke.expect）；任何失败不落库
 6. enabled 由用户决定；下载 ≠ 安装 ≠ 启用
 7. 工件记录 catalogRef（来源源 URL + 资源 id）；远端 code 与本地 code 不同时按钮变「更新」，
    走本地 revise(trigger:'manual') 保留 history，不新建副本
@@ -121,7 +126,8 @@ npm run validate      # 或 node scripts/validate.mjs
 ```
 
 零依赖（Node 原生）。检查：JSON 合法、必填字段、路径不越界、registry 与条目 ID 一致、
-插件代码入口存在且不含宿主禁用的全局/动态求值/无界循环，以及
+插件代码入口存在且不含宿主禁用的全局/动态求值/无界循环、
+`llm-tool` 的 `exposes[]` / `smoke[]` 契约齐全，以及
 `share/share.js` 的 `decodeUrl` / `libUrl` 与站点 URL 契约一致。
 **不校验 `skills/registry.json`**：技能清单的结构契约在宿主 `SkillRecipe.ts`，由宿主安装时逐条解析。
 
@@ -134,7 +140,7 @@ npm run validate      # 或 node scripts/validate.mjs
 
 | 出现处 | 来源 |
 |---|---|
-| `pointId` / `specVersion` / `entry` / hostApi / 资源配额 | `weiqi-bot/domain/plugin/types.ts`（`RANKING_SPEC`、`DEFAULT_PLUGIN_LIMITS`） |
+| `pointId` / `specVersion` / `entry` / hostApi / 资源配额 | `weiqi-bot/domain/plugin/types.ts`（`PLUGIN_SPECS`：`RANKING_SPEC` / `LLM_TOOL_SPEC`、`DEFAULT_PLUGIN_LIMITS`） |
 | 工具声明形状 | `weiqi-bot/application/model/IModelGateway.ts`（`ModelToolDefinition`） |
 | 插件禁用规则 | `weiqi-bot/domain/plugin/PluginValidator.ts` |
 | 输出契约（columns / rows / cells） | `weiqi-bot/domain/ranking/RankingTable.ts`（`validateRankingOutput`） |

@@ -8,16 +8,18 @@
 | pointId | specVersion | 入口 | 输入 | 输出契约 | 宿主接入点 |
 |---|---|---|---|---|---|
 | `ranking` | 1 | `rank` | `{ matches: MatchData[] }`（原始对阵表的只读 JSON 拷贝） | `{ columns: { key, label }[], rows: { id, name, rank, cells }[] }` | `application/plugin/RankingPluginAdapter.ts` → `domain/ranking/RankingPipeline.ts` |
+| `llm-tool` | 1 | `call` | `{ method: string, args: [参数对象] }`（method 只能取 manifest `exposes[]` 白名单） | 任意可 JSON 序列化的值（形状由各库的 `exposes[].description` 声明） | `application/plugin/LlmToolKit.ts` → 对话页 chat / skill-dev 角色 |
 
 来源：
 
-- `weiqi-bot/domain/plugin/types.ts` 的 `RANKING_POINT_ID` 与 `RANKING_SPEC`（pointId / version / entry / hostApi / limits）；
+- `weiqi-bot/domain/plugin/types.ts` 的 `PLUGIN_SPECS` 注册表（`RANKING_SPEC` / `LLM_TOOL_SPEC`：pointId / version / entry / hostApi / limits）；
 - `weiqi-bot/domain/ranking/types.ts` 的 `RankingInput` / `RankingOutput`（输入与输出结构）；
 - `weiqi-bot/domain/ranking/RankingTable.ts` 的 `validateRankingOutput`（列名汉字、`cells` 只能是数值/数值数组、`rows` 覆盖全部选手且 `id`/`name` 与对阵一致）。
 
-**只有 `ranking` 一个扩展点，`specVersion` 当前为 1。** `registry.json` 的 `pointId` 与
-`plugin.json` 的 `pointId` 都受 `scripts/validate.mjs` 的 `KNOWN_POINT_IDS` 白名单约束，
-防止出现「资源先发、宿主不认」的漂移（历史上曾误写 `ranking.tiebreak`）。
+**当前注册两个扩展点：`ranking` 与 `llm-tool`，两者 `specVersion` 都是 1。**
+`registry.json` 的 `pointId` 与 `plugin.json` 的 `pointId` 都受 `scripts/validate.mjs` 的
+`KNOWN_POINT_IDS` 白名单约束，防止出现「资源先发、宿主不认」的漂移
+（历史上曾误写 `ranking.tiebreak`）。
 
 新增扩展点须先在 weiqi-bot 里落地 spec 与适配层，再来本仓库登记，并同步：
 `schema/plugin.schema.json` 的 `pointId.enum`、`scripts/validate.mjs` 的 `KNOWN_POINT_IDS`、
@@ -29,7 +31,7 @@
 |---|---|---|
 | `pointId` | `pointId` | 必填，必须在宿主注册表里 |
 | `version` | `specVersion` | 必填，宿主据此解释旧工件 |
-| `entry` | `entry` | 必填，合法 JS 标识符；宿主以 `JSON.stringify(rank(JSON.parse(__PLUGIN_INPUT__)))` 调用 |
+| `entry` | `entry` | 必填，合法 JS 标识符；宿主以 `JSON.stringify(<entry>(JSON.parse(__PLUGIN_INPUT__)))` 调用（ranking=`rank`，llm-tool=`call`） |
 | `hostApi` | 不声明 | 由宿主 spec 决定，资源侧不得要求注入能力 |
 | `limits` | 不声明 | 配额来自宿主 `DEFAULT_PLUGIN_LIMITS`，资源侧不复制数值 |
 | `PluginArtifact.code` | `code` 指向的源码文件 | 永远全量源码，不是 diff |
@@ -58,6 +60,30 @@
 
 ⚠️ `PluginValidator` 是**对整串源码做正则**，注释与字符串里出现上述禁用词同样会被拦截。
 `scripts/validate.mjs` 复刻了这一点，示例插件的注释因此刻意规避了这些词。
+
+## `llm-tool` 扩展点（模型能力插件）
+
+`llm-tool` 与 `ranking` 共用同一套工件、存储、在线安装与 QuickJS 沙箱，差别只在**契约**：
+
+| 维度 | ranking | llm-tool |
+|---|---|---|
+| 入口 | `rank({matches})` | `call({method,args})` |
+| 输入 | 原始对阵表 | 方法名 + 一个 JSON 参数对象 |
+| 输出 | 严格 `{ columns, rows }`，由 `validateRankingOutput` 校验 | 任意可 JSON 序列化值，宿主不解读语义 |
+| 生效位置 | 赛事详情页排名管线 | 对话页 chat / skill-dev 角色的 `llm_tool_call` 工具 |
+| 方法白名单 | 无（只有一个入口） | `plugin.json` 的 `exposes[]`，宿主只放行这里声明的 `method` |
+| 安装前试跑 | `SAMPLE_RANKING_INPUT` + 排名契约 | `smoke[]` 样例逐字段比对 `expect` |
+
+关键安全边界（与 skill 配方「system 给声明 + 宿主内置执行器」同构）：
+
+- 库源码只在一次性 QuickJS Worker 里 `evalCode`，**不进主线程 JS 环境、不进模型上下文**；
+  模型只看到 system 里的库名 + 方法说明，调工具时只提交 `{libId, method, args}`。
+- `method` 必须命中 `exposes[]`；`args` 只作为 JSON 数据写入 `__PLUGIN_INPUT__`，
+  绝不参与代码拼接（胶水由宿主固定生成）。
+- 库必须是经典脚本或 `module.exports` 形态；QuickJS 不支持 ESM `export`。
+- 不提供、也不自检 `new Date()` 依赖的非确定性字段（如 `isToday`、节气、生肖），
+  因为沙箱里的时间来自宿主真实时钟，逐次运行结果会变。
+- 工件默认停用，人工启用后模型才看得到；缓存命中即零网络下载，每次仍是一次性 Worker。
 
 ## 工具声明契约
 

@@ -14,7 +14,7 @@
 
 1. 确认宿主已有对应扩展点 spec（见 [extension-points.md](extension-points.md)）。
    没有就先在 weiqi-bot 里做，别先发资源。
-2. 建目录：`plugins/<pointId>/<slug>/`（当前 `<pointId>` 只能是 `ranking`）。
+2. 建目录：`plugins/<pointId>/<slug>/`（`<pointId>` 取 `ranking` 或 `llm-tool`，见 [extension-points.md](extension-points.md)）。
 3. 写 `plugin.json`：
 
    ```json
@@ -48,7 +48,12 @@
 6. 在 `registry.json` 的 `resources` 追加条目，`type: "plugin"`，带 `pointId` 与 `specVersion`，
    `path` 指向 `plugin.json`。
 7. 跑 `npm run validate`；再在 weiqi-bot 里用 `PluginValidator` + QuickJS 试跑一次
-   （输出要能过 `validateRankingOutput`）。
+   （ranking 输出要能过 `validateRankingOutput`；llm-tool 用 `smoke[]` 比对 `expect`）。
+
+若写的是 `llm-tool`：入口固定 `call({method,args})`，`method` 只认 `exposes[]` 里的名字，
+manifest 还要给 `exposes[]`（方法名 + 说明 + 参数 JSON Schema）与 `smoke[]`（自检样例 + 期望值）。
+库必须是经典脚本或 `module.exports` 形态，不得用 ESM `export`；不要依赖 `new Date()`
+这类非确定性结果做自检断言。完整示例见 `plugins/llm-tool/lunar/`。
 
 ## 新增工具声明
 
