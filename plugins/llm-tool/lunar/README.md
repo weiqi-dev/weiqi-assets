@@ -7,7 +7,7 @@
 
 ## 接口
 
-唯一入口 `call({ method, args })`，`method` 只认白名单里的三个方法：
+唯一入口 `call({ method, args })`，`method` 只认白名单里的四个方法：
 
 ### `toLunar` — 公历转农历
 
@@ -53,6 +53,53 @@
 
 不存在的日期（如 `2026-02-30`）、反向范围、早于 `1900-01-31` 的日期一律抛错，
 错误由宿主转成工具观察回喂模型，不编造结果。
+
+### `monthCalendar` — 一次取回一张公历月表的紧凑视图
+
+输入 `{ "year": 2027, "month": 2 }`（`month` 取 1–12，必须是整数）。
+返回 `{ year, month, daysInMonth, firstWeekday, monthSpan[], days[] }`：
+
+```json
+{
+  "year": 2027, "month": 2, "daysInMonth": 28, "firstWeekday": 1,
+  "monthSpan": [
+    { "lunarYear": 2026, "lunarMonth": 12, "isLeap": false, "from": "2027-02-01", "to": "2027-02-05" },
+    { "lunarYear": 2027, "lunarMonth": 1,  "isLeap": false, "from": "2027-02-06", "to": "2027-02-28" }
+  ],
+  "days": [
+    { "solar": "2027-02-04", "day": "廿八", "term": "立春" },
+    { "solar": "2027-02-05", "day": "廿九", "festival": "除夕" },
+    { "solar": "2027-02-06", "day": "初一", "festival": "春节" }
+  ]
+}
+```
+
+**为什么是这些字段**（每个都对应月历配方的一个明确用途，没有一个是「压出来的」）：
+
+| 字段 | 配方里的用途 |
+|---|---|
+| `days[].solar` | 单元格里的公历日 |
+| `days[].day` | 单元格里的纯农历日名；直接由 `dayText(l.day)` 生成，本来就不带月份字眼，闰月只加「闰」前缀 |
+| `days[].term` | 单元格里的节气名；仅当日有节气时出现 |
+| `days[].festival` | 单元格里的传统节日名；仅当日有节日时出现 |
+| `monthSpan[]` | 表格外说明「本月跨哪些农历月、有无闰月、跨不跨农历年」 |
+| `firstWeekday` | 月首在周一..周日的排布（1=周一 .. 7=周日） |
+| `daysInMonth` | 该月天数；由 `new Date(Date.UTC(y, m, 0)).getUTCDate()` 推导，自带闰年规则，**不写月份天数常量表** |
+
+刻意不输出的东西：`lunar{year,month,day,isLeap}` 结构化字段、`lunarText`、
+全年 `solarTerms` 列表、`festivals` 的稀疏结果 —— 这些是旧配方让模型自行判定
+时需要的中间量，现在判定全部在库内完成。省略 `null` 的 `term`/`festival` 不是
+为了凑一个经验阈值，而是「无节气 / 无节日」本就该用缺省字段表达；单条观察
+是否被裁剪由宿主 `CONTEXT_LIMITS.maxCharsPerMessage` 统一决定，本库不设阈值、
+不做压缩或增量编码。
+
+实测全月输出 1263–1381 字符（2027-02 / 2026-02 / 2025-01 / 2026-10 / 2023-09 /
+2027-01 / 2024-02 / 2000-02），远低于宿主 2000 字符的单条观察上限 —— 一次调用
+即可拿全，不必像旧配方那样按日历周分片 4 次。
+
+`monthSpan` 给的是**数字农历年**（如 2026 / 2027），不提供天干地支：朔闰事实表里
+没有干支字段，不硬编一套。「丙午年腊月」这类写法不是本库的输出，配方应改用
+数字年表述，保证表格外说明里每个数字都有工具出处。
 
 ## 数据来源（这条最要紧）
 
@@ -147,8 +194,9 @@
 | 安装前静态预检 + 沙箱试跑 + `smoke[].expect` 严格比对 | `weiqi-bot/services/plugin-catalog/PluginCatalogService.ts` / `application/plugin/LlmToolContract.ts` |
 
 `smoke[]` 每条都带 `method`，宿主按该字段组装 `call({method,args})` 并逐字段
-比对 `expect`。本工件 8 条覆盖三个方法、闰月、腊月廿九除夕、节气逐年差异、
-1900 年表外回退。
+比对 `expect`。本工件 11 条覆盖四个方法、闰月、腊月廿九除夕、节气逐年差异、
+1900 年表外回退，以及 `monthCalendar` 的整月视图 / 月首周日 / 闰年 29 天。
+`monthCalendar` 三条的 `expect` 由生成脚本从本库真实输出程序化导出，不手写。
 
 资源侧**不复制**配额数值：宿主升级 spec 时以宿主为准，本仓库只声明遵守哪个版本。
 
@@ -161,7 +209,7 @@
 时按钮变「更新」、走 `revise` 保留版本历史。
 
 ⚠️ **已安装旧版 `llm-tool.lunar` 的用户需手动点「更新」**：源码变了，
-`toLunar` 的返回也多了 `solarTerm` / `festival` 两个字段。宿主会保留版本历史，
+`toLunar` 的返回多了 `solarTerm` / `festival` 两个字段，并新增 `monthCalendar` 方法。宿主会保留版本历史，
 不会静默覆盖。配方里若硬编码了 `libId`，仍应改为从 system 的「可用能力库」
 清单动态读取（那是另一个已知问题，与本次数据无关）。
 

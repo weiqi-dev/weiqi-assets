@@ -3,7 +3,7 @@
  *
  * 本文件是 weiqi-assets 发布的插件工件，入口 call({method,args}) 由宿主 llm-tool
  * 扩展点约定调用（见 docs/extension-points.md）。方法名只认 exposes[] 白名单里的
- * toLunar / solarTerms / festivals，参数只作为 JSON 数据进入，不参与任何代码拼接。
+ * toLunar / solarTerms / festivals / monthCalendar，参数只作为 JSON 数据进入，不参与任何代码拼接。
  *
  * 数据来源：LUNAR_TABLE 是 1900-2100 的朔闰事实表（每年闰哪月、各月 29/30 天、
  * 闰月天数），以可读结构逐行重排；基准 1900-01-31 = 农历 1900 年正月初一。
@@ -671,6 +671,78 @@ function festivals(spec) {
   return { from: fromStr, to: toStr, count: days.length, days: days };
 }
 
+/**
+ * 月历紧凑视图：一次给出生成一张公历月表所需的全部历法信息。
+ *   { year: 2027, month: 2 }
+ * 返回 { year, month, daysInMonth, firstWeekday, monthSpan, days }。
+ *
+ * 字段取舍（每个字段都对应配方的一个明确用途，不设压缩技巧、不丢事实）：
+ * - days[].solar     → 表格里的公历日
+ * - days[].day       → 表格里的纯农历日名（dayText()，本来就无月份字眼）
+ * - days[].term      → 表格里的节气名；仅当日有节气时存在
+ * - days[].festival  → 表格里的传统节日名；仅当日有节日时存在
+ * - monthSpan[]      → 表格外说明「本月跨哪些农历月、有无闰月」
+ * - firstWeekday     → 月首在周一..周日的排布（1..7，ISO 周一起算）
+ * - daysInMonth      → 该月天数，由 Date.UTC 推导，不写死月份天数表
+ * 不输出 lunar{} 结构化字段、lunarText、solarTerms 全年列表：配方不再自行判定，
+ * 这些是内部中间量。省略 null 字段是为了让观察不被重复的空值占满；上限来自
+ * 宿主 CONTEXT_LIMITS.maxCharsPerMessage，由 ToolLoop 统一裁剪，此处不设阈值。
+ */
+function monthCalendar(spec) {
+  if (!spec || typeof spec !== 'object') throw new Error('参数必须是对象');
+  var y = spec.year, m = spec.month;
+  if (!Number.isInteger(y) || !Number.isInteger(m) || m < 1 || m > 12) {
+    throw new Error('需要整数 {year, month}，month 取 1-12');
+  }
+  // 下月第 0 天 = 本月最后一天；Date.UTC 自带闰年规则，不需要月份天数常量表。
+  var daysInMonth = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  // getUTCDay(): 0=周日..6=周六；换成周一起算的 1..7。
+  var wd = new Date(Date.UTC(y, m - 1, 1)).getUTCDay();
+  var firstWeekday = wd === 0 ? 7 : wd;
+
+  var fromStr = String(y) + '-' + pad2(m) + '-01';
+  var toStr = String(y) + '-' + pad2(m) + '-' + pad2(daysInMonth);
+  var r = toLunar({ from: fromStr, to: toStr });
+
+  var days = [];
+  var monthSpan = [];
+  for (var i = 0; i < r.days.length; i++) {
+    var d = r.days[i];
+    var item = { solar: d.solar, day: dayText(d.lunar.day) };
+    if (d.lunar.isLeap) item.day = '闰' + item.day;
+    if (d.solarTerm !== null) item.term = d.solarTerm;
+    if (d.festival !== null) item.festival = d.festival;
+    days.push(item);
+
+    // 农历月切换处记一段；同一农历月连续只记首日与末日。
+    var key = d.lunar.year + '/' + d.lunar.month + '/' + (d.lunar.isLeap ? 1 : 0);
+    var last = monthSpan.length > 0 ? monthSpan[monthSpan.length - 1] : null;
+    if (last === null || last.key !== key) {
+      monthSpan.push({
+        key: key,
+        lunarYear: d.lunar.year,
+        lunarMonth: d.lunar.month,
+        isLeap: d.lunar.isLeap,
+        from: d.solar,
+        to: d.solar
+      });
+    } else {
+      last.to = d.solar;
+    }
+  }
+  // key 是内部拼接用的比较键，不进对外结果。
+  for (var j = 0; j < monthSpan.length; j++) delete monthSpan[j].key;
+
+  return {
+    year: y,
+    month: m,
+    daysInMonth: daysInMonth,
+    firstWeekday: firstWeekday,
+    monthSpan: monthSpan,
+    days: days
+  };
+}
+
 /** llm-tool 扩展点入口：宿主以 call({method,args}) 调用，方法名只认白名单 */
 function call(input) {
   if (!input || typeof input.method !== 'string') throw new Error('缺少 method');
@@ -678,5 +750,6 @@ function call(input) {
   if (input.method === 'toLunar') return toLunar(input.args[0]);
   if (input.method === 'solarTerms') return solarTerms(input.args[0]);
   if (input.method === 'festivals') return festivals(input.args[0]);
+  if (input.method === 'monthCalendar') return monthCalendar(input.args[0]);
   throw new Error('不支持的方法：' + input.method);
 }
