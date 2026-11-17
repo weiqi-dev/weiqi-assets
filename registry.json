@@ -47,6 +47,15 @@
       "pointId": "llm-tool",
       "specVersion": 1,
       "path": "plugins/llm-tool/lunar/plugin.json"
+    },
+    {
+      "id": "llm-tool.json-query",
+      "type": "plugin",
+      "name": "JSON 查询与提取",
+      "summary": "按路径选取、条件筛选、全文正则搜索与结构探测，确定性地从 JSON 里提取信息；类似 grep 那一层，但输入输出都是 JSON。零网络、不依赖运行时时钟。",
+      "pointId": "llm-tool",
+      "specVersion": 1,
+      "path": "plugins/llm-tool/json-query/plugin.json"
     }
   ]
 }
