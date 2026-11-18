@@ -21,6 +21,12 @@
 **技能配方不进顶层 `registry.json`**：它是另一份清单，结构契约在 weiqi-bot 的 `SkillRecipe.ts`，
 本仓库没有对应 schema，`scripts/validate.mjs` 也不校验它（只校验顶层 registry / 条目 / 代码 / share URL 契约）。
 
+### 技能怎么被激活
+
+配方**不写触发词**。宿主在每轮对话前把已启用技能的 `id | name | summary` 组成一份目录，交给模型做一次轻量路由，由模型按用户意图决定本轮启用哪些技能；目录外 id 一律丢弃，路由失败则本轮不启用技能、正常对话继续。
+
+因此写配方时，`name` 与 `summary` 要说清「什么场景、做什么」，这是路由唯一依据；`prompt` 是技能启用后才追加给对话模型的指令，不参与路由。
+
 ### 开发「需要凭据」的技能怎么写
 
 以 `github.rest` 为例。这类技能**不需要写任何代码**，只要在配方里做两件事：
@@ -79,7 +85,7 @@ weiqi-assets/
 ├── share/                     # SGF 二维码分享与下载（站点能力，见 share/README.md）
 │   ├── index.html             # 扫码着陆页
 │   ├── share.js               # 编解码 + 二维码库（纯库，无副作用）
-│   └── README.md              # URL 契约、数据格式、触发方式
+│   └── README.md              # URL 契约、数据格式、能力说明
 ├── scripts/validate.mjs       # 清单/条目/代码/URL 契约一致性校验（零依赖）
 ├── docs/
 │   ├── architecture.md        # 定位、下载链路、与 weiqi-bot 的分工
@@ -121,7 +127,7 @@ weiqi-assets/
 
 ```
 1. GET  /skills/registry.json           ← 独立入口，与顶层 registry 无关
-2. 逐条解析 SkillRecipe（schemaVersion / id / version / triggers / primitives / prompt）
+2. 逐条解析 SkillRecipe（schemaVersion / id / version / name / summary / primitives / prompt）
 3. 用户点「安装」→ 校验配方合法 + 引用的原语在宿主注册表里存在
 4. 写进本地技能库（LocalStorageAdapter('weiqi-bot')），安装即启用
 5. 对话时 loadSkills() 只取本地库 enabled 条目；在线源可达与否对对话无影响

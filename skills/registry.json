@@ -9,7 +9,6 @@
       "version": 1,
       "name": "图片对阵表导入赛事",
       "summary": "用户上传比赛对阵表图片并希望导入赛事时，把图片里的对阵信息整理成草稿，人工确认后写入赛事库。",
-      "triggers": ["对阵表", "导入比赛", "导入赛事", "比赛图片", "赛事导入"],
       "primitives": ["event_parse_draft", "event_commit_draft"],
       "prompt": "图片已随消息送达，按所见内容逐行整理编排对阵表：标题、分组、轮次、每台黑方姓名/累计积分、白方姓名/累计积分。表上的分是选手截至本轮的累计积分（大分），不是本轮胜负：第1轮通常双方都是0，照抄即可，不要换算成2/0/1胜负；轮空白方姓名留空、累计分填0。不要臆造看不清的姓名，不确定就向用户追问。先调用 event_parse_draft 得到预览，把预览摘要复述给用户并结束本轮回复；等用户下一条消息明确确认后，再调用 event_commit_draft 写库（无需重复传 draftToken）。宿主会在导入下一轮后用累计分差分回算本轮胜负。"
     },
@@ -19,18 +18,6 @@
       "version": 4,
       "name": "做题练习",
       "summary": "用户想做题（可带题型与难度，如「做8K手筋题」）时，抽取条件并调用工具，由宿主生成带参数的做题页链接。",
-      "triggers": [
-        "死活题",
-        "做一道",
-        "死活",
-        "做题",
-        "手筋",
-        "官子",
-        "对杀",
-        "布局",
-        "中盘",
-        "棋理"
-      ],
       "primitives": [
         "navigate_to"
       ],
@@ -42,11 +29,6 @@
       "version": 1,
       "name": "查天气",
       "summary": "用户说「查天气＋城市」时，取回 wttr.in 的公开 JSON 天气数据并归纳成简洁中文播报",
-      "triggers": [
-        "查天气",
-        "天气怎么样",
-        "今天天气"
-      ],
       "primitives": [
         "web_fetch"
       ],
@@ -58,13 +40,6 @@
       "version": 2,
       "name": "查股价",
       "summary": "用户说「查股价＋股票代码/名称」时，取回腾讯公开行情接口的文本数据，解析并归纳成简洁中文报价播报",
-      "triggers": [
-        "查股价",
-        "查股票",
-        "股票价格",
-        "股价多少",
-        "行情查询"
-      ],
       "primitives": [
         "web_fetch"
       ],
@@ -76,12 +51,6 @@
       "version": 13,
       "name": "月历（公历+农历+节气+节日+法定假）",
       "summary": "按用户给出的年份和月份生成纯 Markdown 月历，含农历日名、节气、传统节日，并按节假日 JSON 用带圈数字标注放假日、补班日用不加粗的普通数字区分；农历日名只显示「初一/廿五」这类日子本身，绝不带「正月」「腊月」等月份字眼。",
-      "triggers": [
-        "月历",
-        "日历",
-        "某年某月",
-        "查看月份"
-      ],
       "primitives": [
         "web_fetch",
         "web_cache_read"
@@ -97,18 +66,6 @@
       "version": 1,
       "name": "同花顺财经新闻",
       "summary": "用户想看最新财经新闻 / 股市快讯时，取回同花顺财经新闻推送接口的 JSON，按「最新在前」归纳成简洁中文要闻；支持翻页与分类筛选，读不到不编造。",
-      "triggers": [
-        "财经新闻",
-        "财经快讯",
-        "财经要闻",
-        "股市新闻",
-        "市场消息",
-        "最新财经",
-        "今日财经",
-        "新闻速览",
-        "7×24",
-        "快讯"
-      ],
       "primitives": [
         "web_fetch",
         "web_cache_read"
@@ -121,19 +78,6 @@
       "version": 1,
       "name": "GitHub REST API",
       "summary": "用通用 http_fetch_auth 原语直连 GitHub REST API 查仓库 / Issue / PR；Token 规格由本配方 secrets 声明（仅 api.github.com、Authorization: Bearer），宿主强制，模型永远读不到明文。首次或 401 时模型只贴配置链接，用户弹框录入即自动保存。本配方不声明 requiredCapabilities，不依赖任何 llm-tool 能力库。",
-      "triggers": [
-        "我的仓库",
-        "github仓库",
-        "github 仓库",
-        "github issue",
-        "github pr",
-        "查github",
-        "GitHub 账号",
-        "我的 issue",
-        "仓库列表",
-        "配置 GitHub Token",
-        "修改 GitHub Token"
-      ],
       "primitives": [
         "http_fetch_auth",
         "secret_prompt",

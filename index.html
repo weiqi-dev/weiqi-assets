@@ -66,7 +66,7 @@
     <p>技能配方是<strong>另一套清单</strong>，不经过上面的 <code>registry.json</code>。宿主单独取这个地址：</p>
     <div class="url">https://weiqi-dev.github.io/weiqi-assets/skills/registry.json</div>
     <pre>GET /skills/registry.json
- → 解析纯声明配方（schemaVersion / id / version / triggers / primitives / prompt）
+ → 解析纯声明配方（schemaVersion / id / version / name / summary / primitives / prompt）
  → 配方只引用宿主已注册的原语名，不含任何可执行代码
  → 用户在「🧠 技能」→「在线技能」点安装，写进本地技能库
  → 只有本地库里启用的条目才会被 LLM 调用（装了才生效）
@@ -116,32 +116,32 @@
     <h2>🧩 技能配方列表（纯声明 · 装了才生效）</h2>
     <div class="item">
       <div class="item-title"><span class="badge">skill</span>图片对阵表导入赛事 <code>event.import-pairing-image</code> · v1</div>
-      <div class="item-desc">触发「对阵表 / 导入比赛 …」，引用 <code>event_parse_draft</code> + <code>event_commit_draft</code>。
+      <div class="item-desc">从比赛图片导入对阵表，引用 <code>event_parse_draft</code> + <code>event_commit_draft</code>。
         把图片对阵表整理成可编辑表格，用户确认后宿主再写库。</div>
     </div>
     <div class="item">
       <div class="item-title"><span class="badge">skill</span>做题练习 <code>puzzle.tsumego</code> · v4</div>
-      <div class="item-desc">触发「死活题 / 做一道 / 手筋 / 官子 …」，引用 <code>navigate_to</code>。
+      <div class="item-desc">生成围棋死活 / 手筋 / 官子做题页，引用 <code>navigate_to</code>。
         每轮按题型 / 难度重算；链接由宿主渲染成按钮，模型正文里不写任何网址。</div>
     </div>
     <div class="item">
       <div class="item-title"><span class="badge">skill</span>查天气 <code>weather.wttr</code> · v1</div>
-      <div class="item-desc">触发「查天气 / 天气怎么样 / 今天天气」，引用 <code>web_fetch</code>。
+      <div class="item-desc">查询某地当前天气与短期预报，引用 <code>web_fetch</code>。
         取 wttr.in 的公开 JSON 归纳中文播报；取不到如实说明、不编造数据。</div>
     </div>
     <div class="item">
       <div class="item-title"><span class="badge">skill</span>查股价 <code>stock.quote</code> · v2</div>
-      <div class="item-desc">触发「查股价 / 查股票 / 股票价格 …」，引用 <code>web_fetch</code>。
+      <div class="item-desc">查询股票行情，引用 <code>web_fetch</code>。
         取腾讯公开行情文本归纳中文报价播报；仅供参考，取不到不编造价格。</div>
     </div>
     <div class="item">
       <div class="item-title"><span class="badge">skill</span>同花顺财经新闻 <code>stock.news.10jqka</code> · v1</div>
-      <div class="item-desc">触发「财经新闻 / 财经快讯 / 股市新闻 / 快讯 …」，引用 <code>web_fetch</code> + <code>web_cache_read</code>。
+      <div class="item-desc">读取同花顺财经快讯并归纳，引用 <code>web_fetch</code> + <code>web_cache_read</code>。
         取同花顺财经新闻推送接口的 JSON，按最新在前归纳要闻；单行大 JSON 用缓存分页读，支持翻页与分类筛选，读不到不编造。</div>
     </div>
     <div class="item">
       <div class="item-title"><span class="badge">skill</span>GitHub REST API <code>github.rest</code> · v1</div>
-      <div class="item-desc">触发「我的仓库 / github issue / 修改 GitHub Token …」，引用 <code>http_fetch_auth</code> + <code>secret_prompt</code> + <code>web_cache_read</code>，并带 <code>secrets</code> 规格声明（仅 <code>api.github.com</code> / <code>Authorization: Bearer</code>）。
+      <div class="item-desc">通过 GitHub REST API 查仓库 / Issue / PR，或配置 Token，引用 <code>http_fetch_auth</code> + <code>secret_prompt</code> + <code>web_cache_read</code>，并带 <code>secrets</code> 规格声明（仅 <code>api.github.com</code> / <code>Authorization: Bearer</code>）。
         查仓库 / Issue / PR；首次或 401 时模型只贴一条配置链接，用户弹框录入 Token 即自动保存、下次不再弹；模型永远接触不到 Token 明文。这是宿主通用带凭据原语的第一个示例配方。</div>
     </div>
     <p style="margin-top:12px">配方都是纯 JSON、只组合宿主原语；新增 / 修订配方改 <code>skills/registry.json</code> 即可，
