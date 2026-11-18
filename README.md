@@ -13,13 +13,24 @@
 |---|---|---|---|---|
 | 插件工件 | `plugins/` | 顶层 `registry.json` | `weiqi-bot/domain/plugin/types.ts` 的 `PluginArtifact` / `PluginSpec`（QuickJS 沙箱执行） | 可用 4 个：`ranking` 三个口径 + `llm-tool` 的「公历转农历」 |
 | LLM 工具声明 | `tools/` | 顶层 `registry.json` | `weiqi-bot/application/model/IModelGateway.ts` 的 `ModelToolDefinition` | 镜像 1 个：`web_fetch` |
-| 技能配方 | `skills/` | **`skills/registry.json`（独立清单）** | `weiqi-bot/application/skill/SkillRecipe.ts` / `SkillTypes.ts` 的 `SkillRecipe` | 5 条：做题、对阵图片导入、查天气、查股价、同花顺财经新闻 |
+| 技能配方 | `skills/` | **`skills/registry.json`（独立清单）** | `weiqi-bot/application/skill/SkillRecipe.ts` / `SkillTypes.ts` 的 `SkillRecipe` | 6 条：做题、对阵图片导入、查天气、查股价、同花顺财经新闻、GitHub REST API |
 
 插件是**可执行代码**（在宿主 QuickJS 沙箱里跑，零宿主能力）；工具目前是**声明镜像**（执行器由宿主内置，见各条目 `README.md`）；
 技能配方是**纯声明 JSON**，只引用宿主已注册的原语名，永远不含可执行代码。
 插件与工具通过顶层 `registry.json` 索引，`schema/` 给出 JSON Schema 契约，`scripts/validate.mjs` 做一致性校验。
 **技能配方不进顶层 `registry.json`**：它是另一份清单，结构契约在 weiqi-bot 的 `SkillRecipe.ts`，
 本仓库没有对应 schema，`scripts/validate.mjs` 也不校验它（只校验顶层 registry / 条目 / 代码 / share URL 契约）。
+
+### 开发「需要凭据」的技能怎么写
+
+以 `github.rest` 为例。这类技能**不需要写任何代码**，只要在配方里做两件事：
+
+1. `primitives` 引用宿主通用原语 `http_fetch_auth`（带凭据直连）、`secret_prompt`（换/改凭据）、`web_cache_read`（长正文分页读）。
+2. 加一段 `secrets` 纯声明规格：每项给 `key`（凭据名）、`label`（弹框标签）、`allowedHosts`（允许发往的纯域名数组）、`header`（宿主怎么拼请求头：`name` + `prefix`），可选 `setupUrl` / `hint` / `reauthStatuses`（哪些状态码算失效，默认 `[401]`）。
+
+运行时模型调用 `http_fetch_auth` **只能给 `url` 和 `secretKey` 两个参数**；允许访问哪些域名、请求头怎么拼，全部由宿主按这份 `secrets` 声明强制决定，模型传不进来、也永远接触不到凭据明文。首次使用或凭据失效时，原语回一条 `secret-prompt:<key>` 链接，模型只负责把链接原样贴给用户；用户点开弹框录入即自动保存到本地（`secrets` 域，opaque），宿主回灌一条用户消息触发下一轮，下次不再弹框。说「修改 / 换」也由 `secret_prompt` 触发同一个弹框。
+
+**扩展**：接入另一家认证 API 只需再写一条配方、换一份 `secrets` 声明（不同的 key / allowedHosts / header），宿主内核、`http_fetch_auth` 工具签名、弹框都不用改。
 
 宿主的在线插件平台**只安装 `type: plugin`**；`type: tool` 只在列表里展示，不提供安装按钮。
 插件默认源 `https://weiqi-dev.github.io/weiqi-assets/registry.json` 只读、由本仓库 git 发布，宿主可另加自定义源但默认源不可覆盖。

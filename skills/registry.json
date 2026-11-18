@@ -114,6 +114,43 @@
         "web_cache_read"
       ],
       "prompt": "用户想看最新财经新闻 / 股市快讯时才走下面流程；只是聊股票话题、或要查某只股票的价格（那是「查股价」技能的职责）就正常回答，不要调用工具。\n\n1. 数据源是同花顺财经新闻推送接口：\n   https://news.10jqka.com.cn/tapp/news/push/stock/?page=1&tag=&track=website&pagesize=100\n   用 web_fetch 直接取回它，不要自己拼请求头、也不要换成别的网址（该接口要求带浏览器 User-Agent，宿主 web_fetch 走的透明代理已具备）。返回是单行 JSON，pagesize=100 时约八万多字符；web_fetch 的观察只有开头一小段预览，完整正文已留在宿主缓存里。\n\n2. 用 web_cache_read（url 填 web_fetch 观察里给出的那个绝对 URL）继续读：先用 mode=info 看总字符数，再用 mode=slice 从 offset=0 开始，按每次观察末尾「请把 offset 设为 X 继续读」的提示逐页往下读。正文只有一行，grep 逐行匹配在这里没有意义，不要用 grep。\n   ⚠️ 宿主单条观察有字符上限（weiqi-bot application/chat/ConversationPrompt.ts 的 CONTEXT_LIMITS.maxCharsPerMessage，完整正文塞不进一次观察），总模型调用轮数也有 guard（application/chat/ToolLoop.ts 的 maxModelCalls）。这里不复制这些配额的具体数值：它们由宿主版本决定、会变。所以不要试图读完整份 100 条：读到能完整列出用户要的条数就停 —— 判定标准是这几条的 title / digest / tag / stock[] 都在已读的字符里，不能只凭 web_fetch 的开头预览就下笔。用户没说要几条时，默认归纳最新 5 条 —— 这是本配方明说的默认呈现量，不是接口限制，用户要更多就继续翻页；翻到仍未读全就如实说明只读到几条，不补写没读到的。\n\n3. 数据结构（只读这些字段，别给未文档化字段编含义）：\n   - 顶层 code / msg / time / data；time 是接口取回时刻的 Unix 秒时间戳。\n   - data.list[] 是新闻数组，已按发布时间由新到旧排好；每条有 title（标题）、digest（摘要）、ctime / rtime（发布 / 更新时间，Unix 秒）、tag（分类，多个用逗号分隔）、url（原文链接）、stock[]（相关个股，含 name / stockCode）、tagInfo[]（关联标签）。\n   - data.total 是接口侧总条数；data.filter[] 列出可选分类标签（含 name），tag 参数的取值以它为准。\n   - import / color / nature / picUrl / source / tagInfo[].score 等字段含义接口未说明，一律忽略，不要拿来排序、筛选或断言「重要」。\n   ⚠️ 不要自己把 ctime / rtime 换算成日期时间（换算算错就是编造）：只按 list[] 的既有顺序呈现，并说明「按接口返回顺序由新到旧」。\n\n4. 用户改条件时，按原话调整 URL 参数后重新 web_fetch（page 页码、pagesize 每页条数、tag 分类），track=website 固定不动：说「翻下一页 / 再看一批」就把 page 加 1；说「只要 A股 / 港股 / 美股 / 重要 …」就把 tag 填成对应中文并做 URL 编码（如 美股 → %E7%BE%8E%E8%82%A1），可选取值以 data.filter[].name 为准；说「少一点 / 20 条」就调小 pagesize。换了参数就是新的 URL，缓存按 URL 索引，web_cache_read 的 url 也要换成新观察里的 URL。\n\n5. 输出用简洁中文，按「最新在前」列要闻：每条给分类 tag、标题、一句话摘要（取 digest，过长截到第一句；digest 为空就只给标题）、相关个股（stock[] 非空才列，写 name 即可）。开头说明本次呈现的是接口返回的最新 N 条（N 取实际读全并归纳的条数），不要声称「100 条已全部整理」。末尾标注「数据来自同花顺财经新闻推送接口」，说明接口时间戳未换算、新闻可能有滞后、仅供参考不构成投资建议。用户明确要原文链接时才把对应条目的 url 列出；否则正文里不要堆链接。\n\n6. 诚实性：只归纳真正读到的条目，绝不凭预览猜测未显示部分、不补写没读到的新闻；code 不是 \"200\"、HTTP 非 200、返回 403 / HTML、正文为空或不是合法 JSON 时，如实说明取不到并停止，不要编造新闻。"
+    },
+    {
+      "schemaVersion": 1,
+      "id": "github.rest",
+      "version": 1,
+      "name": "GitHub REST API",
+      "summary": "用通用 http_fetch_auth 原语直连 GitHub REST API 查仓库 / Issue / PR；Token 规格由本配方 secrets 声明（仅 api.github.com、Authorization: Bearer），宿主强制，模型永远读不到明文。首次或 401 时模型只贴配置链接，用户弹框录入即自动保存。",
+      "triggers": [
+        "我的仓库",
+        "github仓库",
+        "github 仓库",
+        "github issue",
+        "github pr",
+        "查github",
+        "GitHub 账号",
+        "我的 issue",
+        "仓库列表",
+        "配置 GitHub Token",
+        "修改 GitHub Token"
+      ],
+      "primitives": [
+        "http_fetch_auth",
+        "secret_prompt",
+        "web_cache_read"
+      ],
+      "secrets": [
+        {
+          "key": "github_token",
+          "label": "GitHub Personal Access Token",
+          "setupUrl": "https://github.com/settings/tokens",
+          "hint": "classic 选 repo 权限即可；fine-grained 需授予目标仓库的读权限。只存本机，模型永远读不到。",
+          "allowedHosts": ["api.github.com"],
+          "header": { "name": "Authorization", "prefix": "Bearer " },
+          "reauthStatuses": [401]
+        }
+      ],
+      "prompt": "用户想通过 GitHub REST API 查自己的仓库、Issue、Pull Request、用户信息等时才走下面流程；只是聊 Git / GitHub 概念或代码问题就正常回答，不要调用工具。\n\n1. 用 http_fetch_auth 取回目标数据：url 必须是 https://api.github.com/ 开头的 GET 绝对 URL（可带 query），secretKey 固定填 'github_token'。常用端点：\n   - 当前用户信息：https://api.github.com/user\n   - 我的仓库：https://api.github.com/user/repos?per_page=30&sort=updated\n   - 指定用户仓库：https://api.github.com/users/{owner}/repos?per_page=30\n   - 某仓库的 Issue：https://api.github.com/repos/{owner}/{repo}/issues?state=open&per_page=30\n   - 某仓库的 PR：https://api.github.com/repos/{owner}/{repo}/pulls?state=open&per_page=30\n   - 搜索仓库：https://api.github.com/search/repositories?q={关键词}&per_page=20\n   {owner}/{repo} 从用户原话里取；用户没给全就先问，不要臆造仓库名。**允许访问哪些域名、Authorization 头怎么拼、哪些状态码算凭据失效，都由本配方 secrets 声明、宿主强制**：模型只给 url 与 secretKey，绝不自己拼请求头、绝不传 Token 或任何密钥、也绝不改成别的域名或走 web_fetch（那会绕过鉴权）。这套 http_fetch_auth 是宿主通用原语，别的认证 API 只要另写一份 secrets 声明即可复用，不需要改宿主代码。\n\n2. http_fetch_auth 的观察只有开头一小段预览，完整正文已留在宿主缓存里。需要更多条目时用 web_cache_read（url 填 http_fetch_auth 观察里给出的那个绝对 URL）：先用 mode=info 看总字符数，再用 mode=slice 分页读、或用 mode=grep 检索。⚠️ 宿主单条观察有字符上限（CONTEXT_LIMITS.maxCharsPerMessage），完整 JSON 塞不进一次观察；这里不复制具体数值，它由宿主版本决定。不要凭预览猜测未显示的部分；读到能完整列出用户要的条目就停，判定标准是这几条的字段都在已读的字符里。用户没说要几条时默认归纳前 10 条（这是本配方明说的默认呈现量，不是接口限制）。\n\n3. 若观察里出现「🔑 配置 / 修改 GitHub Personal Access Token」链接（凭据未配置，或 GitHub 返回 401 说明已失效 / 权限不足）：**只把这条链接原样贴给用户，然后结束本轮回复**。附一句简短说明：点开弹框录入后会自动保存，下次不再弹；保存完会继续刚才的请求。绝不要索要、猜测、复述或记录任何 Token 明文，绝不要改 URL 重试、也不要自己编一份 GitHub 数据。用户在弹框保存后会在新一轮里重新发起，那时宿主已能读到凭据，http_fetch_auth 会直接成功。\n\n4. 用户说「换 / 修改 / 重新配置 / 更新 GitHub Token」时，调用 secret_prompt 并传 secretKey='github_token'，它无论当前是否已配置都会返回同一条配置链接：只把链接原样贴给用户并结束本轮。同样绝不要索要或复述 Token 明文。\n\n5. 输出用简洁中文归纳：仓库列名称、是否私有、语言、简介、更新时间、星标数、html_url；Issue / PR 列编号、标题、状态、作者、创建时间、html_url；用户信息列 login、公开仓库数等。只写真正读到的字段，字段缺失就不列，不要给未读到的条目补内容。开头说明本次呈现的条数与来源（GitHub REST API），用户明确要链接时才把 html_url 列出，否则不堆链接。\n\n6. 诚实性：HTTP 非 2xx（403 限流 / 404 不存在 / 422 参数错等）时如实说明状态码与 GitHub 返回的 message，不要用常识补数据；网络失败 / CORS 被拦 / 正文不是合法 JSON 时如实说明取不到并停止。403 限流不是凭据失效，不要误叫用户重新配置。除「未配置 / 401 / 用户主动要改」三种情况外，不要主动弹配置链接。"
     }
   ]
 }
