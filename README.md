@@ -13,7 +13,7 @@
 |---|---|---|---|---|
 | 插件工件 | `plugins/` | 顶层 `registry.json` | `weiqi-bot/domain/plugin/types.ts` 的 `PluginArtifact` / `PluginSpec`（QuickJS 沙箱执行） | 可用 4 个：`ranking` 三个口径 + `llm-tool` 的「公历转农历」 |
 | LLM 工具声明 | `tools/` | 顶层 `registry.json` | `weiqi-bot/application/model/IModelGateway.ts` 的 `ModelToolDefinition` | 镜像 1 个：`web_fetch` |
-| 技能配方 | `skills/` | **`skills/registry.json`（独立清单）** | `weiqi-bot/application/skill/SkillRecipe.ts` / `SkillTypes.ts` 的 `SkillRecipe` | 4 条：做题、对阵图片导入、查天气、查股价 |
+| 技能配方 | `skills/` | **`skills/registry.json`（独立清单）** | `weiqi-bot/application/skill/SkillRecipe.ts` / `SkillTypes.ts` 的 `SkillRecipe` | 5 条：做题、对阵图片导入、查天气、查股价、同花顺财经新闻 |
 
 插件是**可执行代码**（在宿主 QuickJS 沙箱里跑，零宿主能力）；工具目前是**声明镜像**（执行器由宿主内置，见各条目 `README.md`）；
 技能配方是**纯声明 JSON**，只引用宿主已注册的原语名，永远不含可执行代码。
