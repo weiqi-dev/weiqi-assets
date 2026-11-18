@@ -120,7 +120,7 @@
       "id": "github.rest",
       "version": 1,
       "name": "GitHub REST API",
-      "summary": "用通用 http_fetch_auth 原语直连 GitHub REST API 查仓库 / Issue / PR；Token 规格由本配方 secrets 声明（仅 api.github.com、Authorization: Bearer），宿主强制，模型永远读不到明文。首次或 401 时模型只贴配置链接，用户弹框录入即自动保存。",
+      "summary": "用通用 http_fetch_auth 原语直连 GitHub REST API 查仓库 / Issue / PR；Token 规格由本配方 secrets 声明（仅 api.github.com、Authorization: Bearer），宿主强制，模型永远读不到明文。首次或 401 时模型只贴配置链接，用户弹框录入即自动保存。本配方不声明 requiredCapabilities，不依赖任何 llm-tool 能力库。",
       "triggers": [
         "我的仓库",
         "github仓库",

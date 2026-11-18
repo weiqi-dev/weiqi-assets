@@ -32,6 +32,8 @@
 
 **扩展**：接入另一家认证 API 只需再写一条配方、换一份 `secrets` 声明（不同的 key / allowedHosts / header），宿主内核、`http_fetch_auth` 工具签名、弹框都不用改。
 
+**与 llm-tool 划清界限**：配方是否需要本地 JS 能力库，由可选的 `requiredCapabilities` 声明决定——**缺省该字段就是明确的「无依赖」**（写空数组会被 `parseSkillRecipe` 判为配方写错）。`github.rest` 不写它，宿主因此不会把 `llm_tool_call`、农历能力库清单或 QuickJS 沙箱挂进这一轮；只有像 `user.dn2lz9` 那样显式声明 `["monthCalendar"]` 的配方命中时才按需挂载。装过某个能力库 ≠ 每轮都要把它塞给模型。
+
 宿主的在线插件平台**只安装 `type: plugin`**；`type: tool` 只在列表里展示，不提供安装按钮。
 插件默认源 `https://weiqi-dev.github.io/weiqi-assets/registry.json` 只读、由本仓库 git 发布，宿主可另加自定义源但默认源不可覆盖。
 技能源是**单源模型**，默认源 `…/skills/registry.json` 是宿主代码常量（`SkillCatalogSources.DEFAULT_SKILL_REGISTRY_URL`），
