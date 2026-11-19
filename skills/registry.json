@@ -29,13 +29,16 @@
     {
       "schemaVersion": 1,
       "id": "weather.wttr",
-      "version": 1,
+      "version": 2,
       "name": "查天气",
-      "summary": "用户说「查天气＋城市」时，取回 wttr.in 的公开 JSON 天气数据并归纳成简洁中文播报",
+      "summary": "查询指定城市天气，并支持用户维护自选城市列表，一次查询全部自选城市天气。",
       "primitives": [
-        "web_fetch"
+        "web_fetch",
+        "web_cache_read",
+        "kv_read",
+        "kv_write"
       ],
-      "prompt": "用户想查某个城市的天气。把城市名转成英文或汉语拼音（如 北京→Beijing、上海→Shanghai、广州→Guangzhou），拼成 wttr.in 的公开 JSON 接口路径，形如 https://wttr.in/城市拼音?format=j1，用 web_fetch 取回。从返回的 current_condition 中读取 temp_C、天气描述、FeelsLikeC、humidity、windspeedKmph、观测时间；再从 weather 数组第一天的 hourly 里挑几个关键时段（如早、午、晚）补充趋势，以及当天 maxtempC / mintempC。用简洁自然的中文播报，标注数据来自 wttr.in。若用户没说城市，默认北京；接口取不到或返回异常时如实说明，不要编造天气数据。"
+      "prompt": "用户明确想查询天气、管理自选城市时才使用本技能；只是讨论天气、气候或气象知识时正常回答，不调用工具。\n\n【城市识别】\n用户直接指定城市时，查询该城市，不受自选列表影响。把中文城市名转换为英文或汉语拼音（如 北京→Beijing、上海→Shanghai、广州→Guangzhou），拼成 wttr.in 的 JSON 接口路径：https://wttr.in/城市拼音?format=j1。\n用户没有指定城市，也没有要求查询自选城市时，先读取自选列表：如果列表有城市，询问用户是否查询自选城市；如果列表为空，询问用户想查询哪个城市。不要擅自默认北京。\n\n【自选城市存储】\n自选城市保存在本地数据层 prefs 域，固定键 weather.watchlist，值为城市名称字符串数组，例如 [\"北京\",\"上海\",\"巴黎\"]。只使用 prefs 域和 weather.watchlist 键，不要使用 secrets 或其他键名。\n\nA. 添加自选城市：用户说「把上海加入自选」「记住巴黎这个城市」等时：\n1. 先调用 kv_read，domain='prefs'、key='weather.watchlist'。\n2. 不存在时按空数组处理；如果城市已存在，如实告知已在自选中，不重复添加。\n3. 不存在则把用户明确提供的城市名称追加到数组末尾。\n4. 调用 kv_write 写回去重后的完整字符串数组，domain='prefs'、key='weather.watchlist'。\n5. 根据工具结果回执。写入失败时如实说明，不得谎报保存成功。\n添加城市只保存偏好，不自动查询天气，除非用户同时明确要求查询。\n\nB. 删除自选城市：用户明确要求删除某个城市时，先 kv_read 读取列表，只删除用户点名的城市，再用 kv_write 写回完整数组。城市不存在时如实告知，不要改动其他城市。写入失败时如实说明。\n\nC. 查看自选城市：用户说「看看我的自选城市」「有哪些自选城市」时，调用 kv_read。列表为空或不存在时告知尚未添加；否则按实际列表展示城市名称，不要自行补充城市。\n\nD. 查询自选城市天气：用户说「查询自选城市天气」「看看我收藏的城市天气」等时：\n1. 先 kv_read 读取 prefs/weather.watchlist。\n2. 列表不存在或为空时，告知还没有自选城市，并提示用户可以先指定城市查询，再要求将其加入自选。\n3. 对列表中的每个城市分别转换为 wttr.in 可用的英文或拼音名称，分别调用 web_fetch 获取天气。不要漏掉列表中的城市，也不要把多个城市拼成一个城市路径。\n4. 对每个请求分别处理返回结果；某个城市取数失败时单独标注，不要影响其他城市的播报，也不要编造数据。\n\n【天气取数与缓存】\n调用 web_fetch 获取 wttr.in 的公开 JSON 接口。若观察提示正文未完整显示，必须使用 web_cache_read 读取对应 URL 的缓存正文，直到取得需要的字段；不能只根据预览播报。每个城市使用本次 web_fetch 返回的绝对 URL 读取缓存。\n从 current_condition 读取 temp_C、weatherDesc 天气描述、FeelsLikeC、humidity、windspeedKmph 和观测时间；从 weather 数组第一天读取 maxtempC、mintempC，以及 hourly 中早、午、晚几个关键时段的天气趋势。只使用实际读到的字段。\n\n【输出】\n用简洁自然的中文播报，至少包括城市、当前天气、气温、体感温度、湿度、风速、当天最高和最低气温；有完整 hourly 数据时补充早午晚趋势。查询多个自选城市时按城市分组列出，开头说明实际查询的城市数量。标注数据来自 wttr.in。\n接口取不到、返回异常、JSON 不合法或所需字段缺失时如实说明，不要编造天气数据。"
     },
     {
       "schemaVersion": 1,
