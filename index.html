@@ -130,9 +130,9 @@
         取 wttr.in 的公开 JSON 归纳中文播报；取不到如实说明、不编造数据。</div>
     </div>
     <div class="item">
-      <div class="item-title"><span class="badge">skill</span>查股价 <code>stock.quote</code> · v2</div>
-      <div class="item-desc">查询股票行情，引用 <code>web_fetch</code>。
-        取腾讯公开行情文本归纳中文报价播报；仅供参考，取不到不编造价格。</div>
+      <div class="item-title"><span class="badge">skill</span>查股价 + 自选股池 <code>stock.quote</code> · v3</div>
+      <div class="item-desc">查询单只 / 多只股票行情，并支持用户自选股池；引用 <code>web_fetch</code> + <code>web_cache_read</code> + <code>kv_read</code> + <code>kv_write</code>。
+        取腾讯公开行情文本归纳中文报价播报；报价后附「添加到自选」链接，点击由宿主回灌一条用户消息、LLM 调本地数据层 <code>prefs</code> 域保存股票代码数组；之后说「查询自选股票当前股价」即一次取回全部代码按列表播报。这是宿主「使用偏好」场景的首个示例配方，与 <code>github.rest</code> 的凭据场景（opaque / 宿主写）镜像对照：这里值可回显、由模型读写。仅供参考，取不到不编造价格。</div>
     </div>
     <div class="item">
       <div class="item-title"><span class="badge">skill</span>同花顺财经新闻 <code>stock.news.10jqka</code> · v1</div>
