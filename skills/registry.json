@@ -108,6 +108,17 @@
         }
       ],
       "prompt": "用户想通过 GitHub REST API 查自己的仓库、Issue、Pull Request、用户信息等时才走下面流程；只是聊 Git / GitHub 概念或代码问题就正常回答，不要调用工具。\n\n1. 用 http_fetch_auth 取回目标数据：url 必须是 https://api.github.com/ 开头的 GET 绝对 URL（可带 query），secretKey 固定填 'github_token'。常用端点：\n   - 当前用户信息：https://api.github.com/user\n   - 我的仓库：https://api.github.com/user/repos?per_page=30&sort=updated\n   - 指定用户仓库：https://api.github.com/users/{owner}/repos?per_page=30\n   - 某仓库的 Issue：https://api.github.com/repos/{owner}/{repo}/issues?state=open&per_page=30\n   - 某仓库的 PR：https://api.github.com/repos/{owner}/{repo}/pulls?state=open&per_page=30\n   - 搜索仓库：https://api.github.com/search/repositories?q={关键词}&per_page=20\n   {owner}/{repo} 从用户原话里取；用户没给全就先问，不要臆造仓库名。**允许访问哪些域名、Authorization 头怎么拼、哪些状态码算凭据失效，都由本配方 secrets 声明、宿主强制**：模型只给 url 与 secretKey，绝不自己拼请求头、绝不传 Token 或任何密钥、也绝不改成别的域名或走 web_fetch（那会绕过鉴权）。这套 http_fetch_auth 是宿主通用原语，别的认证 API 只要另写一份 secrets 声明即可复用，不需要改宿主代码。\n\n2. http_fetch_auth 的观察只有开头一小段预览，完整正文已留在宿主缓存里。需要更多条目时用 web_cache_read（url 填 http_fetch_auth 观察里给出的那个绝对 URL）：先用 mode=info 看总字符数，再用 mode=slice 分页读、或用 mode=grep 检索。⚠️ 宿主单条观察有字符上限（CONTEXT_LIMITS.maxCharsPerMessage），完整 JSON 塞不进一次观察；这里不复制具体数值，它由宿主版本决定。不要凭预览猜测未显示的部分；读到能完整列出用户要的条目就停，判定标准是这几条的字段都在已读的字符里。用户没说要几条时默认归纳前 10 条（这是本配方明说的默认呈现量，不是接口限制）。\n\n3. 若观察里出现「🔑 配置 / 修改 GitHub Personal Access Token」链接（凭据未配置，或 GitHub 返回 401 说明已失效 / 权限不足）：**只把这条链接原样贴给用户，然后结束本轮回复**。附一句简短说明：点开弹框录入后会自动保存，下次不再弹；保存完会继续刚才的请求。绝不要索要、猜测、复述或记录任何 Token 明文，绝不要改 URL 重试、也不要自己编一份 GitHub 数据。用户在弹框保存后会在新一轮里重新发起，那时宿主已能读到凭据，http_fetch_auth 会直接成功。\n\n4. 用户说「换 / 修改 / 重新配置 / 更新 GitHub Token」时，调用 secret_prompt 并传 secretKey='github_token'，它无论当前是否已配置都会返回同一条配置链接：只把链接原样贴给用户并结束本轮。同样绝不要索要或复述 Token 明文。\n\n5. 输出用简洁中文归纳：仓库列名称、是否私有、语言、简介、更新时间、星标数、html_url；Issue / PR 列编号、标题、状态、作者、创建时间、html_url；用户信息列 login、公开仓库数等。只写真正读到的字段，字段缺失就不列，不要给未读到的条目补内容。开头说明本次呈现的条数与来源（GitHub REST API），用户明确要链接时才把 html_url 列出，否则不堆链接。\n\n6. 诚实性：HTTP 非 2xx（403 限流 / 404 不存在 / 422 参数错等）时如实说明状态码与 GitHub 返回的 message，不要用常识补数据；网络失败 / CORS 被拦 / 正文不是合法 JSON 时如实说明取不到并停止。403 限流不是凭据失效，不要误叫用户重新配置。除「未配置 / 401 / 用户主动要改」三种情况外，不要主动弹配置链接。"
+    },
+    {
+      "schemaVersion": 1,
+      "id": "play.start",
+      "version": 1,
+      "name": "围棋对弈",
+      "summary": "用户想开始围棋对弈、下棋或观看 AI 对局时，识别对弈模式并导航到对应页面。支持真人对弈、人机对弈和 AI 自对弈；未明确模式时进入对弈选择首页。",
+      "primitives": [
+        "navigate_to"
+      ],
+      "prompt": "当用户明确表达想开始围棋对弈、下棋或观看 AI 对局时，才使用本技能。只是讨论围棋、分析棋局、询问下棋技巧时，不要调用工具。\n\n【模式识别】\n1. 真人对弈：用户明确表示想和朋友、其他真人、两个人进行对弈，或者选择双人对弈。path 使用 /play/hh.html，label 使用「开始真人对弈」。\n2. 人机对弈：用户明确表示想和 AI、电脑、机器人下棋，或者让 AI 陪自己下棋。path 使用 /play/hm.html，label 使用「开始人机对弈」。\n3. AI 自对弈：用户明确表示想让两个 AI 互相下棋、观看 AI 自己下棋或观摩 AI 对局。path 使用 /play/mm.html，label 使用「开始 AI 自对弈」。\n4. 未明确模式：用户只是说「我想下棋」「开始对弈」「来一盘围棋」等，没有明确指定对弈对象时，path 使用 /play/index.html，label 使用「进入围棋对弈」。不要擅自推断用户想玩哪一种模式。\n\n【导航执行】\n识别模式后，立即调用 navigate_to，只传 path 和 label，不需要 query 参数。每次新的对弈请求都重新调用，不沿用历史链接。\n\n【回复规则】\nnavigate_to 会由宿主生成站内导航按钮。不要自己编造 URL，不要输出 Markdown 链接或网址。只用一句简短自然的中文提示用户点击按钮进入对弈页面，然后结束回复。\n\n【边界】\n用户只是在谈论对弈、询问对弈规则、讨论之前的棋局时，不要跳转。只有用户确实想开始或进入对弈时才调用导航工具。"
     }
   ]
 }
