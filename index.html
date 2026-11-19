@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Weiqi Assets - weiqi-bot 开放扩展资源</title>
+<link rel="icon" href="data:,">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -30,6 +31,9 @@
            border-radius: 999px; background: #ede9fe; color: #6d28d9; margin-right: 8px; }
   .badge.site { background: #d1fae5; color: #065f46; }
   .item-desc { font-size: 13px; color: #6b7280; line-height: 1.7; }
+  .meta { font-weight: 400; font-size: 12px; color: #9ca3af; }
+  .count { font-size: 13px; font-weight: 400; color: #9ca3af; margin-left: 8px; }
+  .hint { color: #9ca3af; font-size: 13px; }
   code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
          background: #f3f4f6; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
   pre { background: #111827; color: #e5e7eb; padding: 14px; border-radius: 8px;
@@ -74,78 +78,22 @@
     <p>结构契约在 weiqi-bot 的 <code>application/skill/SkillRecipe.ts</code> / <code>SkillTypes.ts</code>；
        本仓库没有对应 schema，<code>scripts/validate.mjs</code> 也不校验这份清单。
        默认源是宿主代码常量，用户可在面板改成任意 https 源或一键恢复（内容未经官方审核时需自担信任）。
-       当前 6 条配方见下方「技能配方列表」。</p>
+       下方列表实时取自该清单，新增 / 修订配方只改这一个文件。</p>
   </div>
 
   <div class="card">
-    <h2>📦 资源列表</h2>
-    <div class="item">
-      <div class="item-title"><span class="badge">plugin</span>总分排序</div>
-      <div class="url">plugins/ranking/total-score/plugin.json</div>
-      <div class="item-desc">扩展点 <code>ranking</code> / spec v1 / 入口 <code>rank({matches}) → {columns,rows}</code>。
-        按总得分（积分与对手分合成）排名，同分依次比较积分、直胜、对手分顺减；可在赛事详情页选用。</div>
-    </div>
-    <div class="item">
-      <div class="item-title"><span class="badge">plugin</span>直胜排序</div>
-      <div class="url">plugins/ranking/direct-win/plugin.json</div>
-      <div class="item-desc">扩展点 <code>ranking</code> / spec v1 / 入口 <code>rank({matches}) → {columns,rows}</code>。
-        积分→对手分→直胜→逆减，展示直胜列；对应赛事详情页原先内置的「直胜」口径，现在由插件提供。</div>
-    </div>
-    <div class="item">
-      <div class="item-title"><span class="badge">plugin</span>简易排序</div>
-      <div class="url">plugins/ranking/simple/plugin.json</div>
-      <div class="item-desc">扩展点 <code>ranking</code> / spec v1 / 入口 <code>rank({matches}) → {columns,rows}</code>。
-        积分→对手分→逆减，不展示累进分；对应赛事详情页原先内置的「简易」口径，现在由插件提供。</div>
-    </div>
-    <div class="item">
-      <div class="item-title"><span class="badge">plugin</span>公历转农历 <code>llm-tool.lunar</code></div>
-      <div class="url">plugins/llm-tool/lunar/plugin.json</div>
-      <div class="item-desc">扩展点 <code>llm-tool</code> / spec v1 / 入口 <code>call({method,args})</code>。
-        把公历单日或日期范围换算成农历（含闰月），模型在对话里通过 <code>llm_tool_call</code> 调用；
-        装好启用后零网络。含 <code>exposes[]</code> 方法白名单与 <code>smoke[]</code> 安装自检。</div>
-    </div>
-    <div class="item">
-      <div class="item-title"><span class="badge">tool</span>web_fetch 工具声明</div>
-      <div class="url">tools/web-fetch/v1/tool.json</div>
-      <div class="item-desc">对齐 <code>ModelToolDefinition</code> 的声明镜像；执行器由 weiqi-bot 内置，
-        本仓库不提供可执行代码，在线平台只展示、不安装。</div>
-    </div>
+    <h2>📦 资源列表<span class="count" id="resource-count"></span></h2>
+    <div id="resource-list"><p class="hint">正在从 <code>registry.json</code> 加载…</p></div>
+    <p style="margin-top:12px">上表实时取自顶层 <code>registry.json</code> 的 <code>resources[]</code>，
+       条目数量与明细自动跟随；新增插件 / 工具只改清单，不用改本页。</p>
   </div>
 
   <div class="card">
-    <h2>🧩 技能配方列表（纯声明 · 装了才生效）</h2>
-    <div class="item">
-      <div class="item-title"><span class="badge">skill</span>图片对阵表导入赛事 <code>event.import-pairing-image</code> · v1</div>
-      <div class="item-desc">从比赛图片导入对阵表，引用 <code>event_parse_draft</code> + <code>event_commit_draft</code>。
-        把图片对阵表整理成可编辑表格，用户确认后宿主再写库。</div>
-    </div>
-    <div class="item">
-      <div class="item-title"><span class="badge">skill</span>做题练习 <code>puzzle.tsumego</code> · v4</div>
-      <div class="item-desc">生成围棋死活 / 手筋 / 官子做题页，引用 <code>navigate_to</code>。
-        每轮按题型 / 难度重算；链接由宿主渲染成按钮，模型正文里不写任何网址。</div>
-    </div>
-    <div class="item">
-      <div class="item-title"><span class="badge">skill</span>查天气 <code>weather.wttr</code> · v1</div>
-      <div class="item-desc">查询某地当前天气与短期预报，引用 <code>web_fetch</code>。
-        取 wttr.in 的公开 JSON 归纳中文播报；取不到如实说明、不编造数据。</div>
-    </div>
-    <div class="item">
-      <div class="item-title"><span class="badge">skill</span>查股价 + 自选股池 <code>stock.quote</code> · v3</div>
-      <div class="item-desc">查询单只 / 多只股票行情，并支持用户自选股池；引用 <code>web_fetch</code> + <code>web_cache_read</code> + <code>kv_read</code> + <code>kv_write</code>。
-        取腾讯公开行情文本归纳中文报价播报；报价后附「添加到自选」链接，点击由宿主回灌一条用户消息、LLM 调本地数据层 <code>prefs</code> 域保存股票代码数组；之后说「查询自选股票当前股价」即一次取回全部代码按列表播报。这是宿主「使用偏好」场景的首个示例配方，与 <code>github.rest</code> 的凭据场景（opaque / 宿主写）镜像对照：这里值可回显、由模型读写。仅供参考，取不到不编造价格。</div>
-    </div>
-    <div class="item">
-      <div class="item-title"><span class="badge">skill</span>同花顺财经新闻 <code>stock.news.10jqka</code> · v1</div>
-      <div class="item-desc">读取同花顺财经快讯并归纳，引用 <code>web_fetch</code> + <code>web_cache_read</code>。
-        取同花顺财经新闻推送接口的 JSON，按最新在前归纳要闻；单行大 JSON 用缓存分页读，支持翻页与分类筛选，读不到不编造。</div>
-    </div>
-    <div class="item">
-      <div class="item-title"><span class="badge">skill</span>GitHub REST API <code>github.rest</code> · v1</div>
-      <div class="item-desc">通过 GitHub REST API 查仓库 / Issue / PR，或配置 Token，引用 <code>http_fetch_auth</code> + <code>secret_prompt</code> + <code>web_cache_read</code>，并带 <code>secrets</code> 规格声明（仅 <code>api.github.com</code> / <code>Authorization: Bearer</code>）。
-        查仓库 / Issue / PR；首次或 401 时模型只贴一条配置链接，用户弹框录入 Token 即自动保存、下次不再弹；模型永远接触不到 Token 明文。这是宿主通用带凭据原语的第一个示例配方。</div>
-    </div>
-    <p style="margin-top:12px">配方都是纯 JSON、只组合宿主原语；新增 / 修订配方改 <code>skills/registry.json</code> 即可，
-       无需重建 Web 资源包。与插件「默认停用、人工启用」不同，技能安装即启用（纯声明零代码）。</p>
+    <h2>🧩 技能配方列表（纯声明 · 装了才生效）<span class="count" id="skill-count"></span></h2>
+    <div id="skill-list"><p class="hint">正在从 <code>skills/registry.json</code> 加载…</p></div>
+    <p style="margin-top:12px">上表实时取自 <code>skills/registry.json</code> 的 <code>skills[]</code>，
+       条目数量与明细自动跟随；新增 / 修订配方只改清单、无需重建 Web 资源包。
+       与插件「默认停用、人工启用」不同，技能安装即启用（纯声明零代码）。</p>
   </div>
 
   <div class="card">
@@ -166,6 +114,7 @@
       <a href="docs/extension-points.md">扩展点契约</a>
       <a href="docs/contributing.md">贡献指南</a>
       <a href="share/README.md">SGF 分享能力</a>
+      <a href="registry.json">扩展资源清单</a>
       <a href="skills/registry.json">技能配方清单</a>
       <a href="schema/registry.schema.json">registry schema</a>
       <a href="schema/plugin.schema.json">plugin schema</a>
@@ -181,5 +130,75 @@
     <p>MIT License · Made for Go/Weiqi players</p>
   </div>
 </div>
+
+<script>
+// 清单是唯一事实源：两个列表实时取 registry.json / skills/registry.json 渲染，
+// 本页不维护任何条目数量或逐条描述的副本。新增资源只改对应清单即可。
+(function () {
+  'use strict';
+  var ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ESC[c]; });
+  }
+  function el(id) { return document.getElementById(id); }
+
+  function renderResources(data) {
+    var items = (data && Array.isArray(data.resources)) ? data.resources : [];
+    var count = el('resource-count');
+    if (count) count.textContent = '共 ' + items.length + ' 项';
+    if (!items.length) return '<p class="hint">清单里暂无资源条目。</p>';
+    return items.map(function (r) {
+      var meta = [];
+      if (r.pointId) meta.push('扩展点 <code>' + esc(r.pointId) + '</code>');
+      if (r.specVersion) meta.push('spec v' + esc(r.specVersion));
+      var metaHtml = meta.length ? ' <span class="meta">' + meta.join(' · ') + '</span>' : '';
+      return '<div class="item">\n' +
+        '      <div class="item-title"><span class="badge">' + esc(r.type) + '</span>' +
+        esc(r.name) + ' <code>' + esc(r.id) + '</code>' + metaHtml + '</div>\n' +
+        '      <div class="url">' + esc(r.path) + '</div>\n' +
+        '      <div class="item-desc">' + esc(r.summary) + '</div>\n' +
+        '    </div>';
+    }).join('\n');
+  }
+
+  function renderSkills(data) {
+    var items = (data && Array.isArray(data.skills)) ? data.skills : [];
+    var count = el('skill-count');
+    if (count) count.textContent = '共 ' + items.length + ' 条';
+    if (!items.length) return '<p class="hint">清单里暂无技能配方。</p>';
+    return items.map(function (s) {
+      var prims = (Array.isArray(s.primitives) ? s.primitives : [])
+        .map(function (p) { return '<code>' + esc(p) + '</code>'; }).join(' + ');
+      var caps = (Array.isArray(s.requiredCapabilities) && s.requiredCapabilities.length)
+        ? ' · 依赖 ' + s.requiredCapabilities.map(function (c) { return '<code>' + esc(c) + '</code>'; }).join(' + ')
+        : '';
+      return '<div class="item">\n' +
+        '      <div class="item-title"><span class="badge">skill</span>' +
+        esc(s.name) + ' <code>' + esc(s.id) + '</code> · v' + esc(s.version) + '</div>\n' +
+        '      <div class="item-desc">' + esc(s.summary) + caps + '<br>' +
+        '<span class="meta">原语：' + (prims || '（无）') + '</span></div>\n' +
+        '    </div>';
+    }).join('\n');
+  }
+
+  function load(url, listId, countId, render) {
+    fetch(url, { cache: 'no-store' })
+      .then(function (res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      })
+      .then(function (data) { el(listId).innerHTML = render(data); })
+      .catch(function (err) {
+        var c = el(countId);
+        if (c) c.textContent = '清单未加载';
+        el(listId).innerHTML = '<p class="hint">列表暂时无法加载（' + esc(err.message) +
+          '）。请通过 HTTP(S) 打开本站，或直接查看 <a href="' + esc(url) + '">' + esc(url) + '</a>。</p>';
+      });
+  }
+
+  load('./registry.json', 'resource-list', 'resource-count', renderResources);
+  load('./skills/registry.json', 'skill-list', 'skill-count', renderSkills);
+})();
+</script>
 </body>
 </html>

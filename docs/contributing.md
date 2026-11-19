@@ -9,6 +9,10 @@
 - **代码要能跑**：插件源码必须能在宿主 QuickJS 沙箱里通过校验与试跑，不能只是示意。
 - **改 share 要两仓同步**：路径、URL、编解码格式任一变更，都要同时改本仓库与 weiqi-bot，
   并跑 `npm run validate` + weiqi-bot 相关单测。
+- **清单是唯一事实源**：`registry.json` 与 `skills/registry.json` 是条目数量与明细的唯一来源。
+  `index.html` 的两个列表运行时 `fetch` 清单渲染，README 也不逐条列举、不写死数量。
+  新增 / 修订资源**只改对应清单**（技能改 `skills/registry.json`；插件 / 工具改 `registry.json` + 建条目目录），
+  不要同步去改 `index.html` 或 README 里的条目列表 —— 那类手工副本正是过去数字漂移的来源。
 
 ## 新增插件
 
@@ -93,6 +97,36 @@ manifest 还要给 `exposes[]`（方法名 + 说明 + 参数 JSON Schema）与 `
 
 ⚠️ 除非 weiqi-bot 已经实现「外部执行器隔离与注册」，否则**不要**把 status 写成
 `downloadable`，也不要在本仓库放会被主线程直接执行的代码。
+
+## 新增技能配方
+
+技能是**纯声明 JSON**，不含代码、不建目录，只需往 `skills/registry.json` 的 `skills[]` 追加一条：
+
+```json
+{
+  "schemaVersion": 1,
+  "id": "play.start",
+  "version": 1,
+  "name": "围棋对弈",
+  "summary": "一句话说清什么场景、做什么（路由唯一依据）",
+  "primitives": ["navigate_to"],
+  "prompt": "命中后追加给对话模型的自然语言指令……"
+}
+```
+
+要点：
+
+1. `id` 小写字母 / 数字开头，只允许 `[a-z0-9._-]`，全清单唯一；`version` 为正整数，
+   修订同一条配方时递增它（宿主据此提示「有更新」）。
+2. `name` / `summary` 说清场景与职责 —— 宿主每轮把它俩组成目录交给模型做路由，
+   配方不写触发词；`prompt` 是命中后才追加的指令，不参与路由。
+3. `primitives` 只能引用宿主已注册的原语名（如 `navigate_to` / `web_fetch`），
+   引用不存在的原语 → 只展示、不可安装。可选 `requiredCapabilities` / `secrets`
+   按对应宿主契约填写，缺省即「无依赖 / 不涉凭据」。
+4. 结构契约在 weiqi-bot 的 `application/skill/SkillRecipe.ts`（`parseSkillRecipe`），
+   本仓库无对应 schema、`scripts/validate.mjs` 也不校验这份清单；可用该解析器实跑一遍自检。
+5. **只改这一个文件**：站点技能列表实时读取该清单渲染，数量与明细自动跟随，
+   不需要改 `index.html`、README 或重建 Web 资源包。
 
 ## 修改 SGF 分享能力
 

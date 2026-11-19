@@ -9,17 +9,22 @@
 
 ## 三类扩展资源
 
-| 类型 | 目录 | 清单入口 | 对齐的宿主契约 | 当前状态 |
-|---|---|---|---|---|
-| 插件工件 | `plugins/` | 顶层 `registry.json` | `weiqi-bot/domain/plugin/types.ts` 的 `PluginArtifact` / `PluginSpec`（QuickJS 沙箱执行） | 可用 4 个：`ranking` 三个口径 + `llm-tool` 的「公历转农历」 |
-| LLM 工具声明 | `tools/` | 顶层 `registry.json` | `weiqi-bot/application/model/IModelGateway.ts` 的 `ModelToolDefinition` | 镜像 1 个：`web_fetch` |
-| 技能配方 | `skills/` | **`skills/registry.json`（独立清单）** | `weiqi-bot/application/skill/SkillRecipe.ts` / `SkillTypes.ts` 的 `SkillRecipe` | 6 条：做题、对阵图片导入、查天气、查股价、同花顺财经新闻、GitHub REST API |
+| 类型 | 目录 | 清单入口（唯一事实源） | 对齐的宿主契约 |
+|---|---|---|---|
+| 插件工件 | `plugins/` | 顶层 `registry.json` 的 `resources[]` | `weiqi-bot/domain/plugin/types.ts` 的 `PluginArtifact` / `PluginSpec`（QuickJS 沙箱执行） |
+| LLM 工具声明 | `tools/` | 同上（与插件共用一份清单） | `weiqi-bot/application/model/IModelGateway.ts` 的 `ModelToolDefinition` |
+| 技能配方 | `skills/` | **`skills/registry.json` 的 `skills[]`（独立清单）** | `weiqi-bot/application/skill/SkillRecipe.ts` / `SkillTypes.ts` 的 `SkillRecipe` |
+
+清单是唯一事实源：**条目数量与明细一律以两份清单为准**，站点 `index.html` 运行时 `fetch` 清单后渲染列表，
+本 README 不再逐条列举、也不写死数量。新增 / 修订资源只改对应清单（加 skill 改 `skills/registry.json`，
+加插件 / 工具改 `registry.json` + 建条目目录），**不用同步改 README 或 index.html**。
 
 插件是**可执行代码**（在宿主 QuickJS 沙箱里跑，零宿主能力）；工具目前是**声明镜像**（执行器由宿主内置，见各条目 `README.md`）；
 技能配方是**纯声明 JSON**，只引用宿主已注册的原语名，永远不含可执行代码。
 插件与工具通过顶层 `registry.json` 索引，`schema/` 给出 JSON Schema 契约，`scripts/validate.mjs` 做一致性校验。
 **技能配方不进顶层 `registry.json`**：它是另一份清单，结构契约在 weiqi-bot 的 `SkillRecipe.ts`，
 本仓库没有对应 schema，`scripts/validate.mjs` 也不校验它（只校验顶层 registry / 条目 / 代码 / share URL 契约）。
+`index.html` 的两个列表同样直接读取这两份清单渲染，页面里不存任何条目副本。
 
 ### 技能怎么被激活
 
@@ -166,6 +171,7 @@ npm run validate      # 或 node scripts/validate.mjs
 `llm-tool` 的 `exposes[]` / `smoke[]` 契约齐全，以及
 `share/share.js` 的 `decodeUrl` / `libUrl` 与站点 URL 契约一致。
 **不校验 `skills/registry.json`**：技能清单的结构契约在宿主 `SkillRecipe.ts`，由宿主安装时逐条解析。
+站点的技能列表也是运行时读取该清单渲染，因此清单本身写错会在页面上直接表现为「列表无法加载」，不会静默显示旧数据。
 
 禁用规则与 `weiqi-bot/domain/plugin/PluginValidator.ts` **同源**——注意该校验器对全串做正则，
 **注释里出现禁用词也会被拦下**，示例插件因此刻意不写出那些词。
