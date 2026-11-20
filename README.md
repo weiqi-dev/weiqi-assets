@@ -54,7 +54,7 @@
 | 链接的作用 | 弹框录入 → 自动保存 → 回灌重试 | 只回灌一条用户消息 → LLM 按配方读写并回执 |
 | 宿主是否碰数据 | 碰（录入 / 直连拼 header） | **一行存储都不写** |
 
-做法：配方 `primitives` 直接引用宿主恒定挂载的 `kv_read` / `kv_write`（**不需要新增原语、不改宿主内核 / 工具签名 / 装配**），在 `prompt` 里写清固定域名与键（此处为 `prefs` / `stock.watchlist`，值是去重后的股票代码数组）。报价后附一条 `[添加到自选](stock-watch-add:<代码>)` markdown 链接；宿主 `ChatPage.bindPrefLinks()` 用 document 事件委托接管点击，只回灌形如「把 <代码> 加入我的自选…」的**正常用户消息**，由 LLM 在新一轮完成读 → 去重 → 写 → 回执。用户说「查询自选股票当前股价」时，LLM 读回数组、一次 `web_fetch` 拼全部代码、按列表播报。
+做法：配方 `primitives` 直接引用宿主恒定挂载的 `kv_read` / `kv_write`（**不需要新增原语、不改宿主内核 / 工具签名 / 装配**），在 `prompt` 里写清固定域名与键（此处为 `prefs` / `stock.watchlist`，值是去重后的股票代码数组）。报价后附一条 `[添加到自选](prefs-add:prefs:stock.watchlist:<代码>)` markdown 链接；宿主 `ChatPage.bindPrefLinks()` 用 document 事件委托接管点击，只回灌一条带 domain / key / 值的**正常用户消息**，由 LLM 在新一轮完成读 → 去重 → 写 → 回执。用户说「查询自选股票当前股价」时，LLM 读回数组、一次 `web_fetch` 拼全部代码、按列表播报。
 
 链接里只带一个经形状校验的股票代码（`PrefLink.ts`），不携带待写入的值 / URL / JSON；脏 href 静默忽略。宿主不托管写入，是为了模型上下文里始终有这份偏好，不会出现「宿主偷偷写了、模型下一轮却不知道」的劈叉。
 
