@@ -37,11 +37,13 @@
 以 `github.rest` 为例。这类技能**不需要写任何代码**，只要在配方里做两件事：
 
 1. `primitives` 引用宿主通用原语 `http_fetch_auth`（带凭据直连）、`secret_prompt`（换/改凭据）、`web_cache_read`（长正文分页读）。
-2. 加一段 `secrets` 纯声明规格：每项给 `key`（凭据名）、`label`（弹框标签）、`allowedHosts`（允许发往的纯域名数组）、`header`（宿主怎么拼请求头：`name` + `prefix`），可选 `setupUrl` / `hint` / `reauthStatuses`（哪些状态码算失效，默认 `[401]`）。
+2. 加一段 `secrets` 纯声明规格：每项给 `key`（凭据名）、`label`（弹框标签）、`allowedHosts`（允许发往的纯域名数组）、`header`（宿主怎么拼请求头：`name` + `prefix`），可选 `setupUrl` / `hint` / `reauthStatuses`（哪些状态码算失效，默认 `[401]`）。缺省 `method` 即 GET。
 
-运行时模型调用 `http_fetch_auth` **只能给 `url` 和 `secretKey` 两个参数**；允许访问哪些域名、请求头怎么拼，全部由宿主按这份 `secrets` 声明强制决定，模型传不进来、也永远接触不到凭据明文。首次使用或凭据失效时，原语回一条 `secret-prompt:<key>` 链接，模型只负责把链接原样贴给用户；用户点开弹框录入即自动保存到本地（`secrets` 域，opaque），宿主回灌一条用户消息触发下一轮，下次不再弹框。说「修改 / 换」也由 `secret_prompt` 触发同一个弹框。
+接口只支持 POST 时（如 `tavily.search`），同一份声明再加 `method: "POST"`、`bodyStatic`（固定 JSON 字段）、`bodyQueryParams`（允许从 URL query 搬进 body 的键白名单）。宿主把模型给的 `?query=…` 按白名单搬进 JSON body 并合并静态字段，**静态字段后写**，模型无法用 query 覆盖固定值，也无法夹带别的 body 字段；多余 query 参数一律丢弃。
 
-**扩展**：接入另一家认证 API 只需再写一条配方、换一份 `secrets` 声明（不同的 key / allowedHosts / header），宿主内核、`http_fetch_auth` 工具签名、弹框都不用改。
+运行时模型调用 `http_fetch_auth` **只能给 `url` 和 `secretKey` 两个参数**；允许访问哪些域名、请求头怎么拼、用 GET 还是 POST、body 里有哪些字段，全部由宿主按这份 `secrets` 声明强制决定，模型传不进来、也永远接触不到凭据明文。首次使用或凭据失效时，原语回一条 `secret-prompt:<key>` 链接，模型只负责把链接原样贴给用户；用户点开弹框录入即自动保存到本地（`secrets` 域，opaque），宿主回灌一条用户消息触发下一轮，下次不再弹框。说「修改 / 换」也由 `secret_prompt` 触发同一个弹框。
+
+**扩展**：接入另一家认证 API 只需再写一条配方、换一份 `secrets` 声明（不同的 key / allowedHosts / header / method / body），宿主内核、`http_fetch_auth` 工具签名、弹框都不用改。
 
 ### 开发「使用偏好」类技能怎么写（本地数据层第二期）
 

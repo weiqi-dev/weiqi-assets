@@ -120,9 +120,14 @@ manifest 还要给 `exposes[]`（方法名 + 说明 + 参数 JSON Schema）与 `
    修订同一条配方时递增它（宿主据此提示「有更新」）。
 2. `name` / `summary` 说清场景与职责 —— 宿主每轮把它俩组成目录交给模型做路由，
    配方不写触发词；`prompt` 是命中后才追加的指令，不参与路由。
-3. `primitives` 只能引用宿主已注册的原语名（如 `navigate_to` / `web_fetch`），
-   引用不存在的原语 → 只展示、不可安装。可选 `requiredCapabilities` / `secrets`
-   按对应宿主契约填写，缺省即「无依赖 / 不涉凭据」。
+3. `primitives` 只能引用宿主已注册的原语名（如 `navigate_to` / `web_fetch` /
+   `http_fetch_auth` / `secret_prompt` / `web_cache_read`），引用不存在的原语 →
+   只展示、不可安装。可选 `requiredCapabilities` / `secrets` 按对应宿主契约填写，
+   缺省即「无依赖 / 不涉凭据」。`secrets` 的形状见
+   weiqi-bot `application/skill/SecretSpec.ts`：除 `key` / `label` /
+   `allowedHosts` / `header` 外，POST 接口可声明 `method: "POST"` /
+   `bodyStatic` / `bodyQueryParams`；POST 专属字段出现在 GET 配方、或缺 method
+   的 POST 配方都会在解析阶段被拒。
 4. 结构契约在 weiqi-bot 的 `application/skill/SkillRecipe.ts`（`parseSkillRecipe`），
    本仓库无对应 schema、`scripts/validate.mjs` 也不校验这份清单；可用该解析器实跑一遍自检。
 5. **只改这一个文件**：站点技能列表实时读取该清单渲染，数量与明细自动跟随，
