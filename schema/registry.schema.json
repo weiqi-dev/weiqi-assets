@@ -27,6 +27,11 @@
         "type": { "type": "string", "enum": ["plugin", "tool"] },
         "name": { "type": "string", "minLength": 1 },
         "summary": { "type": "string", "minLength": 1 },
+        "category": {
+          "type": "string",
+          "minLength": 1,
+          "description": "可选：面板筛选用的中文分类标签（纯展示）。取值见 docs/contributing.md 的分类表；宿主不认识的值会按 pointId / id 命名空间兜底推导，不影响安装。"
+        },
         "pointId": { "type": "string" },
         "specVersion": { "type": "integer", "minimum": 1 },
         "path": { "type": "string", "pattern": "^(plugins|tools)/[A-Za-z0-9._/-]+\\.json$" }

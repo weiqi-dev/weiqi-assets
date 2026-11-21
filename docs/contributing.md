@@ -109,6 +109,7 @@ manifest 还要给 `exposes[]`（方法名 + 说明 + 参数 JSON Schema）与 `
   "version": 1,
   "name": "围棋对弈",
   "summary": "一句话说清什么场景、做什么（路由唯一依据）",
+  "category": "围棋",
   "primitives": ["navigate_to"],
   "prompt": "命中后追加给对话模型的自然语言指令……"
 }
@@ -120,6 +121,9 @@ manifest 还要给 `exposes[]`（方法名 + 说明 + 参数 JSON Schema）与 `
    修订同一条配方时递增它（宿主据此提示「有更新」）。
 2. `name` / `summary` 说清场景与职责 —— 宿主每轮把它俩组成目录交给模型做路由，
    配方不写触发词；`prompt` 是命中后才追加的指令，不参与路由。
+   可选 `category` 是面板筛选用的中文标签，取值只能是
+   排名 / 模型工具 / 围棋 / 财经 / 搜索 / 生活 / 开发 / 未分类 之一（见 README 的分类说明）。
+   不写也能用：宿主按 `id` 第一段命名空间兜底推导，推不出来显示「未分类」。
 3. `primitives` 只能引用宿主已注册的原语名（如 `navigate_to` / `web_fetch` /
    `http_fetch_auth` / `secret_prompt` / `web_cache_read`），引用不存在的原语 →
    只展示、不可安装。可选 `requiredCapabilities` / `secrets` 按对应宿主契约填写，

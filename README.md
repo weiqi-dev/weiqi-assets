@@ -72,6 +72,16 @@
 技能是**安装制**：在线配方不会自动生效，必须经面板「安装」写进本地技能库；只有本地库里启用的条目才会被 LLM 调用。
 引用宿主注册表里没有的原语的配方只展示、不可安装。安装即启用（纯声明零代码，不设插件那道「默认停用」闸门）。
 
+**分类标签（`category`，可选）**：顶层 `registry.json` 的 plugin 条目、`skills/registry.json` 的技能条目、
+以及 plugin manifest 都可声明一个中文分类，供助手页四个列表（本地/在线 × 插件/技能）按标签筛选；
+默认「全部」不筛选。取值只有这几个：**排名 / 模型工具 / 围棋 / 财经 / 搜索 / 生活 / 开发 / 未分类**
+（与 weiqi-bot `presentation/adapters/web/pages/assistant/ChatPage.ts` 内联的 `EXTENSION_CATEGORIES`、本仓库
+`scripts/validate.mjs` 的 `KNOWN_CATEGORIES` 三处同步）。这是人工标注的业务分类表，
+不是从验证集拟合出来的数值：清单是唯一事实源，宿主不认识或没写的标签一律按
+`pointId`（`ranking`→排名 / `llm-tool`→模型工具）或技能 `id` 第一段命名空间兜底推导，
+推导不出来就是「未分类」。该字段纯展示，**不参与安装 / 兼容 / 激活判定，也不进 LLM 提示词**；
+老资源、自定义源、LLM 自建技能不写它照样工作。
+
 ## 目录结构
 
 ```
@@ -172,8 +182,9 @@ npm run validate      # 或 node scripts/validate.mjs
 插件代码入口存在且不含宿主禁用的全局/动态求值/无界循环、
 `llm-tool` 的 `exposes[]` / `smoke[]` 契约齐全，以及
 `share/share.js` 的 `decodeUrl` / `libUrl` 与站点 URL 契约一致。
-**不校验 `skills/registry.json`**：技能清单的结构契约在宿主 `SkillRecipe.ts`，由宿主安装时逐条解析。
-站点的技能列表也是运行时读取该清单渲染，因此清单本身写错会在页面上直接表现为「列表无法加载」，不会静默显示旧数据。
+**技能清单只校验一件事**：`skills[]` 每条可选 `category` 的取值必须在分类白名单内；
+配方结构契约仍在宿主 `SkillRecipe.ts`，由宿主安装时逐条解析。站点的技能列表也是运行时读取
+该清单渲染，因此清单本身写错会在页面上直接表现为「列表无法加载」，不会静默显示旧数据。
 
 禁用规则与 `weiqi-bot/domain/plugin/PluginValidator.ts` **同源**——注意该校验器对全串做正则，
 **注释里出现禁用词也会被拦下**，示例插件因此刻意不写出那些词。

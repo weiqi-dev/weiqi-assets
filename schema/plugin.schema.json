@@ -20,6 +20,11 @@
     "readme": { "type": "string" },
     "license": { "type": "string" },
     "tags": { "type": "array", "items": { "type": "string" } },
+    "category": {
+      "type": "string",
+      "minLength": 1,
+      "description": "可选：面板筛选分类。清单 registry.resources[] 为唯一事实源，此字段仅供清单未标时兼容补足；两者都写时宿主以清单为准。"
+    },
     "exposes": {
       "type": "array",
       "description": "llm-tool 专用：对外暴露的方法白名单。每项含 name / description / params(JSON Schema)。",

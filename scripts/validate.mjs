@@ -63,6 +63,23 @@ const ENTRY_RE = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
  */
 const KNOWN_POINT_IDS = ['ranking', 'llm-tool'];
 
+/**
+ * 面板筛选分类白名单。来源：weiqi-bot presentation/adapters/web/pages/assistant/ChatPage.ts 内联的
+ * EXTENSION_CATEGORIES（人工标注的业务分类表，不是拟合出来的数值）。
+ * 两处必须同步；写不在表里的值，宿主会按 pointId / id 命名空间兜底推导，
+ * 但容易让贡献者以为标注生效，因此在这里提前拦下。
+ */
+const KNOWN_CATEGORIES = ['排名', '模型工具', '围棋', '财经', '搜索', '生活', '开发', '未分类'];
+
+function validateCategory(obj, ctx) {
+  const c = obj?.category;
+  if (c === undefined) return; // 可选：老资源 / 第三方源不强制
+  if (typeof c !== 'string' || !c.trim()) { fail(`${ctx}.category 必须是非空字符串`); return; }
+  if (!KNOWN_CATEGORIES.includes(c)) {
+    fail(`${ctx}.category (${c}) 不是已知分类；可用：${KNOWN_CATEGORIES.join(' / ')}`);
+  }
+}
+
 /** 与 weiqi-bot/domain/plugin/PluginValidator.ts 的禁用规则同源 */
 const BROWSER_GLOBALS =
   /\bfetch\b|\bwindow\b|\bdocument\b|\blocalStorage\b|\bindexedDB\b|\bXMLHttpRequest\b|\bimportScripts\b|\brequire\b|\bpostMessage\b|\bself\b|\bnavigator\b|\bWebSocket\b/;
@@ -98,6 +115,7 @@ function validatePlugin(manifestPath, entry) {
   if (m.tags !== undefined && (!Array.isArray(m.tags) || m.tags.some((t) => typeof t !== 'string'))) {
     fail(`${ctx}.tags 必须是字符串数组`);
   }
+  validateCategory(m, ctx);
 
   const codePath = requireString(m, 'code', ctx);
   if (codePath) {
@@ -251,6 +269,7 @@ function main() {
       if (id) seenIds.add(id);
       requireString(r, 'name', ctx);
       requireString(r, 'summary', ctx);
+      validateCategory(r, ctx);
       const path = requireString(r, 'path', ctx);
       if (path && !/^(plugins|tools)\/[A-Za-z0-9._/-]+\.json$/.test(path)) {
         fail(`${ctx}.path 必须位于 plugins/ 或 tools/ 下且以 .json 结尾`);
@@ -266,6 +285,19 @@ function main() {
       } else {
         if (path) validateTool(path, r);
       }
+    }
+  }
+  // 技能清单不做结构校验（契约在 weiqi-bot 的 parseSkillRecipe），
+  // 只对本仓库新增的可选 category 标注做取值自检，避免写一个宿主不认识的标签。
+  const skills = readJson('skills/registry.json');
+  if (skills) {
+    if (Array.isArray(skills.skills)) {
+      for (const [i, sk] of skills.skills.entries()) {
+        if (!sk || typeof sk !== 'object') continue;
+        validateCategory(sk, `skills/registry.json.skills[${i}]`);
+      }
+    } else {
+      fail('skills/registry.json.skills 必须是数组');
     }
   }
   validateShareUrls();
