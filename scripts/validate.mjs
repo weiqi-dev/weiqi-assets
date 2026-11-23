@@ -57,11 +57,11 @@ const ENTRY_RE = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
 
 /**
  * 宿主已注册的扩展点白名单。来源：weiqi-bot/domain/plugin/types.ts 的
- * PLUGIN_SPECS 注册表（当前 'ranking' / 'llm-tool'）。资源侧不得自造 pointId，
+ * PLUGIN_SPECS 注册表（当前 'ranking' / 'workflow-operator'）。资源侧不得自造 pointId，
  * 否则宿主 resolvePluginSpec 找不到 spec、装了也用不了。
  * 宿主新增扩展点时，这里与 docs/extension-points.md 一起更新。
  */
-const KNOWN_POINT_IDS = ['ranking', 'llm-tool'];
+const KNOWN_POINT_IDS = ['ranking', 'workflow-operator'];
 
 /**
  * 面板筛选分类白名单。来源：weiqi-bot presentation/adapters/web/pages/assistant/ChatPage.ts 内联的
@@ -69,7 +69,7 @@ const KNOWN_POINT_IDS = ['ranking', 'llm-tool'];
  * 两处必须同步；写不在表里的值，宿主会按 pointId / id 命名空间兜底推导，
  * 但容易让贡献者以为标注生效，因此在这里提前拦下。
  */
-const KNOWN_CATEGORIES = ['排名', '模型工具', '围棋', '财经', '搜索', '生活', '开发', '未分类'];
+const KNOWN_CATEGORIES = ['排名', '算子', '围棋', '财经', '搜索', '生活', '开发', '未分类'];
 
 function validateCategory(obj, ctx) {
   const c = obj?.category;
@@ -142,12 +142,12 @@ function validatePlugin(manifestPath, entry) {
       fail(`${ctx}.readme 指向的文件不存在：${m.readme}`);
     }
   }
-  if (m.pointId === 'llm-tool') validateLlmToolPlugin(m, ctx, entryName);
+  if (m.pointId === 'workflow-operator') validateOperatorPlugin(m, ctx, entryName);
 }
 
-/** llm-tool 扩展点的额外契约：入口固定 call、方法白名单、安装自检样例 */
-function validateLlmToolPlugin(m, ctx, entryName) {
-  if (entryName && entryName !== 'call') fail(`${ctx}.entry 必须是 "call"（llm-tool 扩展点约定）`);
+/** workflow-operator 扩展点的额外契约：入口固定 call、算子方法白名单、算子安装自检样例 */
+function validateOperatorPlugin(m, ctx, entryName) {
+  if (entryName && entryName !== 'call') fail(`${ctx}.entry 必须是 "call"（workflow-operator 算子扩展点约定）`);
   if (!Array.isArray(m.exposes) || m.exposes.length === 0) {
     fail(`${ctx}.exposes 必须是非空数组`);
   } else {

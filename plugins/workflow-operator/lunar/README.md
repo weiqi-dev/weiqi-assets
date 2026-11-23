@@ -1,9 +1,11 @@
-# 公历转农历 · 节气 · 传统节日（llm-tool）
+# 公历转农历 · 节气 · 传统节日（workflow-operator）
 
-`llm-tool` 扩展点的能力库。装进宿主、人工启用后，对话里的模型就能通过
-`llm_tool_call` 把公历日期换算成农历、查 24 节气与传统节日；**调用时零网络**
+`workflow-operator` 扩展点的**工作流算子插件**。装进宿主、人工启用后，宿主 `OperatorRegistry`
+把 `lunar.*` 的 `exposes[]` 方法按名注册为算子（`lunar.toLunar` / `lunar.solarTerms` /
+`lunar.festivals` / `lunar.monthCalendar`），**阶段二 workflow 节点**用 `"call"` 按名调用，
+把公历日期换算成农历、查 24 节气与传统节日；**调用时零网络**
 （源码与事实表都在本地工件里），每次调用仍在一次性 QuickJS Worker 里执行，
-库源码不进主线程 JS 环境、不进模型上下文。
+插件源码不进主线程 JS 环境、不进模型上下文。阶段一只提供按名执行的注册地基，不解析配方。
 
 ## 接口
 
@@ -52,7 +54,7 @@
 「最多查多少天」这类无出处的经验常数。
 
 不存在的日期（如 `2026-02-30`）、反向范围、早于 `1900-01-31` 的日期一律抛错，
-错误由宿主转成工具观察回喂模型，不编造结果。
+错误由宿主作为算子执行失败返回给 workflow runner，不编造结果。
 
 ### `monthCalendar` — 一次取回一张公历月表的紧凑视图
 
@@ -87,15 +89,14 @@
 | `daysInMonth` | 该月天数；由 `new Date(Date.UTC(y, m, 0)).getUTCDate()` 推导，自带闰年规则，**不写月份天数常量表** |
 
 刻意不输出的东西：`lunar{year,month,day,isLeap}` 结构化字段、`lunarText`、
-全年 `solarTerms` 列表、`festivals` 的稀疏结果 —— 这些是旧配方让模型自行判定
-时需要的中间量，现在判定全部在库内完成。省略 `null` 的 `term`/`festival` 不是
-为了凑一个经验阈值，而是「无节气 / 无节日」本就该用缺省字段表达；单条观察
-是否被裁剪由宿主 `CONTEXT_LIMITS.maxCharsPerMessage` 统一决定，本库不设阈值、
-不做压缩或增量编码。
+全年 `solarTerms` 列表、`festivals` 的稀疏结果 —— 这些是早先让模型自行判定
+时需要的中间量，现在判定全部在算子内完成，workflow 节点只拿紧凑的 `value`。省略 `null`
+的 `term`/`festival` 不是为了凑一个经验阈值，而是「无节气 / 无节日」本就该用缺省字段表达；
+本库不设阈值、不做压缩或增量编码。
 
 实测全月输出 1263–1381 字符（2027-02 / 2026-02 / 2025-01 / 2026-10 / 2023-09 /
-2027-01 / 2024-02 / 2000-02），远低于宿主 2000 字符的单条观察上限 —— 一次调用
-即可拿全，不必像旧配方那样按日历周分片 4 次。
+2027-01 / 2024-02 / 2000-02），一次调用即可把整月紧凑视图作为算子的 `value` 返回，
+不必像旧配方那样按日历周分片 4 次。
 
 `monthSpan` 给的是**数字农历年**（如 2026 / 2027），不提供天干地支：朔闰事实表里
 没有干支字段，不硬编一套。「丙午年腊月」这类写法不是本库的输出，配方应改用
@@ -187,11 +188,11 @@
 
 | 约束 | 来源 |
 |---|---|
-| 扩展点 `llm-tool`、spec v1、入口 `call`、hostApi 为空、资源配额 | `weiqi-bot/domain/plugin/types.ts` 的 `LLM_TOOL_SPEC` / `DEFAULT_PLUGIN_LIMITS` |
+| 扩展点 `workflow-operator`、spec v1、入口 `call`、hostApi 为空、资源配额 | `weiqi-bot/domain/plugin/types.ts` 的 `WORKFLOW_OPERATOR_SPEC` / `DEFAULT_PLUGIN_LIMITS` |
 | `maxCodeBytes` 由 32KB 放宽到 64KB | 同文件 `DEFAULT_PLUGIN_LIMITS.maxCodeBytes`（2026-11-17）。本工件可读源码实测约 45.5KB，旧值会卡在安装预检。运行时防失控靠 `memoryBytes` / `maxStackBytes` / `timeoutMs` / `maxOutputBytes`，`maxCodeBytes` 只是安装期静态预检 |
 | `call({method,args})` 的输入只作为 JSON 数据进入沙箱 | `weiqi-bot/infrastructure/plugin-vm/QuickJsExecutor.ts` 的 `__PLUGIN_INPUT__` |
-| 方法名只认 `exposes[]` 白名单 | `weiqi-bot/application/plugin/LlmToolKit.ts` |
-| 安装前静态预检 + 沙箱试跑 + `smoke[].expect` 严格比对 | `weiqi-bot/services/plugin-catalog/PluginCatalogService.ts` / `application/plugin/LlmToolContract.ts` |
+| 方法名只认 `exposes[]` 白名单 | `weiqi-bot/application/plugin/OperatorRegistry.ts` |
+| 安装前静态预检 + 沙箱试跑 + `smoke[].expect` 严格比对 | `weiqi-bot/services/plugin-catalog/PluginCatalogService.ts` / `application/plugin/OperatorContract.ts` |
 
 `smoke[]` 每条都带 `method`，宿主按该字段组装 `call({method,args})` 并逐字段
 比对 `expect`。本工件 11 条覆盖四个方法、闰月、腊月廿九除夕、节气逐年差异、
@@ -204,14 +205,9 @@
 
 与 `ranking` 插件逐字相同：宿主取 `plugin.json` → 按 `code` 取源码 → 静态预检 +
 沙箱试跑（跑 `smoke` 里的样例并比对 `expect`）→ 写进工件存储，**默认停用**。
-用户在「插件」面板启用后，chat / skill-dev 角色才会看到并调用它。
+用户在「插件」面板启用后，`lunar.*` 方法注册进宿主算子表，供阶段二 workflow 按名引用。
 `catalogRef`（来源 registry URL + 资源 id）用于识别「同一个插件」，远端源码变化
 时按钮变「更新」、走 `revise` 保留版本历史。
-
-⚠️ **已安装旧版 `llm-tool.lunar` 的用户需手动点「更新」**：源码变了，
-`toLunar` 的返回多了 `solarTerm` / `festival` 两个字段，并新增 `monthCalendar` 方法。宿主会保留版本历史，
-不会静默覆盖。配方里若硬编码了 `libId`，仍应改为从 system 的「可用能力库」
-清单动态读取（那是另一个已知问题，与本次数据无关）。
 
 ## 许可证
 

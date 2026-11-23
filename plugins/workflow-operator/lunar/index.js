@@ -1,7 +1,7 @@
 /**
- * 公历转农历（llm-tool 扩展点的示例工件）
+ * 公历转农历（workflow-operator 扩展点的示例工件）
  *
- * 本文件是 weiqi-assets 发布的插件工件，入口 call({method,args}) 由宿主 llm-tool
+ * 本文件是 weiqi-assets 发布的插件工件，入口 call({method,args}) 由宿主 workflow-operator
  * 扩展点约定调用（见 docs/extension-points.md）。方法名只认 exposes[] 白名单里的
  * toLunar / solarTerms / festivals / monthCalendar，参数只作为 JSON 数据进入，不参与任何代码拼接。
  *
@@ -743,7 +743,7 @@ function monthCalendar(spec) {
   };
 }
 
-/** llm-tool 扩展点入口：宿主以 call({method,args}) 调用，方法名只认白名单 */
+/** workflow-operator 扩展点入口：宿主以 call({method,args}) 调用，方法名只认白名单 */
 function call(input) {
   if (!input || typeof input.method !== 'string') throw new Error('缺少 method');
   if (!Array.isArray(input.args) || input.args.length !== 1) throw new Error('args 必须是含一个参数对象的数组');

@@ -169,13 +169,10 @@
     return items.map(function (s) {
       var prims = (Array.isArray(s.primitives) ? s.primitives : [])
         .map(function (p) { return '<code>' + esc(p) + '</code>'; }).join(' + ');
-      var caps = (Array.isArray(s.requiredCapabilities) && s.requiredCapabilities.length)
-        ? ' · 依赖 ' + s.requiredCapabilities.map(function (c) { return '<code>' + esc(c) + '</code>'; }).join(' + ')
-        : '';
       return '<div class="item">\n' +
         '      <div class="item-title"><span class="badge">skill</span>' +
         esc(s.name) + ' <code>' + esc(s.id) + '</code> · v' + esc(s.version) + '</div>\n' +
-        '      <div class="item-desc">' + esc(s.summary) + caps + '<br>' +
+        '      <div class="item-desc">' + esc(s.summary) + '<br>' +
         '<span class="meta">原语：' + (prims || '（无）') + '</span></div>\n' +
         '    </div>';
     }).join('\n');

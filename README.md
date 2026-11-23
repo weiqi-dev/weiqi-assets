@@ -62,7 +62,7 @@
 
 **扩展**：再加一类用户偏好（默认分类、常用参数…）只需在配方里换一个键名与值形状，宿主一行不改 —— 这正是本地数据层「加场景不改内核」的扩展点。
 
-**与 llm-tool 划清界限**：配方是否需要本地 JS 能力库，由可选的 `requiredCapabilities` 声明决定——**缺省该字段就是明确的「无依赖」**（写空数组会被 `parseSkillRecipe` 判为配方写错）。`github.rest` 不写它，宿主因此不会把 `llm_tool_call`、农历能力库清单或 QuickJS 沙箱挂进这一轮；只有像 `user.dn2lz9` 那样显式声明 `["monthCalendar"]` 的配方命中时才按需挂载。装过某个能力库 ≠ 每轮都要把它塞给模型。
+**算子插件与技能配方分属两条链**：`workflow-operator` 算子插件的 `exposes[]` 每个方法按名注册进宿主 `OperatorRegistry`；技能配方在**阶段二**用 workflow DSL 的 `"call"` 节点按算子名引用它们。**当前阶段一只提供按名执行 value→value 的算子注册地基，不解析配方、不做 DAG runner**；配方与算子注册表之间不设依赖声明，旧的 llm 对接通道及 system 清单已一并删除。
 
 宿主的在线插件平台**只安装 `type: plugin`**；`type: tool` 只在列表里展示，不提供安装按钮。
 插件默认源 `https://weiqi-dev.github.io/weiqi-assets/registry.json` 只读、由本仓库 git 发布，宿主可另加自定义源但默认源不可覆盖。
@@ -74,11 +74,11 @@
 
 **分类标签（`category`，可选）**：顶层 `registry.json` 的 plugin 条目、`skills/registry.json` 的技能条目、
 以及 plugin manifest 都可声明一个中文分类，供助手页四个列表（本地/在线 × 插件/技能）按标签筛选；
-默认「全部」不筛选。取值只有这几个：**排名 / 模型工具 / 围棋 / 财经 / 搜索 / 生活 / 开发 / 未分类**
+默认「全部」不筛选。取值只有这几个：**排名 / 算子 / 围棋 / 财经 / 搜索 / 生活 / 开发 / 未分类**
 （与 weiqi-bot `presentation/adapters/web/pages/assistant/ChatPage.ts` 内联的 `EXTENSION_CATEGORIES`、本仓库
 `scripts/validate.mjs` 的 `KNOWN_CATEGORIES` 三处同步）。这是人工标注的业务分类表，
 不是从验证集拟合出来的数值：清单是唯一事实源，宿主不认识或没写的标签一律按
-`pointId`（`ranking`→排名 / `llm-tool`→模型工具）或技能 `id` 第一段命名空间兜底推导，
+`pointId`（`ranking`→排名 / `workflow-operator`→算子）或技能 `id` 第一段命名空间兜底推导，
 推导不出来就是「未分类」。该字段纯展示，**不参与安装 / 兼容 / 激活判定，也不进 LLM 提示词**；
 老资源、自定义源、LLM 自建技能不写它照样工作。
 
@@ -105,7 +105,7 @@ weiqi-assets/
 │   │       ├── plugin.json
 │   │       ├── index.js
 │   │       └── README.md
-│   └── llm-tool/              # 模型能力插件（chat / skill-dev 角色可调用）
+│   └── workflow-operator/              # 工作流算子插件（exposes[] 按名注册进宿主 OperatorRegistry）
 │       └── lunar/             # 公历转农历（单日 + 日期范围）
 │           ├── plugin.json    # 含 exposes[] / smoke[]
 │           ├── index.js       # 经典脚本 + call({method,args}) 入口
@@ -147,7 +147,7 @@ weiqi-assets/
 3. GET  <entry.path>                       ← 相对 registry.baseUrl 或本站点根
 4. 插件：GET  <manifest.code> 取源码 → 构造 PluginArtifact 写入工件存储
    工具：仅展示 definition，不注册执行器
-5. 校验（宿主侧）：PluginValidator + QuickJS 沙箱试跑（按 pointId 分派：ranking 验排名契约、llm-tool 比对 smoke.expect）；任何失败不落库
+5. 校验（宿主侧）：PluginValidator + QuickJS 沙箱试跑（按 pointId 分派：ranking 验排名契约、workflow-operator 比对 smoke.expect）；任何失败不落库
 6. enabled 由用户决定；下载 ≠ 安装 ≠ 启用
 7. 工件记录 catalogRef（来源源 URL + 资源 id）；远端 code 与本地 code 不同时按钮变「更新」，
    走本地 revise(trigger:'manual') 保留 history，不新建副本
@@ -180,7 +180,7 @@ npm run validate      # 或 node scripts/validate.mjs
 
 零依赖（Node 原生）。检查：JSON 合法、必填字段、路径不越界、registry 与条目 ID 一致、
 插件代码入口存在且不含宿主禁用的全局/动态求值/无界循环、
-`llm-tool` 的 `exposes[]` / `smoke[]` 契约齐全，以及
+`workflow-operator` 的 `exposes[]` / `smoke[]` 契约齐全，以及
 `share/share.js` 的 `decodeUrl` / `libUrl` 与站点 URL 契约一致。
 **技能清单只校验一件事**：`skills[]` 每条可选 `category` 的取值必须在分类白名单内；
 配方结构契约仍在宿主 `SkillRecipe.ts`，由宿主安装时逐条解析。站点的技能列表也是运行时读取
@@ -195,7 +195,7 @@ npm run validate      # 或 node scripts/validate.mjs
 
 | 出现处 | 来源 |
 |---|---|
-| `pointId` / `specVersion` / `entry` / hostApi / 资源配额 | `weiqi-bot/domain/plugin/types.ts`（`PLUGIN_SPECS`：`RANKING_SPEC` / `LLM_TOOL_SPEC`、`DEFAULT_PLUGIN_LIMITS`） |
+| `pointId` / `specVersion` / `entry` / hostApi / 资源配额 | `weiqi-bot/domain/plugin/types.ts`（`PLUGIN_SPECS`：`RANKING_SPEC` / `WORKFLOW_OPERATOR_SPEC`、`DEFAULT_PLUGIN_LIMITS`） |
 | 工具声明形状 | `weiqi-bot/application/model/IModelGateway.ts`（`ModelToolDefinition`） |
 | 插件禁用规则 | `weiqi-bot/domain/plugin/PluginValidator.ts` |
 | 输出契约（columns / rows / cells） | `weiqi-bot/domain/ranking/RankingTable.ts`（`validateRankingOutput`） |

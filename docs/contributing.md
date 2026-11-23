@@ -18,51 +18,60 @@
 
 1. 确认宿主已有对应扩展点 spec（见 [extension-points.md](extension-points.md)）。
    没有就先在 weiqi-bot 里做，别先发资源。
-2. 建目录：`plugins/<pointId>/<slug>/`（`<pointId>` 取 `ranking` 或 `llm-tool`，见 [extension-points.md](extension-points.md)）。
-3. 写 `plugin.json`：
+2. 建目录：`plugins/<pointId>/<slug>/`（`<pointId>` 取 `ranking` 或 `workflow-operator`，见 [extension-points.md](extension-points.md)）。
+3. 写 `plugin.json`（以 `workflow-operator` 工作流算子插件为例）：
 
    ```json
    {
      "$schema": "../../../schema/plugin.schema.json",
-     "id": "ranking.my-plugin",
-     "name": "我的排名口径",
+     "id": "workflow-operator.my-operator",
+     "name": "我的工作流算子",
      "type": "plugin",
-     "pointId": "ranking",
+     "pointId": "workflow-operator",
      "specVersion": 1,
-     "entry": "rank",
-     "code": "plugins/ranking/my-plugin/index.js",
+     "entry": "call",
+     "code": "plugins/workflow-operator/my-operator/index.js",
      "origin": "manual",
      "intent": "用户最初的需求原话",
-     "readme": "plugins/ranking/my-plugin/README.md",
+     "readme": "plugins/workflow-operator/my-operator/README.md",
      "license": "MIT",
-     "tags": ["ranking"]
+     "tags": ["workflow-operator"],
+     "exposes": [
+       { "name": "compute", "description": "算子方法说明", "params": { "type": "object", "properties": {}, "additionalProperties": false } }
+     ],
+     "smoke": [
+       { "method": "compute", "args": [{}], "expect": {} }
+     ]
    }
    ```
 
    `id` 用小写字母/数字开头，只允许 `[a-z0-9._-]`。`$schema` / `code` / `readme`
    都是**仓库根相对路径**（三层目录就写 `../../../`）。`pointId` 必须在宿主注册表里，
    `scripts/validate.mjs` 的 `KNOWN_POINT_IDS` 白名单会拦截自造值。
+   `exposes[]` 每个方法会按 `<slug>.<name>` 注册成一条宿主算子，供阶段二 workflow 按名调用。
 
-4. 写 `index.js`：全局函数 `rank({ matches })`，返回 `{ columns, rows }`
-   （列名汉字、`cells` 数值或数值数组、`rows` 覆盖全部选手且 `id`/`name` 与对阵一致）。
-   不得引用宿主/浏览器全局，不得动态求值，不得无界循环；注释里也别写那些禁用词
-   （`PluginValidator` 对整串做正则）。参考 `plugins/ranking/total-score/index.js`。
-5. 写 `README.md`：说明契约来源（宿主哪个文件）、排序/业务口径的**明确选择**、安装形状。
+4. 写 `index.js`：全局函数 `call({ method, args })`，`method` 只认 `exposes[]` 白名单，
+   返回任意可 JSON 序列化值。不得引用宿主/浏览器全局，不得动态求值，不得无界循环；
+   注释里也别写那些禁用词（`PluginValidator` 对整串做正则）。参考 `plugins/workflow-operator/lunar/index.js`
+   （ranking 插件则写 `rank({matches})` 返回 `{columns,rows}`，见 `plugins/ranking/total-score/index.js`）。
+5. 写 `README.md`：说明契约来源（宿主哪个文件）、算子方法的**明确选择**、安装形状（登记进宿主 `OperatorRegistry`）。
    如果用了任何阈值或常数，必须说清是物理推导、具名准则还是明说的业务约束。
 6. 在 `registry.json` 的 `resources` 追加条目，`type: "plugin"`，带 `pointId` 与 `specVersion`，
-   `path` 指向 `plugin.json`。
+   `category` 填 `算子`，`path` 指向 `plugin.json`。
 7. 跑 `npm run validate`；再在 weiqi-bot 里用 `PluginValidator` + QuickJS 试跑一次
-   （ranking 输出要能过 `validateRankingOutput`；llm-tool 用 `smoke[]` 比对 `expect`）。
+   （workflow-operator 用 `smoke[]` 比对 `expect`；ranking 输出要能过 `validateRankingOutput`）。
 
-若写的是 `llm-tool`：入口固定 `call({method,args})`，`method` 只认 `exposes[]` 里的名字，
-manifest 还要给 `exposes[]`（方法名 + 说明 + 参数 JSON Schema）与 `smoke[]`（自检样例 + 期望值）。
-库必须是经典脚本或 `module.exports` 形态，不得用 ESM `export`；不要依赖 `new Date()`
-这类非确定性结果做自检断言。完整示例见 `plugins/llm-tool/lunar/`。
+`workflow-operator` 是工作流算子插件：入口固定 `call({method,args})`，`method` 只认 `exposes[]` 里的名字，
+manifest 还要给 `exposes[]`（算子方法名 + 说明 + 参数 JSON Schema）与 `smoke[]`（算子自检样例 + 期望值）。
+插件必须是经典脚本或 `module.exports` 形态，不得用 ESM `export`；不要依赖 `new Date()`
+这类非确定性结果做自检断言。完整示例见 `plugins/workflow-operator/lunar/`。
+算子插件不挂模型 `tools[]`，只进宿主算子表。
 
-以上是「把库随资源发布、人工安装」的路径。也可以让模型在对话里自建能力库：插件开发
-角色的 `plugin_write` 带 `pointId:"llm-tool"` + `exposes[]` + `smoke[]` 即可，宿主用同一套
-沙箱逐条自检、落进同一张工件表，默认停用、人工启用后跨会话复用。详见 `docs/extension-points.md`
-的 `llm-tool` 专节。
+以上是「把算子随资源发布、人工安装」的路径。也可以由插件开发角色自建算子插件：
+该角色用 `plugin_write` 带 `pointId:"workflow-operator"` + `exposes[]` + `smoke[]` 即可，宿主用同一套
+沙箱逐条自检、落进同一张工件表，默认停用、人工启用后注册进 `OperatorRegistry` 供阶段二 workflow
+按名引用，跨会话复用。两条路径都不进模型工具表。详见 `docs/extension-points.md`
+的 `workflow-operator` 专节。
 
 ## 新增工具声明
 
@@ -122,12 +131,11 @@ manifest 还要给 `exposes[]`（方法名 + 说明 + 参数 JSON Schema）与 `
 2. `name` / `summary` 说清场景与职责 —— 宿主每轮把它俩组成目录交给模型做路由，
    配方不写触发词；`prompt` 是命中后才追加的指令，不参与路由。
    可选 `category` 是面板筛选用的中文标签，取值只能是
-   排名 / 模型工具 / 围棋 / 财经 / 搜索 / 生活 / 开发 / 未分类 之一（见 README 的分类说明）。
+   排名 / 算子 / 围棋 / 财经 / 搜索 / 生活 / 开发 / 未分类 之一（见 README 的分类说明）。
    不写也能用：宿主按 `id` 第一段命名空间兜底推导，推不出来显示「未分类」。
 3. `primitives` 只能引用宿主已注册的原语名（如 `navigate_to` / `web_fetch` /
    `http_fetch_auth` / `secret_prompt` / `web_cache_read`），引用不存在的原语 →
-   只展示、不可安装。可选 `requiredCapabilities` / `secrets` 按对应宿主契约填写，
-   缺省即「无依赖 / 不涉凭据」。`secrets` 的形状见
+   只展示、不可安装。可选 `secrets` 按对应宿主契约填写，缺省即「不涉凭据」。`secrets` 的形状见
    weiqi-bot `application/skill/SecretSpec.ts`：除 `key` / `label` /
    `allowedHosts` / `header` 外，POST 接口可声明 `method: "POST"` /
    `bodyStatic` / `bodyQueryParams`；POST 专属字段出现在 GET 配方、或缺 method
