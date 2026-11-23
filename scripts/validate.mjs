@@ -81,16 +81,29 @@ function validateCategory(obj, ctx) {
 }
 
 /**
- * 可选 routeHint：一行触发条件（「用户说什么话时选这条」），只供技能路由目录消费。
- * 与 bot parseSkillRecipe.readRouteHint 同款宽容口径：缺省不强制（自建技能 / 第三方源
- * 回落到 summary）；显式给值必须是单行非空字符串 —— 目录是「一条技能一行」，
- * 换行会破坏渲染。不做词表 / 长度阈值校验（数值必须有出处，不引入经验常数）。
+ * 可选路由词短语数组：配方从自身场景句里提炼的若干短路由词，只供技能路由目录消费。
+ * 与宿主 parseSkillRecipe.readRouteWords 同款形状：没配 routeHint 的配方目录缺省只给
+ * id | name（靠名称路由）；配了就由宿主把数组里的短语用顿号 join 成一行拼在目录行里，
+ * 供模型按用户说法命中。
+ * 本仓库是发布方清单，口径比宿主略严：宿主对非数组 / 空数组 / 全空白项按缺省宽放，
+ * 这里显式写歪就拦住（发布方清单要求写对）。
+ * 目录一技能一行，路由词必须是单行非空短语；不设词数上限 / 长度阈值 / 截断启发式
+ * （数值必须有出处，不引入经验常数）。
  */
 function validateRouteHint(obj, ctx) {
   const h = obj?.routeHint;
   if (h === undefined) return; // 可选：老配方 / 第三方源不强制
-  if (typeof h !== 'string' || !h.trim()) { fail(`${ctx}.routeHint 必须是非空字符串`); return; }
-  if (/[\r\n]/.test(h)) fail(`${ctx}.routeHint 必须是一行文本（不能含换行）`);
+  // 非数组（含字符串）/ 空数组 / 全空白项：宿主按缺省宽放会静默丢词，发布方清单必须写对
+  if (!Array.isArray(h) || h.length === 0 ||
+      h.every((w) => typeof w !== 'string' || !w.trim())) {
+    fail(`${ctx}.routeHint 必须是非空短语数组（目录一技能一行，路由词必须是单行非空短语）`);
+    return;
+  }
+  for (const [i, w] of h.entries()) {
+    if (typeof w !== 'string' || !w.trim() || /[\r\n]/.test(w)) {
+      fail(`${ctx}.routeHint[${i}] 每项必须是 string、trim 后非空、不含换行（目录一技能一行，路由词必须是单行非空短语）`);
+    }
+  }
 }
 
 /**
