@@ -1,0 +1,237 @@
+{
+  "$schema": "../../../schema/plugin.schema.json",
+  "id": "workflow-operator.calendar",
+  "name": "月历算子（公历+农历+节气+节日+法定假）",
+  "type": "plugin",
+  "pointId": "workflow-operator",
+  "specVersion": 1,
+  "entry": "call",
+  "code": "plugins/workflow-operator/calendar/index.js",
+  "origin": "manual",
+  "intent": "为宿主工作流算子表提供一个纯计算算子 buildMonth：把公历月表所需的历法事实（朔闰、24 节气、传统节日）与 workflow 注入的法定节假日 JSON 一次合并并排版成 {weeks[], legend[]}，供宿主 display_json_list 旁路渲染。整张月历由 DAG 自产出，模型只填 year/month、只收完成与句柄，不接触业务数据。不联网、不读取运行时时钟；历法来自内置 HKO 1901-2100 事实表，法定假由上游节点注入，取不到即抛错，绝不编造。",
+  "readme": "plugins/workflow-operator/calendar/README.md",
+  "license": "MIT",
+  "tags": [
+    "workflow-operator",
+    "calendar",
+    "lunar",
+    "solar-term",
+    "festival",
+    "holiday",
+    "month-calendar"
+  ],
+  "category": "生活",
+  "exposes": [
+    {
+      "name": "buildMonth",
+      "description": "生成一张公历月表的最终可渲染数据。传 {year:整数, month:1-12, holidays:节假日JSON}；返回 {weeks[], legend[]}。weeks[] 每项 {mon..sun} 七个纯文本单元格，放假日用带圈数字 ①..㉛，其余用普通数字，单元格内容按传统节日>节气>农历日名只取一个；legend[] 每项 {text} 为表格外说明（农历月段、本月节气与节日、法定放假日、调休上班日、数据来源）。holidays 的 Years 按年份映射假期数组，StartDate..EndDate 连休区间内每天为法定放假日，CompDays 为调休上班日；补班同日优先。years/month 越界或 holidays 结构不合法即抛错。",
+      "params": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "year",
+          "month",
+          "holidays"
+        ],
+        "properties": {
+          "year": {
+            "type": "integer",
+            "description": "公历年；历法事实表覆盖 1900-2100 农历年，超出范围由换算逻辑抛错"
+          },
+          "month": {
+            "type": "integer",
+            "description": "公历月 1-12"
+          },
+          "holidays": {
+            "type": "object",
+            "description": "节假日 JSON，含 Years 年份映射；由 workflow 的 web_fetch(storeOnly) 经绑定注入，插件自身零网络"
+          }
+        }
+      }
+    }
+  ],
+  "smoke": [
+    {
+      "method": "buildMonth",
+      "args": [
+        {
+          "year": 2026,
+          "month": 11,
+          "holidays": {
+            "Name": "测试源",
+            "Years": {}
+          }
+        }
+      ],
+      "expect": {
+        "weeks": [
+          {
+            "mon": "",
+            "tue": "",
+            "wed": "",
+            "thu": "",
+            "fri": "",
+            "sat": "",
+            "sun": "1 廿三"
+          },
+          {
+            "mon": "2 廿四",
+            "tue": "3 廿五",
+            "wed": "4 廿六",
+            "thu": "5 廿七",
+            "fri": "6 廿八",
+            "sat": "7 立冬",
+            "sun": "8 三十"
+          },
+          {
+            "mon": "9 初一",
+            "tue": "10 初二",
+            "wed": "11 初三",
+            "thu": "12 初四",
+            "fri": "13 初五",
+            "sat": "14 初六",
+            "sun": "15 初七"
+          },
+          {
+            "mon": "16 初八",
+            "tue": "17 初九",
+            "wed": "18 初十",
+            "thu": "19 十一",
+            "fri": "20 十二",
+            "sat": "21 十三",
+            "sun": "22 小雪"
+          },
+          {
+            "mon": "23 十五",
+            "tue": "24 十六",
+            "wed": "25 十七",
+            "thu": "26 十八",
+            "fri": "27 十九",
+            "sat": "28 二十",
+            "sun": "29 廿一"
+          },
+          {
+            "mon": "30 廿二",
+            "tue": "",
+            "wed": "",
+            "thu": "",
+            "fri": "",
+            "sat": "",
+            "sun": ""
+          }
+        ],
+        "legend": [
+          {
+            "text": "公历 2026 年 11 月，共 30 天"
+          },
+          {
+            "text": "本月农历月段：农历 2026 年 9 月（11-01—11-08）；农历 2026 年 10 月（11-09—11-30）"
+          },
+          {
+            "text": "本月节气：立冬（11-07）、小雪（11-22）"
+          },
+          {
+            "text": "本月传统节日：无"
+          },
+          {
+            "text": "本月法定放假日：无"
+          },
+          {
+            "text": "本月调休上班日：无"
+          },
+          {
+            "text": "数据来源：历法＝插件内置朔闰与节气事实表（HKO 1901-2100）；法定假＝测试源"
+          }
+        ]
+      }
+    },
+    {
+      "method": "buildMonth",
+      "args": [
+        {
+          "year": 2027,
+          "month": 2,
+          "holidays": {
+            "Name": "测试源",
+            "Years": {
+              "2027": [
+                {
+                  "Name": "春节",
+                  "StartDate": "2027-02-05",
+                  "EndDate": "2027-02-13",
+                  "CompDays": [
+                    "2027-01-31",
+                    "2027-02-14"
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "expect": {
+        "weeks": [
+          {
+            "mon": "1 廿五",
+            "tue": "2 廿六",
+            "wed": "3 廿七",
+            "thu": "4 立春",
+            "fri": "⑤ 除夕",
+            "sat": "⑥ 春节",
+            "sun": "⑦ 初二"
+          },
+          {
+            "mon": "⑧ 初三",
+            "tue": "⑨ 初四",
+            "wed": "⑩ 初五",
+            "thu": "⑪ 初六",
+            "fri": "⑫ 初七",
+            "sat": "⑬ 初八",
+            "sun": "14 初九"
+          },
+          {
+            "mon": "15 初十",
+            "tue": "16 十一",
+            "wed": "17 十二",
+            "thu": "18 十三",
+            "fri": "19 雨水",
+            "sat": "20 元宵",
+            "sun": "21 十六"
+          },
+          {
+            "mon": "22 十七",
+            "tue": "23 十八",
+            "wed": "24 十九",
+            "thu": "25 二十",
+            "fri": "26 廿一",
+            "sat": "27 廿二",
+            "sun": "28 廿三"
+          }
+        ],
+        "legend": [
+          {
+            "text": "公历 2027 年 2 月，共 28 天"
+          },
+          {
+            "text": "本月农历月段：农历 2026 年 12 月（02-01—02-05）；农历 2027 年 1 月（02-06—02-28）"
+          },
+          {
+            "text": "本月节气：立春（02-04）、雨水（02-19）"
+          },
+          {
+            "text": "本月传统节日：除夕（02-05）、春节（02-06）、元宵（02-20）"
+          },
+          {
+            "text": "本月法定放假日：02-05、02-06、02-07、02-08、02-09、02-10、02-11、02-12、02-13"
+          },
+          {
+            "text": "本月调休上班日：02-14"
+          },
+          {
+            "text": "数据来源：历法＝插件内置朔闰与节气事实表（HKO 1901-2100）；法定假＝测试源"
+          }
+        ]
+      }
+    }
+  ]
+}

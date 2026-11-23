@@ -41,6 +41,16 @@
       "name": "web_fetch",
       "summary": "取回公开网页文本内容的工具声明镜像，对齐宿主的 ModelToolDefinition。",
       "path": "tools/web-fetch/v1/tool.json"
+    },
+    {
+      "id": "workflow-operator.calendar",
+      "type": "plugin",
+      "name": "月历算子",
+      "summary": "workflow-operator 算子插件：buildMonth 一次算出公历月表所需的农历日名、24 节气、传统节日与法定假，并排成周网格 + 说明，供月历 workflow 走宿主旁路渲染；零网络、零时钟，数据取不到即抛错。",
+      "pointId": "workflow-operator",
+      "specVersion": 1,
+      "path": "plugins/workflow-operator/calendar/plugin.json",
+      "category": "生活"
     }
   ]
 }
