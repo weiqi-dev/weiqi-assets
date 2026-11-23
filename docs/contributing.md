@@ -52,7 +52,7 @@
 
 4. 写 `index.js`：全局函数 `call({ method, args })`，`method` 只认 `exposes[]` 白名单，
    返回任意可 JSON 序列化值。不得引用宿主/浏览器全局，不得动态求值，不得无界循环；
-   注释里也别写那些禁用词（`PluginValidator` 对整串做正则）。参考 `plugins/workflow-operator/lunar/index.js`
+   注释里也别写那些禁用词（`PluginValidator` 对整串做正则）。
    （ranking 插件则写 `rank({matches})` 返回 `{columns,rows}`，见 `plugins/ranking/total-score/index.js`）。
 5. 写 `README.md`：说明契约来源（宿主哪个文件）、算子方法的**明确选择**、安装形状（登记进宿主 `OperatorRegistry`）。
    如果用了任何阈值或常数，必须说清是物理推导、具名准则还是明说的业务约束。
@@ -64,7 +64,7 @@
 `workflow-operator` 是工作流算子插件：入口固定 `call({method,args})`，`method` 只认 `exposes[]` 里的名字，
 manifest 还要给 `exposes[]`（算子方法名 + 说明 + 参数 JSON Schema）与 `smoke[]`（算子自检样例 + 期望值）。
 插件必须是经典脚本或 `module.exports` 形态，不得用 ESM `export`；不要依赖 `new Date()`
-这类非确定性结果做自检断言。完整示例见 `plugins/workflow-operator/lunar/`。
+这类非确定性结果做自检断言。算子插件契约见 `docs/extension-points.md` 的 `workflow-operator` 专节。
 算子插件不挂模型 `tools[]`，只进宿主算子表。
 
 以上是「把算子随资源发布、人工安装」的路径。也可以由插件开发角色自建算子插件：

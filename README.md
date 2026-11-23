@@ -92,24 +92,19 @@ weiqi-assets/
 │   ├── plugin.schema.json     # 插件元数据契约
 │   └── tool.schema.json       # 工具声明契约
 ├── plugins/                   # 插件工件，按扩展点分目录
-│   ├── ranking/
-│   │   ├── total-score/       # 总分排序（可用工件）
+│   └── ranking/               # ranking 扩展点（workflow-operator 扩展点见 docs/extension-points.md）
+│       ├── total-score/       # 总分排序（可用工件）
 │       │   ├── plugin.json    # 元数据（含 code 相对路径）
 │       │   ├── index.js       # 完整源码（永远全量，不是 diff）
 │       │   └── README.md      # 契约来源与安装形状
-│   │   ├── direct-win/        # 直胜口径（原详情页内置规则外置）
-│   │   │   ├── plugin.json
-│   │   │   ├── index.js
-│   │   │   └── README.md
-│   │   └── simple/            # 简易口径（原详情页内置规则外置）
-│   │       ├── plugin.json
-│   │       ├── index.js
-│   │       └── README.md
-│   └── workflow-operator/              # 工作流算子插件（exposes[] 按名注册进宿主 OperatorRegistry）
-│       └── lunar/             # 公历转农历（单日 + 日期范围）
-│           ├── plugin.json    # 含 exposes[] / smoke[]
-│           ├── index.js       # 经典脚本 + call({method,args}) 入口
-│           └── README.md      # 数据源、核验锚点、契约来源
+│       ├── direct-win/        # 直胜口径（原详情页内置规则外置）
+│       │   ├── plugin.json
+│       │   ├── index.js
+│       │   └── README.md
+│       └── simple/            # 简易口径（原详情页内置规则外置）
+│           ├── plugin.json
+│           ├── index.js
+│           └── README.md
 ├── tools/                     # LLM 工具声明，按工具名/版本分目录
 │   └── web-fetch/v1/
 │       ├── tool.json

@@ -65,7 +65,7 @@
 
 `workflow-operator` 是**工作流算子插件**：它不挂模型 `tools[]`，
 不进 `ModelRequest.tools`，也不向 system 提示词注入任何算子清单。工件 `exposes[]` 的**每个方法按名注册成一条宿主算子**
-（内置算子用 snake_case，插件算子用 `<slug>.<exposes[].name>`，如 `lunar.monthCalendar`），
+（内置算子用 snake_case，插件算子用 `<slug>.<exposes[].name>`，如 `my-operator.compute`），
 由宿主 `OperatorRegistry` 统一持有；**阶段二的 workflow/DAG runner** 在节点里写
 `"call": "<算子名>"` 按名查表并按名执行（value→value）。阶段一只提供这张「按名查/按名执行」的地基，
 不解析配方、不做拓扑排序、不跑 DAG。

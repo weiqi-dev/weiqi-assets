@@ -41,16 +41,6 @@
       "name": "web_fetch",
       "summary": "取回公开网页文本内容的工具声明镜像，对齐宿主的 ModelToolDefinition。",
       "path": "tools/web-fetch/v1/tool.json"
-    },
-    {
-      "id": "workflow-operator.lunar",
-      "type": "plugin",
-      "name": "农历 · 节气 · 传统节日",
-      "summary": "公历转农历（含闰月），附 1901-2100 全量 24 节气（HKO 逐年事实表）与春节/元宵/端午/七夕/中元/中秋/重阳/腊八/除夕等传统节日判定；新增 monthCalendar 一次取回整月紧凑视图供月历配方使用。零网络、不依赖运行时时钟。",
-      "pointId": "workflow-operator",
-      "specVersion": 1,
-      "path": "plugins/workflow-operator/lunar/plugin.json",
-      "category": "算子"
     }
   ]
 }
