@@ -81,6 +81,19 @@ function validateCategory(obj, ctx) {
 }
 
 /**
+ * 可选 routeHint：一行触发条件（「用户说什么话时选这条」），只供技能路由目录消费。
+ * 与 bot parseSkillRecipe.readRouteHint 同款宽容口径：缺省不强制（自建技能 / 第三方源
+ * 回落到 summary）；显式给值必须是单行非空字符串 —— 目录是「一条技能一行」，
+ * 换行会破坏渲染。不做词表 / 长度阈值校验（数值必须有出处，不引入经验常数）。
+ */
+function validateRouteHint(obj, ctx) {
+  const h = obj?.routeHint;
+  if (h === undefined) return; // 可选：老配方 / 第三方源不强制
+  if (typeof h !== 'string' || !h.trim()) { fail(`${ctx}.routeHint 必须是非空字符串`); return; }
+  if (/[\r\n]/.test(h)) fail(`${ctx}.routeHint 必须是一行文本（不能含换行）`);
+}
+
+/**
  * workflow 配方声明静态校验（契约与 weiqi-bot 的 parseSkillRecipe 同款）。
  * 只校验「本仓库能自证的形状 + 引用」：节点名是否命中已启用算子白名单是宿主运行时
  * OperatorRegistry 的事，这里不校验 call 取值、不设数值阈值、不引 ajv。
@@ -417,6 +430,7 @@ function main() {
         if (!sk || typeof sk !== 'object') continue;
         const ctx = `skills/registry.json.skills[${i}]`;
         validateCategory(sk, ctx);
+        validateRouteHint(sk, ctx);
         // 形状若能用 schema/workflow.schema.json 校验就复用（本脚本零依赖、按同一份契约做等价手写检查）；
         // 语义项（唯一 id / bindings.from 指向更前）手写。无 workflow 的散文配方由函数内部跳过。
         validateWorkflowSkill(sk, ctx, 'skills/registry.json.skills[i]');

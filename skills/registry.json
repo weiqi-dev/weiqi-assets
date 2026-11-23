@@ -9,6 +9,7 @@
       "version": 4,
       "name": "做题练习",
       "summary": "用户想做题（可带题型与难度，如「做8K手筋题」）时，抽取条件并调用工具，由宿主生成带参数的做题页链接。",
+      "routeHint": "用户想做死活 / 手筋 / 官子题等围棋习题、或带题型难度出题时（如「做一道死活题」「做8K手筋题」）",
       "primitives": [
         "navigate_to"
       ],
@@ -21,6 +22,7 @@
       "version": 4,
       "name": "查天气",
       "summary": "按需求选择 wttr.in 请求参数：默认查当天用精简 JSON 一次拿全，要更多天/逐时才取全量并分页；支持自选城市，参数可查 :help。",
+      "routeHint": "用户想查某地天气 / 预报，或管理自选城市、设默认城市时",
       "primitives": [
         "web_fetch",
         "web_cache_read",
@@ -36,6 +38,7 @@
       "version": 4,
       "name": "查股价",
       "summary": "查单只 / 多只股票的实时价格，并支持用户自选股池：报价后点「添加到自选」由 LLM 存进本地 prefs 偏好，之后说「查询自选股票当前股价」即一次取回全部代码按列表播报",
+      "routeHint": "用户想查某只 / 几只股票最新价格、查自选股池行情，或把股票加入自选时",
       "primitives": [
         "web_fetch",
         "web_cache_read",
@@ -51,6 +54,7 @@
       "version": 4,
       "name": "同花顺财经新闻",
       "summary": "用户想看最新财经新闻 / 股市快讯时用本配方：填好 inputs 让 run_workflow 一次取回同花顺推送 JSON 并渲染成标题列表，模型不读新闻正文；改条件（翻页 / 分类 / 展示字段）按 inputs 重跑，取不到如实说明、不编造。inputs 缺省值（page=1 首页、pagesize=20 默认一次展示量、tag 空、format=list、fields 默认只显示标题、note 沿用旧配方免责原文）均有旧配方明文出处，不是拟合常数。",
+      "routeHint": "用户想看最新财经新闻 / 股市快讯时（查股价、聊股票话题不走这条）",
       "primitives": [],
       "prompt": "用户想看最新财经新闻 / 股市快讯时才用本配方；只是聊股票话题、或要查某只股票的价格（那是「查股价」技能的职责）就正常回答。填好 inputs 让 run_workflow 跑一遍，列表由宿主展示原语落地，你不要复述、归纳、翻译或补充任何一条新闻，也不要在回复里写网址或链接。\n\n收尾只写一句简短引导语（如「已为你列出最新的财经新闻，见上方列表。」）；任一节点取不到、返回异常或不是合法 JSON 时如实说明本次没能列出新闻并停笔，不反复重试、不编造新闻。",
       "category": "财经",
@@ -144,6 +148,7 @@
       "version": 2,
       "name": "GitHub REST API",
       "summary": "用通用 http_fetch_auth 原语直连 GitHub REST API 查仓库 / Issue / PR；Token 规格由本配方 secrets 声明（仅 api.github.com、Authorization: Bearer），宿主强制，模型永远读不到明文。首次或 401 时模型只贴配置链接，用户弹框录入即自动保存。",
+      "routeHint": "用户想查 GitHub 仓库 / Issue / PR / 最后一个提交 / 用户信息时",
       "primitives": [
         "http_fetch_auth",
         "secret_prompt",
@@ -176,6 +181,7 @@
       "version": 1,
       "name": "围棋对弈",
       "summary": "用户想开始围棋对弈、下棋或观看 AI 对局时，识别对弈模式并导航到对应页面。支持真人对弈、人机对弈和 AI 自对弈；未明确模式时进入对弈选择首页。",
+      "routeHint": "用户想开始围棋对弈、下棋（真人对弈 / 人机 / AI 自对弈）或观看 AI 对局时",
       "primitives": [
         "navigate_to"
       ],
@@ -188,6 +194,7 @@
       "version": 1,
       "name": "棋手查询",
       "summary": "用户想查询围棋棋手资料时，提取棋手真实姓名并导航到棋手查询页面，自动执行查询。",
+      "routeHint": "用户想查某位围棋棋手资料时（如「查询柯洁」「看看申真谞的资料」）",
       "primitives": [
         "navigate_to"
       ],
@@ -200,6 +207,7 @@
       "version": 1,
       "name": "网页搜索（Tavily）",
       "summary": "用户想联网搜索某个话题、查网页资料或找最新信息时，用 Tavily 的 POST 搜索接口按关键词取回结果，读全后由模型解析并总结归纳；API Key 由宿主弹框录入并只发往 api.tavily.com，模型永远读不到明文。",
+      "routeHint": "用户想联网搜索话题、查网页资料 / 出处、找最新信息，且没有对应专门技能时",
       "primitives": [
         "http_fetch_auth",
         "secret_prompt",
@@ -242,6 +250,7 @@
       "version": 1,
       "name": "记谱",
       "summary": "用户想记录棋谱、摆子出题、拍照还原棋局时，导航到记谱页面（含摆子模式、拍照摆子、拍照识别还原等场景）。",
+      "routeHint": "用户想记录棋谱、摆子（摆棋 / 摆子出题 / 摆死活题 / 摆定式）、拍照摆子、拍照还原棋局、把照片里的棋盘摆成电子棋谱 / 导入棋谱照片时",
       "primitives": [
         "navigate_to"
       ],
@@ -254,6 +263,7 @@
       "version": 1,
       "name": "对手分析",
       "summary": "用户想下载野狐 / OGS 账号棋谱、分析对手、发现对手常用定式时，提取账号并导航到对手分析页自动执行查询。",
+      "routeHint": "用户想按野狐 / OGS 账号下载棋谱、分析对手战绩 / 棋风、发现对手常用定式时",
       "primitives": [
         "navigate_to"
       ],
@@ -266,6 +276,7 @@
       "version": 1,
       "name": "定式",
       "summary": "用户想进行定式探索、定式挑战或定式发现时，按功能导航到定式首页或对应的探索 / 发现 / 挑战页面。",
+      "routeHint": "用户想做定式探索 / 挑战（定式题）/ 发现（从棋谱发现定式规律）时",
       "primitives": [
         "navigate_to"
       ],
@@ -278,6 +289,7 @@
       "version": 1,
       "name": "实战选点",
       "summary": "用户想做实战选点 / 决策训练 / 形势判断、生成选点题或做恶手题时，导航到实战选点页面。",
+      "routeHint": "用户想做实战选点 / 决策训练 / 形势判断，或生成选点题 / 恶手题 / 决策题时",
       "primitives": [
         "navigate_to"
       ],
@@ -290,6 +302,7 @@
       "version": 1,
       "name": "复盘分析",
       "summary": "用户想 AI 复盘棋局、分析棋谱 / 胜率 / 恶手时，导航到复盘分析页面（页面内导入 SGF 或查看复盘历史）。",
+      "routeHint": "用户想 AI 复盘棋局、分析棋谱 / 胜率曲线 / 恶手、评估局面时",
       "primitives": [
         "navigate_to"
       ],
@@ -302,6 +315,7 @@
       "version": 1,
       "name": "赛事查询",
       "summary": "用户想查云比赛 / 围棋赛事、实时排行时，按地区 / 时间 / 关键词抽取条件并导航到赛事查询页自动执行查询。",
+      "routeHint": "用户想查围棋赛事 / 云比赛 / 比赛日程 / 实时排行时",
       "primitives": [
         "navigate_to"
       ],
@@ -314,6 +328,7 @@
       "version": 1,
       "name": "抓取棋谱",
       "summary": "从分享链接抓谱，或按棋谱类别（直播 / 做题 / 带 AI 分析标注）直达「最新棋谱」里对应来源的列表。",
+      "routeHint": "用户想抓取 / 下载棋谱、从分享链接抓谱，或找直播 / 做题 / AI 棋谱、看最新棋谱时",
       "primitives": [
         "navigate_to"
       ],
