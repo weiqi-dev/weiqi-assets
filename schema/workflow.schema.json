@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://weiqi-dev.github.io/weiqi-assets/schema/workflow.schema.json",
+  "title": "带 workflow 的 weiqi-bot 技能配方",
+  "description": "描述 skills/registry.json 里「带 workflow 字段」的单条技能配方的形状。配方是纯 JSON 零代码：inputs[] 填空 + workflow.steps[] 声明 DAG + 宿主 run_workflow 触发。资源侧只校验形状，不校验 call 是否命中算子白名单（内置算子名来自 weiqi-bot、插件算子来自 plugins/workflow-operator/lunar/plugin.json 的 exposes[].name 拼 <slug>.<method>，运行时未注册由 runner 结构化失败回灌）；steps 非空、bindings.from 指向更靠前的真实 step id 这类跨项语义由 scripts/validate.mjs 的 validateWorkflowSkill() 手写校验，纯 JSON Schema 表达不了。占位符只能是字符串值（如 \"{{input.year}}\"），宿主 runner 做纯数据注入、不做表达式求值；call 白名单不在此硬编码，避免与 bot 运行时 registry 漂移。minLength / minItems 的 1 只表示「非空」，不是步数阈值。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "id", "version", "name", "summary", "primitives", "prompt", "workflow"],
+  "properties": {
+    "schemaVersion": { "type": "integer", "const": 1, "description": "技能配方结构版本，沿用 skills/registry.json 现有取值。" },
+    "id": { "type": "string", "minLength": 1, "description": "配方 id。" },
+    "version": { "type": "integer", "minimum": 1, "description": "配方内容版本，语义改写时递增。" },
+    "name": { "type": "string", "minLength": 1 },
+    "summary": { "type": "string", "minLength": 1, "description": "何时用 + 如实兜底，供路由提示。" },
+    "primitives": { "type": "array", "items": { "type": "string" }, "description": "带 workflow 的配方置空数组；不再靠 hasAllPrimitives 挂散文原语工具。" },
+    "category": { "type": "string", "minLength": 1, "description": "面板筛选分类（纯展示）。" },
+    "secrets": { "type": "array", "description": "可选：凭据声明，宿主强制；散文路径配方沿用。" },
+    "prompt": { "type": "string", "minLength": 1, "description": "何时用 + 两处结构化结果由模型写最终话 + 诚实性约束；不再写逐步指令。" },
+    "inputs": {
+      "type": "array",
+      "description": "可选：模型在 yield 边界填的参数契约；缺省表示无需模型填参。name 唯一、占位符引用校验由 validateWorkflowSkill() 完成。",
+      "items": { "$ref": "#/$defs/input" }
+    },
+    "workflow": { "$ref": "#/$defs/workflow" }
+  },
+  "$defs": {
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "type"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "description": "参数名；inputs[] 内唯一，也是 {{input.<name>}} 占位符的引用目标。" },
+        "type": { "type": "string", "enum": ["string", "number", "integer", "boolean", "object", "array"], "description": "参数类型枚举；宿主 runner 只做形状校验，不做表达式求值。" },
+        "required": { "type": "boolean", "description": "是否必须由模型填；缺省不强制。" },
+        "default": { "description": "配方写死的缺省值（任意 JSON 值）；与占位符注入同属数据注入，取值来自旧配方明文说明，不是拟合常数。" },
+        "enum": { "type": "array", "description": "可选枚举表，配方数据；宿主只做校验。" }
+      }
+    },
+    "workflow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["steps"],
+      "properties": {
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "description": "非空步骤数组；steps 顺序即拓扑序（bindings.from 只能指向更靠前的节点），步骤数 = 声明长度，不设上限。",
+          "items": { "$ref": "#/$defs/step" }
+        }
+      }
+    },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "call"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "description": "节点 id；steps 内唯一，bindings[].from 的引用目标。" },
+        "call": { "type": "string", "minLength": 1, "description": "算子名（内置 snake_case 或插件 <slug>.<method>）；不校验白名单，由宿主运行时 OperatorRegistry 决定。" },
+        "args": { "type": "object", "description": "字面量参数对象；字符串值可含 {{input.xxx}} 数据注入占位符（整值占位保留原始类型、嵌入文本转字符串），bindings 注入值按 as 键覆写同名参数。" },
+        "bindings": { "type": "array", "description": "引用绑定数组；每条即声明一条依赖边（fan-out/fan-in），无独立 edges[]。", "items": { "$ref": "#/$defs/binding" } },
+        "yield": { "type": "boolean", "description": "仅显式 true 时该节点 .value 进模型上下文；缺省 false。" }
+      }
+    },
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["from", "path", "as"],
+      "properties": {
+        "from": { "type": "string", "minLength": 1, "description": "上游步骤 id，必须指向本 steps 中位置更靠前的真实节点；跨节点引用校验在 validateWorkflowSkill()，纯 JSON Schema 无法表达。" },
+        "path": { "type": "string", "description": "从上游 StepResult.value 取值的路径（如 '$' 或 'data.list'）；纯引用取值，不做拼接/表达式。" },
+        "as": { "type": "string", "minLength": 1, "description": "注入下游 args 的参数键名；非空。" }
+      }
+    }
+  }
+}

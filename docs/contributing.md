@@ -70,7 +70,7 @@ manifest 还要给 `exposes[]`（算子方法名 + 说明 + 参数 JSON Schema�
 以上是「把算子随资源发布、人工安装」的路径。也可以由插件开发角色自建算子插件：
 该角色用 `plugin_write` 带 `pointId:"workflow-operator"` + `exposes[]` + `smoke[]` 即可，宿主用同一套
 沙箱逐条自检、落进同一张工件表，默认停用、人工启用后注册进 `OperatorRegistry` 供阶段二 workflow
-按名引用，跨会话复用。两条路径都不进模型工具表。详见 `docs/extension-points.md`
+按名引用，跨会话复用。两条路径都不挂模型 `tools[]`。详见 `docs/extension-points.md`
 的 `workflow-operator` 专节。
 
 ## 新增工具声明

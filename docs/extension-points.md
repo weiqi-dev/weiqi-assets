@@ -63,7 +63,7 @@
 
 ## `workflow-operator` 扩展点（工作流算子插件）
 
-`workflow-operator` 是**工作流算子插件**，不是模型工具：它不挂模型 `tools[]`，
+`workflow-operator` 是**工作流算子插件**：它不挂模型 `tools[]`，
 不进 `ModelRequest.tools`，也不向 system 提示词注入任何算子清单。工件 `exposes[]` 的**每个方法按名注册成一条宿主算子**
 （内置算子用 snake_case，插件算子用 `<slug>.<exposes[].name>`，如 `lunar.monthCalendar`），
 由宿主 `OperatorRegistry` 统一持有；**阶段二的 workflow/DAG runner** 在节点里写
@@ -96,7 +96,7 @@
 ### 两条落地路径：在线安装与插件开发角色自建
 
 `workflow-operator` 工件有两种来源，落到**同一张工件表、同一个 IndexedDB、同一套版本历史与启用闸门**，
-并且**两条路径都只进宿主算子表，都不进模型工具表**：
+并且**两条路径都只进宿主算子表，都不挂模型 `tools[]`**：
 
 | 来源 | 触发方式 | origin | 契约从哪来 |
 |---|---|---|---|
@@ -105,7 +105,12 @@
 
 两条路径都先经 QuickJS 沙箱逐条跑 `smoke[]` 并与 `expect` 逐字段比对（能跑但算错同样拒），
 通过后默认 `enabled:false`，**必须人工在「本地插件」页启用**才注册进 `OperatorRegistry`。
-角色自建不绕过这道闸门；启用后由阶段二 workflow 节点按算子名引用，跨会话复用。
+角色自建不绕过这道闸门；启用后由 workflow 节点按算子名引用，跨会话复用。
+
+带 `workflow` 的技能配方与这张算子表对接：`inputs` 填空、`steps` 声明 DAG、宿主 `run_workflow` 触发，
+节点 `"call"` 按算子名查表；形状契约在 `schema/workflow.schema.json`，引用/唯一性等语义由
+`scripts/validate.mjs` 的 `validateWorkflowSkill()` 校验，`call` 是否命中已启用算子由宿主运行时决定。
+无 `workflow` 的配方沿用现有散文执行路径。配方形状不在此处校验白名单，避免与宿主算子表漂移。
 
 `plugin_write` 省略 `pointId` 时仍是原来的 ranking 排名插件（行为逐字不变），只有给了
 `"workflow-operator"` 才走算子插件分支。修订算子插件时契约随源码版本同步；回滚也按工件 `pointId`

@@ -76,7 +76,10 @@
  → 只有本地库里启用的条目才会被 LLM 调用（装了才生效）
  → 引用宿主没有的原语 → 只展示、不可安装</pre>
     <p>结构契约在 weiqi-bot 的 <code>application/skill/SkillRecipe.ts</code> / <code>SkillTypes.ts</code>；
-       本仓库没有对应 schema，<code>scripts/validate.mjs</code> 也不校验这份清单。
+       本仓库另有 <code>schema/workflow.schema.json</code> 描述带 workflow 配方的形状，
+       <code>scripts/validate.mjs</code> 对 <code>skills[]</code> 校验分类取值与 workflow 声明静态形状/引用
+       （无 workflow 的散文配方跳过）。带 workflow 的技能配方：<code>inputs</code> 填空、<code>steps</code> 声明 DAG、
+       宿主 <code>run_workflow</code> 触发。
        默认源是宿主代码常量，用户可在面板改成任意 https 源或一键恢复（内容未经官方审核时需自担信任）。
        下方列表实时取自该清单，新增 / 修订配方只改这一个文件。</p>
   </div>

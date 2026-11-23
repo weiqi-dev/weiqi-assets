@@ -62,7 +62,7 @@
 
 **扩展**：再加一类用户偏好（默认分类、常用参数…）只需在配方里换一个键名与值形状，宿主一行不改 —— 这正是本地数据层「加场景不改内核」的扩展点。
 
-**算子插件与技能配方分属两条链**：`workflow-operator` 算子插件的 `exposes[]` 每个方法按名注册进宿主 `OperatorRegistry`；技能配方在**阶段二**用 workflow DSL 的 `"call"` 节点按算子名引用它们。**当前阶段一只提供按名执行 value→value 的算子注册地基，不解析配方、不做 DAG runner**；配方与算子注册表之间不设依赖声明，旧的 llm 对接通道及 system 清单已一并删除。
+**算子插件与技能配方分属两条链**：`workflow-operator` 算子插件的 `exposes[]` 每个方法按名注册进宿主 `OperatorRegistry`；带 `workflow` 的技能配方用 `"call"` 节点按算子名引用它们，由 `inputs` 填空、`steps` 声明 DAG、宿主 `run_workflow` 触发。无 `workflow` 的配方沿用现有散文执行路径。配方与算子注册表之间不设依赖声明，旧的 llm 对接通道及 system 清单已一并删除。
 
 宿主的在线插件平台**只安装 `type: plugin`**；`type: tool` 只在列表里展示，不提供安装按钮。
 插件默认源 `https://weiqi-dev.github.io/weiqi-assets/registry.json` 只读、由本仓库 git 发布，宿主可另加自定义源但默认源不可覆盖。
@@ -182,9 +182,10 @@ npm run validate      # 或 node scripts/validate.mjs
 插件代码入口存在且不含宿主禁用的全局/动态求值/无界循环、
 `workflow-operator` 的 `exposes[]` / `smoke[]` 契约齐全，以及
 `share/share.js` 的 `decodeUrl` / `libUrl` 与站点 URL 契约一致。
-**技能清单只校验一件事**：`skills[]` 每条可选 `category` 的取值必须在分类白名单内；
-配方结构契约仍在宿主 `SkillRecipe.ts`，由宿主安装时逐条解析。站点的技能列表也是运行时读取
-该清单渲染，因此清单本身写错会在页面上直接表现为「列表无法加载」，不会静默显示旧数据。
+技能清单还校验：`skills[]` 每条可选 `category` 的取值必须在分类白名单内；带 `workflow` 的配方做
+静态声明校验（`schema/workflow.schema.json` 的形状 + `validateWorkflowSkill()` 的引用/唯一性等语义），
+无 `workflow` 的散文配方跳过。配方结构契约的另一半仍在宿主 `SkillRecipe.ts`，由宿主安装时逐条解析。
+站点的技能列表也是运行时读取该清单渲染，因此清单本身写错会在页面上直接表现为「列表无法加载」，不会静默显示旧数据。
 
 禁用规则与 `weiqi-bot/domain/plugin/PluginValidator.ts` **同源**——注意该校验器对全串做正则，
 **注释里出现禁用词也会被拦下**，示例插件因此刻意不写出那些词。

@@ -80,6 +80,127 @@ function validateCategory(obj, ctx) {
   }
 }
 
+/**
+ * workflow 配方声明静态校验（契约与 weiqi-bot 的 parseSkillRecipe 同款）。
+ * 只校验「本仓库能自证的形状 + 引用」：节点名是否命中已启用算子白名单是宿主运行时
+ * OperatorRegistry 的事，这里不校验 call 取值、不设数值阈值、不引 ajv。
+ * 出处：阶段二硬契约「§二次核实」+ parseSkillRecipe 的 readWorkflow() 判据。
+ */
+const WORKFLOW_INPUT_TYPES = ['string', 'number', 'integer', 'boolean', 'object', 'array'];
+const INPUT_PLACEHOLDER_RE = /\{\{input\.([^}]+)\}\}/g;
+
+/** 递归收集 args 里出现的所有字符串（用于 {{input.xxx}} 占位符引用检查） */
+function collectArgStrings(v, out) {
+  if (typeof v === 'string') { out.push(v); return; }
+  if (Array.isArray(v)) { for (const x of v) collectArgStrings(x, out); return; }
+  if (v && typeof v === 'object') { for (const x of Object.values(v)) collectArgStrings(x, out); }
+}
+
+function validateWorkflowSkill(sk, ctx, pathHint) {
+  // 调用点按契约传 (sk, ctx, 'skills/registry.json.skills[i]')：ctx 为带真实下标的完整路径
+  // （与 validateCategory 同款），用作报错前缀；pathHint 为路径模板，仅在 ctx 缺省时兜底，
+  // 保证报错前缀始终非空。两者都只是定位信息，不参与语义判断。
+  if (typeof ctx !== 'string' || !ctx.trim()) ctx = pathHint || 'skill';
+  // 只对带 workflow 字段的配方生效；无 workflow 的散文配方跳过（B 决策，不强制 13 条迁移）
+  if (sk.workflow === undefined) return;
+  // inputs? 可选；给了必须是数组，且 name 唯一 / type 在枚举内 / required·enum 形状对
+  let inputNames = null;
+  if (sk.inputs !== undefined) {
+    if (!Array.isArray(sk.inputs)) {
+      fail(`${ctx}.inputs 必须是数组`);
+    } else {
+      inputNames = new Set();
+      for (const [i, inp] of sk.inputs.entries()) {
+        const ic = `${ctx}.inputs[${i}]`;
+        if (!inp || typeof inp !== 'object' || Array.isArray(inp)) { fail(`${ic} 必须是对象`); continue; }
+        if (typeof inp.name !== 'string' || !inp.name.trim()) {
+          fail(`${ic}.name 必须是非空字符串`);
+        } else {
+          if (inputNames.has(inp.name)) fail(`${ic}.name 重复：${inp.name}`);
+          inputNames.add(inp.name);
+        }
+        if (!WORKFLOW_INPUT_TYPES.includes(inp.type)) {
+          fail(`${ic}.type 必须是 ${WORKFLOW_INPUT_TYPES.join(' / ')} 之一，实际：${inp.type}`);
+        }
+        // required / enum 形状（与 bot readWorkflowInputs 口径一致）；default 任意 JSON 值不校验
+        if (inp.required !== undefined && typeof inp.required !== 'boolean') {
+          fail(`${ic}.required 若给必须是 boolean`);
+        }
+        if (inp.enum !== undefined && !Array.isArray(inp.enum)) {
+          fail(`${ic}.enum 若给必须是数组`);
+        }
+      }
+    }
+  }
+
+  // workflow 必需、对象；steps 必需、非空数组
+  const wf = sk.workflow;
+  if (!wf || typeof wf !== 'object' || Array.isArray(wf)) {
+    fail(`${ctx}.workflow 必须是对象`);
+    return;
+  }
+  if (!Array.isArray(wf.steps) || wf.steps.length === 0) {
+    fail(`${ctx}.workflow.steps 必须是非空数组`);
+    return;
+  }
+
+  // id 唯一、call 非空、args 若给是对象、yield 若给是 boolean；
+  // bindings[].from 指向更靠前的真实 step、as 非空；{{input.xxx}} 引用必须存在。
+  const stepIds = new Set();
+  const priorIds = new Set();
+  for (const [i, st] of wf.steps.entries()) {
+    const sc = `${ctx}.workflow.steps[${i}]`;
+    if (!st || typeof st !== 'object' || Array.isArray(st)) { fail(`${sc} 必须是对象`); continue; }
+    if (typeof st.id !== 'string' || !st.id.trim()) {
+      fail(`${sc}.id 必须是非空字符串`);
+    } else {
+      if (stepIds.has(st.id)) fail(`${sc}.id 重复：${st.id}`);
+      stepIds.add(st.id);
+    }
+    if (typeof st.call !== 'string' || !st.call.trim()) fail(`${sc}.call 必须是非空字符串`);
+    if (st.args !== undefined && (!st.args || typeof st.args !== 'object' || Array.isArray(st.args))) {
+      fail(`${sc}.args 若给必须是对象`);
+    }
+    if (st.yield !== undefined && typeof st.yield !== 'boolean') fail(`${sc}.yield 若给必须是 boolean`);
+
+    // 占位符引用检查：args 里（含嵌套对象/数组）任一字符串值出现 {{input.xxx}}，
+    // 其 xxx 必须在 inputs[] 声明，避免拼错后静默注入。
+    if (st.args && typeof st.args === 'object' && !Array.isArray(st.args)) {
+      const strings = [];
+      collectArgStrings(st.args, strings);
+      for (const s of strings) {
+        for (const m of s.matchAll(INPUT_PLACEHOLDER_RE)) {
+          const name = m[1];
+          if (!inputNames || !inputNames.has(name)) {
+            fail(`${sc}.args 引用了未声明的占位符 {{input.${name}}}（须在 ${ctx}.inputs[] 中存在）`);
+          }
+        }
+      }
+    }
+
+    if (st.bindings !== undefined) {
+      if (!Array.isArray(st.bindings)) {
+        fail(`${sc}.bindings 若给必须是数组`);
+      } else {
+        for (const [j, b] of st.bindings.entries()) {
+          const bc = `${sc}.bindings[${j}]`;
+          if (!b || typeof b !== 'object' || Array.isArray(b)) { fail(`${bc} 必须是对象`); continue; }
+          if (typeof b.as !== 'string' || !b.as.trim()) fail(`${bc}.as 必须是非空字符串`);
+          if (typeof b.from !== 'string' || !b.from.trim()) {
+            fail(`${bc}.from 必须是非空字符串`);
+          } else if (!priorIds.has(b.from)) {
+            // 更靠前 + 真实：priorIds 只收集本步之前已校验过的 id
+            fail(`${bc}.from (${b.from}) 必须指向 steps 中位置更靠前的真实节点 id`);
+          }
+          if (typeof b.path !== 'string') fail(`${bc}.path 必须是字符串`);
+        }
+      }
+    }
+    // 本步校验完才加入 priorIds，供后续步骤引用（from 只能指更靠前）
+    if (typeof st.id === 'string' && st.id.trim()) priorIds.add(st.id);
+  }
+}
+
 /** 与 weiqi-bot/domain/plugin/PluginValidator.ts 的禁用规则同源 */
 const BROWSER_GLOBALS =
   /\bfetch\b|\bwindow\b|\bdocument\b|\blocalStorage\b|\bindexedDB\b|\bXMLHttpRequest\b|\bimportScripts\b|\brequire\b|\bpostMessage\b|\bself\b|\bnavigator\b|\bWebSocket\b/;
@@ -287,14 +408,18 @@ function main() {
       }
     }
   }
-  // 技能清单不做结构校验（契约在 weiqi-bot 的 parseSkillRecipe），
-  // 只对本仓库新增的可选 category 标注做取值自检，避免写一个宿主不认识的标签。
+  // 技能清单：category 标注做取值自检；含 workflow 的配方做工作流声明静态校验
+  // （契约在 weiqi-bot 的 parseSkillRecipe / run_workflow；无 workflow 的配方沿用散文路径，不做结构校验）。
   const skills = readJson('skills/registry.json');
   if (skills) {
     if (Array.isArray(skills.skills)) {
       for (const [i, sk] of skills.skills.entries()) {
         if (!sk || typeof sk !== 'object') continue;
-        validateCategory(sk, `skills/registry.json.skills[${i}]`);
+        const ctx = `skills/registry.json.skills[${i}]`;
+        validateCategory(sk, ctx);
+        // 形状若能用 schema/workflow.schema.json 校验就复用（本脚本零依赖、按同一份契约做等价手写检查）；
+        // 语义项（唯一 id / bindings.from 指向更前）手写。无 workflow 的散文配方由函数内部跳过。
+        validateWorkflowSkill(sk, ctx, 'skills/registry.json.skills[i]');
       }
     } else {
       fail('skills/registry.json.skills 必须是数组');
