@@ -72,22 +72,23 @@
       "path": "stock.news.10jqka/skill.json"
     },
     {
-      "id": "github.rest",
-      "version": 2,
-      "name": "GitHub REST API",
-      "summary": "用通用 http_fetch_auth 原语直连 GitHub REST API 查仓库 / Issue / PR；Token 规格由本配方 secrets 声明（仅 api.github.com、Authorization: Bearer），宿主强制，模型永远读不到明文。首次或 401 时模型只贴配置链接，用户弹框录入即自动保存。",
+      "id": "admin.publish",
+      "version": 1,
+      "name": "发布扩展到 weiqi-assets",
+      "summary": "把本地自建技能 / workflow 算子插件通过宿主原子接口发布到 weiqi-assets（直提默认分支固定路径，GitHub Pages 立即公开）；面向仓库管理者，需配置 github_token。",
       "routeHint": [
-        "用户想查 GitHub 仓库 / Issue / PR 时",
-        "用户想查最后一个提交时",
-        "用户想查用户信息时"
+        "把某技能 / 插件发布到 weiqi-assets",
+        "把刚开发的技能上线供别人安装",
+        "发布 GitHub",
+        "把本地自建的扩展共享到资源库"
       ],
       "primitives": [
-        "http_fetch_auth",
-        "secret_prompt",
-        "web_cache_read"
+        "asset_export",
+        "github_publish_file",
+        "secret_prompt"
       ],
       "category": "开发",
-      "path": "github.rest/skill.json"
+      "path": "admin.publish/skill.json"
     },
     {
       "id": "play.start",

@@ -39,16 +39,18 @@
 
 ### 开发「需要凭据」的技能怎么写
 
-以 `github.rest` 为例。这类技能**不需要写任何代码**，只要在配方里做两件事：
+以 `admin.publish` 为例。这类技能**不需要写任何代码**，只要在配方里做两件事：
 
-1. `primitives` 引用宿主通用原语 `http_fetch_auth`（带凭据直连）、`secret_prompt`（换/改凭据）、`web_cache_read`（长正文分页读）。
-2. 加一段 `secrets` 纯声明规格：每项给 `key`（凭据名）、`label`（弹框标签）、`allowedHosts`（允许发往的纯域名数组）、`header`（宿主怎么拼请求头：`name` + `prefix`），可选 `setupUrl` / `hint` / `reauthStatuses`（哪些状态码算失效，默认 `[401]`）。缺省 `method` 即 GET。
+1. `primitives` 引用宿主已注册的原语：本技能用 `asset_export`（导出本地资源、给句柄与变更集摘要）、`github_publish_file`（提交到 GitHub 默认分支固定路径）、`secret_prompt`（换/改凭据）；都是宿主原子接口，不做 Service / 编排 / 新面板 / 发布前确认 UI。
+2. 加一段 `secrets` 纯声明规格：每项给 `key`（凭据名）、`label`（弹框标签）、`allowedHosts`（允许发往的纯域名数组）、`header`（宿主怎么拼请求头：`name` + `prefix`），可选 `setupUrl` / `hint` / `method`（`GET` / `POST`，缺省 GET）/ `reauthStatuses`（哪些状态码算失效，默认 `[401]`）。本技能沿用现有 `github_token` key（不新增独立 token），`hint` 统一口径：查数据需读权限；发布需目标仓库 Contents 写权限。**`method` 只支持 GET / POST，别写 PUT**。
 
 接口只支持 POST 时（如 `tavily.search`），同一份声明再加 `method: "POST"`、`bodyStatic`（固定 JSON 字段）、`bodyQueryParams`（允许从 URL query 搬进 body 的键白名单）。宿主把模型给的 `?query=…` 按白名单搬进 JSON body 并合并静态字段，**静态字段后写**，模型无法用 query 覆盖固定值，也无法夹带别的 body 字段；多余 query 参数一律丢弃。
 
-运行时模型调用 `http_fetch_auth` **只能给 `url` 和 `secretKey` 两个参数**；允许访问哪些域名、请求头怎么拼、用 GET 还是 POST、body 里有哪些字段，全部由宿主按这份 `secrets` 声明强制决定，模型传不进来、也永远接触不到凭据明文。首次使用或凭据失效时，原语回一条 `secret-prompt:<key>` 链接，模型只负责把链接原样贴给用户；用户点开弹框录入即自动保存到本地（`secrets` 域，opaque），宿主回灌一条用户消息触发下一轮，下次不再弹框。说「修改 / 换」也由 `secret_prompt` 触发同一个弹框。
+运行时模型调用带凭据的原语**只给声明好的参数**（如 `http_fetch_auth` 只能给 `url` 和 `secretKey`；`asset_export` 给 `kind` / `id`，`github_publish_file` 给 `handle` / 可选 `message`）；允许访问哪些域名、请求头怎么拼、用 GET 还是 POST、body 里有哪些字段，全部由宿主按这份 `secrets` 声明强制决定，模型传不进来、也永远接触不到凭据明文。首次使用或凭据失效时，原语回一条 `secret-prompt:<key>` 链接，模型只负责把链接原样贴给用户并**结束本轮、等用户下一条消息**；用户点开弹框录入即自动保存到本地（`secrets` 域，opaque），宿主回灌一条用户消息触发下一轮，下次不再弹框。说「修改 / 换」也由 `secret_prompt` 触发同一个弹框。
 
-**扩展**：接入另一家认证 API 只需再写一条配方、换一份 `secrets` 声明（不同的 key / allowedHosts / header / method / body），宿主内核、`http_fetch_auth` 工具签名、弹框都不用改。
+发布是写外部仓库，必须遵守 `SKILL_FOOTER`：改动业务库 / 外部状态的写操作要先预览、结束本轮、等用户下一条消息明确确认后再提交。本技能把「预览 = `asset_export` 的摘要（只转述句柄与变更集，不复述文件正文）」「提交 = `github_publish_file`（直提默认分支固定路径、Pages 立即公开）」写清楚，两件事不挤在同一轮。带 `workflow` 的技能还要连同依赖的 `workflow-operator` 算子插件一起发布。回复正文绝不自己写 http(s) 外站链接，宿主自定义 scheme 链接（`secret-prompt:`）原样转贴是唯一例外。
+
+**扩展**：接入另一家认证 API、或再做一个需要凭据的管理者技能，只需再写一条配方、换一份 `secrets` 声明（不同的 key / allowedHosts / header / method / body），宿主内核与弹框都不用改。早先那份通用 GitHub REST 查数配方（连目录带引用）已彻底删除，不做兼容桥 / 别名 / 重定向。
 
 ### 开发「使用偏好」类技能怎么写（本地数据层第二期）
 
@@ -136,9 +138,9 @@ weiqi-assets/
 │   ├── stock.news.10jqka/
 │   │   ├── skill.json       # 完整配方（schemaVersion=1，含 prompt / inputs / workflow.steps[]）
 │   │   └── README.md        # 契约来源与用法
-│   ├── github.rest/
-│   │   ├── skill.json       # 完整配方（schemaVersion=1，含 prompt 等散文指令）
-│   │   └── README.md        # 契约来源与用法
+│   ├── admin.publish/
+│   │   ├── skill.json       # 完整配方（schemaVersion=1，含 prompt / secrets）
+│   │   └── README.md        # 面向仓库管理者的用途与凭据 / 发布口径
 │   ├── play.start/
 │   │   ├── skill.json       # 完整配方（schemaVersion=1，含 prompt 等散文指令）
 │   │   └── README.md        # 契约来源与用法

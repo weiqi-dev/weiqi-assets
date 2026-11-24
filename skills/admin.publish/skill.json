@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "id": "admin.publish",
+  "version": 1,
+  "name": "发布扩展到 weiqi-assets",
+  "summary": "把本地自建技能 / workflow 算子插件通过宿主原子接口发布到 weiqi-assets（直提默认分支固定路径，GitHub Pages 立即公开）；面向仓库管理者，需配置 github_token。",
+  "routeHint": [
+    "把某技能 / 插件发布到 weiqi-assets",
+    "把刚开发的技能上线供别人安装",
+    "发布 GitHub",
+    "把本地自建的扩展共享到资源库"
+  ],
+  "primitives": [
+    "asset_export",
+    "github_publish_file",
+    "secret_prompt"
+  ],
+  "secrets": [
+    {
+      "key": "github_token",
+      "label": "GitHub Personal Access Token",
+      "setupUrl": "https://github.com/settings/tokens",
+      "hint": "查数据需读权限；发布需目标仓库 Contents 写权限（classic 选 repo，或 fine-grained 对目标仓库 Contents: read & write）。只存本机，模型永远读不到明文。",
+      "allowedHosts": [
+        "api.github.com"
+      ],
+      "header": {
+        "name": "Authorization",
+        "prefix": "Bearer "
+      },
+      "method": "GET",
+      "reauthStatuses": [
+        401
+      ]
+    }
+  ],
+  "prompt": "只有用户明确要求把本地自建的技能 / workflow 算子插件「发布 / 上线 / 共享到 weiqi-assets」时才走下面流程；\n只是聊 GitHub / Git 概念、查仓库数据、开发或调试技能，或用户要求在线安装只读资源，都不走本技能，按原本地开发 / 使用流程正常回答。\n本配方是纯声明，不生成任何可执行代码；宿主只给原子接口，不做 Service / 编排 / 新面板 / 发布前确认 UI。\n\n1. 先确认目标 id 与 kind：从用户原话里确定要发布的是哪个本地资源、它的 id 与类型（技能配方或 workflow 算子插件）。\n   id / kind 不全或含糊就先问一句，不臆造、不猜测、不替用户挑一个相近的条目。\n\n2. 调 asset_export({kind, id}) 导出该资源，拿到句柄与变更集摘要。\n   **这一步就是发布前的预览**：只把句柄和变更集摘要（改了哪些文件、落到哪个固定路径等）如实转述给用户，不要复述文件正文、不要贴大段内容。\n\n3. 遵守 SKILL_FOOTER：发布是写外部仓库、改动业务库 / 外部状态的写操作，必须先预览、结束本轮、等用户下一条消息明确确认后再提交。\n   所以本轮到第 2 步的预览为止，把「预览 = asset_export 的摘要」写清楚，说明确认后将直提默认分支固定路径、GitHub Pages 立即公开，然后结束本轮回复；\n   绝不在同一轮里预览完就顺手提交，也绝不把「预览」当成已经获得确认。\n\n4. 收到用户下一条消息、且明确确认发布后，再调 github_publish_file({handle, message?})：handle 用上一步 asset_export 给的句柄，\n   message 可给一句意图明确的提交说明（可选）。**直接提交到默认分支固定路径，不建分支、不发 PR**，GitHub Pages 随即公开。\n   **提交 = github_publish_file**；不要自己拼 REST 请求、不要改目标路径、不要引入分支 / PR 流程。\n\n5. 首次使用或凭据失效（401）时，宿主会给出 secret-prompt:github_token 链接：\n   **只把这条链接原样贴给用户，然后结束本轮**，附一句简短说明：点开弹框录入即自动保存，下次不再弹；保存完请在下一轮重新发起。\n   等用户下一条消息再继续。绝不要索要、猜测、复述或记录任何 Token 明文，绝不要改 URL 重试、也不要自己编一份发布结果。\n   用户说「换 / 修改 / 重新配置 GitHub Token」时，调 secret_prompt 并传 secretKey='github_token'，同样只原样贴链接并结束本轮。\n   权限口径照 secrets 的 hint：查数据需读权限；发布需目标仓库 Contents 写权限。沿用现有 github_token key，不新增独立 token。\n\n6. 带 workflow 的技能必须连同它依赖的 workflow-operator 算子插件一起发布：\n   对每个依赖算子各导出一次、在预览里一并列出，确认后一并提交；只发配方不发算子会让别人装了也跑不起来。\n   依赖清单以 asset_export 返回的摘要为准，不要凭记忆补写，也不要漏发。\n\n7. 回复正文绝不自己写 http(s) 外站链接（不拼 GitHub 网页 / REST URL、不贴仓库地址）；\n   宿主自定义 scheme 链接 secret-prompt:github_token 原样转贴是唯一例外。数据来源 / 目标用文字「weiqi-assets」说明即可。\n\n8. 诚实性：导出失败、句柄无效、提交被拒（权限不足 / 冲突 / 非 2xx）或凭据失效时，如实说明状态码与宿主返回的 message 并停止，\n   不要用常识补写「已发布」，不要谎报 Pages 已公开；403 限流不是凭据失效，不要误叫用户重新配置。",
+  "category": "开发"
+}
