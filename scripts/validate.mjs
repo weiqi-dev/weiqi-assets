@@ -123,9 +123,9 @@ function collectArgStrings(v, out) {
 }
 
 function validateWorkflowSkill(sk, ctx, pathHint) {
-  // 调用点按契约传 (sk, ctx, 'skills/registry.json.skills[i]')：ctx 为带真实下标的完整路径
-  // （与 validateCategory 同款），用作报错前缀；pathHint 为路径模板，仅在 ctx 缺省时兜底，
-  // 保证报错前缀始终非空。两者都只是定位信息，不参与语义判断。
+  // 调用点按契约传 (sk, ctx, pathHint)：ctx 为具体配方文件路径（如 skills/<id>/skill.json），
+  // 用作报错前缀；pathHint 为同款路径，仅在 ctx 缺省时兜底，保证报错前缀始终非空。
+  // 两者都只是定位信息，不参与语义判断。
   if (typeof ctx !== 'string' || !ctx.trim()) ctx = pathHint || 'skill';
   // 只对带 workflow 字段的配方生效；无 workflow 的散文配方跳过（B 决策，不强制 13 条迁移）
   if (sk.workflow === undefined) return;
@@ -395,6 +395,148 @@ function validateShareUrls() {
   }
 }
 
+/**
+ * 技能两段式清单校验（共享契约 v2）：
+ *   skills/registry.json 是瘦索引（schemaVersion=2，每条 path=<id>/skill.json，只给目录字段）；
+ *   skills/<id>/skill.json 是完整配方（schemaVersion=1，含 prompt / workflow / inputs / secrets）。
+ * 索引看不到 workflow，但 version / 路由 / 分类等重叠字段必须与配方逐字段一致：
+ * version 决定宿主「有更新」判定，索引不能与配方各说各话。
+ * 这里是发布侧拦截；宿主运行时取不到某条只标 unavailable，不影响其它条目。
+ */
+const PRIMITIVE_RE = /^[a-z][a-z0-9_]*$/;
+const SKILLS_DIR = resolve(ROOT, 'skills');
+const SKILL_OVERLAP_FIELDS = ['id', 'version', 'name', 'summary', 'routeHint', 'primitives', 'category'];
+
+/** 重叠字段逐字段比对：数组逐项、两边都 undefined 算一致；对象按键递归（这些字段只含标量/字符串数组） */
+function sameFieldValue(a, b) {
+  if (a === undefined || b === undefined) return a === undefined && b === undefined;
+  if (Array.isArray(a) || Array.isArray(b)) {
+    return Array.isArray(a) && Array.isArray(b) && a.length === b.length &&
+      a.every((v, i) => sameFieldValue(v, b[i]));
+  }
+  if (a && b && typeof a === 'object' && typeof b === 'object') {
+    const ka = Object.keys(a).sort();
+    const kb = Object.keys(b).sort();
+    return ka.length === kb.length && ka.every((k, i) => k === kb[i] && sameFieldValue(a[k], b[k]));
+  }
+  return a === b;
+}
+
+function showFieldValue(v) {
+  return v === undefined ? 'undefined' : JSON.stringify(v);
+}
+
+function validateSkillRegistry() {
+  const indexPath = 'skills/registry.json';
+  const index = readJson(indexPath);
+  if (!index) return;
+
+  if (index.schemaVersion !== 2) {
+    fail(`${indexPath} 的 schemaVersion 必须是 2（只支持 2，实际：${showFieldValue(index.schemaVersion)}）`);
+  }
+  requireString(index, 'name', indexPath);
+  requireString(index, 'description', indexPath);
+  if (index.baseUrl !== undefined &&
+      (typeof index.baseUrl !== 'string' || !index.baseUrl.trim())) {
+    fail(`${indexPath} 的 baseUrl 若给必须是非空字符串（可选字段）`);
+  }
+  if (!Array.isArray(index.skills)) {
+    fail(`${indexPath} 的 skills 必须是数组`);
+    return;
+  }
+
+  const seenIds = new Set();
+  const seenPaths = new Set();
+  for (const [i, entry] of index.skills.entries()) {
+    const rawId = typeof entry?.id === 'string' && entry.id.trim() ? entry.id : null;
+    const recipePath = rawId ? `skills/${rawId}/skill.json` : null;
+    // 报错一律带具体文件路径：索引文件 + 对应配方文件；不再把 skills/registry.json.skills[i] 当 ctx
+    const at = (field) => `${indexPath} ↔ ${recipePath || '（id 无效，无法定位配方文件）'}${field ? ` 的索引条目 .${field}` : ''}`;
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+      fail(`${at()} 必须是对象`);
+      continue;
+    }
+
+    // ---- 索引条目形状 ----
+    if (rawId === null) {
+      fail(`${at('id')} 必须是非空字符串`);
+    } else {
+      if (!ID_RE.test(rawId)) fail(`${at('id')} 不符合命名规则：${rawId}`);
+      if (seenIds.has(rawId)) fail(`${at('id')} 全清单重复：${rawId}`);
+      seenIds.add(rawId);
+    }
+    if (!Number.isInteger(entry.version) || entry.version < 1) {
+      fail(`${at('version')} 必须是 >=1 的整数，实际：${showFieldValue(entry.version)}`);
+    }
+    for (const key of ['name', 'summary']) {
+      if (typeof entry[key] !== 'string' || !entry[key].trim()) {
+        fail(`${at(key)} 必须是非空字符串`);
+      }
+    }
+
+    const path = typeof entry.path === 'string' ? entry.path : null;
+    if (path === null || !path.trim()) {
+      fail(`${at('path')} 必须是非空字符串`);
+    } else {
+      if (seenPaths.has(path)) fail(`${at('path')} 重复：${path}`);
+      seenPaths.add(path);
+      if (rawId && path !== `${rawId}/skill.json`) {
+        fail(`${at('path')} 必须等于 "<id>/skill.json"（期望 ${rawId}/skill.json，实际 ${path}）`);
+      }
+      // path 是相对 skills/ 的路径：不能拿相对仓库根的 safePath() 直接套，会混掉基准目录
+      const abs = resolve(SKILLS_DIR, path);
+      const rel = relative(SKILLS_DIR, abs);
+      const inside = !path.startsWith('/') && !path.includes('\\') &&
+        rel !== '' && !rel.startsWith('..') && !rel.startsWith(sep);
+      if (!inside) {
+        fail(`${at('path')} 越出 skills/ 目录：skills/${path}`);
+      } else if (!existsSync(abs) || !statSync(abs).isFile()) {
+        fail(`skills/${path} 指向的配方文件不存在或不是文件（索引 ${indexPath} 的 skills[${i}]）`);
+      }
+    }
+
+    if (!Array.isArray(entry.primitives)) {
+      fail(`${at('primitives')} 必须是字符串数组（允许空数组：workflow 配方就是 []）`);
+    } else {
+      for (const [j, p] of entry.primitives.entries()) {
+        if (typeof p !== 'string' || !PRIMITIVE_RE.test(p)) {
+          fail(`${at('primitives')}[${j}] 必须是 /^[a-z][a-z0-9_]*$/ 形式的字符串，实际：${showFieldValue(p)}`);
+        }
+      }
+    }
+    // 索引侧 category / routeHint 不单独校验：与配方重叠，配方侧的白名单/形状校验 +
+    // 下面的逐字段硬比对已覆盖「两边都写歪」与「只歪一边」两种情形，且报错都落在具体文件路径上。
+
+    // ---- 完整配方（只按 id 定位，不拿索引声明的 path 拼读取路径，避免越界读取）----
+    if (!recipePath) continue; // id 无效时无法定位配方文件，上面已带路径报错
+    const recipe = readJson(recipePath);
+    if (recipe === null) {
+      // readJson 已对「文件不存在 / 不是合法 JSON」带路径报错；合法 JSON 但内容为 null 也要拦下
+      if (existsSync(resolve(ROOT, recipePath))) fail(`${recipePath} 顶层必须是对象（实际是 null）`);
+      continue;
+    }
+    if (typeof recipe !== 'object' || Array.isArray(recipe)) {
+      fail(`${recipePath} 顶层必须是对象`);
+      continue;
+    }
+    if (recipe.schemaVersion !== 1) {
+      fail(`${recipePath} 的 schemaVersion 必须是 1（配方自身结构版本；索引是 2，别混），实际：${showFieldValue(recipe.schemaVersion)}`);
+    }
+    requireString(recipe, 'prompt', recipePath);
+    // ctx / pathHint 用具体配方路径；索引里没有 workflow，静态形状只在配方侧校验
+    validateCategory(recipe, recipePath);
+    validateRouteHint(recipe, recipePath);
+    validateWorkflowSkill(recipe, recipePath, recipePath);
+
+    // ---- 索引↔配方重叠字段硬比对（防索引骗人：version 决定宿主「有更新」判定）----
+    for (const field of SKILL_OVERLAP_FIELDS) {
+      if (!sameFieldValue(entry[field], recipe[field])) {
+        fail(`索引↔配方重叠字段不一致：两边文件 ${indexPath} ↔ ${recipePath}，字段名 ${field}，索引 skills[${i}] = ${showFieldValue(entry[field])}，配方 = ${showFieldValue(recipe[field])}`);
+      }
+    }
+  }
+}
+
 function main() {
   const registry = readJson('registry.json');
   if (!registry) return report();
@@ -434,24 +576,8 @@ function main() {
       }
     }
   }
-  // 技能清单：category 标注做取值自检；含 workflow 的配方做工作流声明静态校验
-  // （契约在 weiqi-bot 的 parseSkillRecipe / run_workflow；无 workflow 的配方沿用散文路径，不做结构校验）。
-  const skills = readJson('skills/registry.json');
-  if (skills) {
-    if (Array.isArray(skills.skills)) {
-      for (const [i, sk] of skills.skills.entries()) {
-        if (!sk || typeof sk !== 'object') continue;
-        const ctx = `skills/registry.json.skills[${i}]`;
-        validateCategory(sk, ctx);
-        validateRouteHint(sk, ctx);
-        // 形状若能用 schema/workflow.schema.json 校验就复用（本脚本零依赖、按同一份契约做等价手写检查）；
-        // 语义项（唯一 id / bindings.from 指向更前）手写。无 workflow 的散文配方由函数内部跳过。
-        validateWorkflowSkill(sk, ctx, 'skills/registry.json.skills[i]');
-      }
-    } else {
-      fail('skills/registry.json.skills 必须是数组');
-    }
-  }
+  // 技能两段式清单：索引形状 / path 存在 / 索引↔配方重叠字段一致 / category 白名单 / workflow 静态形状
+  validateSkillRegistry();
   validateShareUrls();
   report();
 }

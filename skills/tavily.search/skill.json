@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "id": "tavily.search",
+  "version": 1,
+  "name": "网页搜索（Tavily）",
+  "summary": "用户想联网搜索某个话题、查网页资料或找最新信息时，用 Tavily 的 POST 搜索接口按关键词取回结果，读全后由模型解析并总结归纳；API Key 由宿主弹框录入并只发往 api.tavily.com，模型永远读不到明文。",
+  "routeHint": [
+    "用户想联网搜索某个话题时",
+    "用户想查网页资料 / 找某个说法的出处时",
+    "用户想找最新信息时",
+    "用户要的是没有对应专门技能覆盖的一般性网页检索时"
+  ],
+  "primitives": [
+    "http_fetch_auth",
+    "secret_prompt",
+    "web_cache_read"
+  ],
+  "secrets": [
+    {
+      "key": "tavily_api_key",
+      "label": "Tavily API Key",
+      "setupUrl": "https://app.tavily.com",
+      "hint": "在 Tavily 控制台生成 tvly- 开头的 API Key。只存本机，宿主直连 api.tavily.com 时在 Authorization 头里使用，模型永远读不到明文。",
+      "allowedHosts": [
+        "api.tavily.com"
+      ],
+      "header": {
+        "name": "Authorization",
+        "prefix": "Bearer "
+      },
+      "method": "POST",
+      "bodyStatic": {
+        "search_depth": "basic",
+        "max_results": 5,
+        "include_answer": true,
+        "include_raw_content": false
+      },
+      "bodyQueryParams": [
+        "query"
+      ],
+      "reauthStatuses": [
+        401
+      ]
+    }
+  ],
+  "prompt": "用户想联网搜索某个话题、查网页资料、找某个说法的出处或了解最新信息时，才走下面流程；只是聊已有知识、闲聊，或用户直接给出一个具体网址让你读（那是 web_fetch 的普通用法），不要走本技能。若用户要的是天气、股价、财经新闻、GitHub 数据、做题、对弈、棋手查询这类已有专门技能能直接给的结构化数据，优先走那些技能，本技能只负责一般性的网页检索。\n\n【唯一的请求模板】\n固定 URL：https://api.tavily.com/search?query=<检索词>\n这是 Tavily 的 POST 搜索接口，宿主按本配方 secrets 声明自动把 query 参数搬进 JSON body，并补上固定字段 search_depth=basic、max_results=5、include_answer=true、include_raw_content=false。**你只能改 query 这一个 URL 参数**：不换域名、不加路径、不拼别的 query 参数（加了宿主也会丢弃）、不改那几个固定字段、不传任何请求头或 body 字段。用户给的 curl 示例里那些 body 字段就是本配方写死的，不要自己再写一遍。\n\n【关键词与编码】\n从用户原话里抽出检索词，必要时改写成更适合检索的短语（去掉语气词、补上关键限定词），并把采用的关键词向用户说明一句；不要臆造用户没提过的人名、机构或事件。中文、空格、标点一律做 URL 编码（用 encodeURIComponent 的口径）：\n- weiqi → https://api.tavily.com/search?query=weiqi\n- 最新 AI Agent 框架对比 → https://api.tavily.com/search?query=%E6%9C%80%E6%96%B0%20AI%20Agent%20%E6%A1%86%E6%9E%B6%E5%AF%B9%E6%AF%94\n绝不要把未编码的中文、空格或 & / # 直接拼进 URL。用户给了几个彼此独立的主题时，各构造一个 query、各取一次，分别归纳；缓存按 URL 索引，读缓存时也各自用自己那次观察里的绝对 URL。\n\n【取数与读全】\n调用 http_fetch_auth，参数只有两个：url 填上面拼好的绝对 URL，secretKey 固定填 'tavily_api_key'。**绝不要传 API Key、请求头、method 或 body**：允许访问哪个域名、用 POST、Authorization 头怎么拼、body 里有哪些字段，全部由本配方 secrets 声明、宿主强制，模型传不进来，也永远接触不到明文。返回是 JSON（含 answer 与 results[]），而 http_fetch_auth 的观察只有开头一小段预览，完整正文已留在宿主缓存里：接着用 web_cache_read（url 填观察里给出的那个绝对 URL），先用 mode=info 看总长度，再用 mode=slice 分页读或 mode=grep 检索，直到本次要归纳的每一条 results[] 项都在已读字符里。判定标准是本次要用的字段都读到了，绝不能只凭预览下笔，更不能凭常识补写没读到的条目。换了 query 就是新 URL，web_cache_read 的 url 也要换成新观察里的 URL。\n\n【解析】\n正文顶部字段：query（本次检索词）、answer（Tavily 生成的简短回答，仅 include_answer 时返回）、response_time、request_id；results[] 每条含 title、url、content（相关片段，不是网页全文）、score（相关度），可能还有 favicon 等。只使用实际读到的字段：字段缺失就不列、不补写。answer 是 Tavily 生成的归纳，引用时说明它是「Tavily 给的回答」，不要当成你核实的结论；content 是摘要片段，不要当成网页全文或已核实事实；score 只是相关度数值，不要据此断言「权威 / 重要」。results 为空时如实说明本次没搜到结果，可建议用户换个关键词，不要编造。\n\n【输出：由你解析并总结归纳】\n这一步不是把结果列成清单，而是读懂全部条目后用简洁中文归纳：\n1. 开头一句说明本次检索词、实际读到几条结果、数据来自 Tavily 搜索。\n2. 先按需引述或转述 answer（标明是 Tavily 给的回答），再按主题或观点把 results 里的主要发现归纳成几条要点，写明哪些来源说了什么；有分歧或互相矛盾时并列指出，不要替它们调和。归纳只能基于本次读到的 query / answer / results[].title / url / content / score，不得用你已有的知识补写未出现的内容，也不得把摘要扩写成事实断言。\n3. 默认不在正文里堆链接；用户明确要出处、链接或原文时，把实际读到的 results[].url 原样列出（可配标题），不要改写、不要编造、不要补成站内搜索页。\n4. 结尾简短说明：这是搜索结果摘要与 Tavily 生成的回答，不是网页原文，可能有滞后或偏差；需要确切结论时请用户点开原文核实。\n\n【凭据与诚实性】\n若观察里出现「🔑 配置 / 修改 Tavily API Key」链接（凭据未配置，或服务端返回 401 说明 key 失效）：**只把这条链接原样贴给用户，然后结束本轮回复**。附一句简短说明：点开弹框录入后会自动保存，下次不再弹；保存完会继续刚才的请求。绝不要索要、猜测、复述或记录任何 API Key 明文，绝不要改 URL 重试、也不要自己编一份搜索结果。用户说「换 / 修改 / 重新配置 Tavily Key」时，调用 secret_prompt 并传 secretKey='tavily_api_key'，只把返回的链接原样贴给用户并结束本轮。\nHTTP 非 2xx（400 参数错 / 422 校验失败 / 429 限流 / 432 额度用尽等）时如实说明状态码与返回的 detail.error，不要用常识补数据；403 不是凭据失效，不要误叫用户重新配置。正文为空、不是合法 JSON、网络失败或 CORS 被拦时如实说明取不到并停止，不要编造结果，也不要用已有知识冒充搜索结果。全文除用户明确要链接外，不要写网址。",
+  "category": "搜索"
+}

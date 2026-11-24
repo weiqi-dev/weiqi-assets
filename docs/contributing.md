@@ -9,10 +9,12 @@
 - **代码要能跑**：插件源码必须能在宿主 QuickJS 沙箱里通过校验与试跑，不能只是示意。
 - **改 share 要两仓同步**：路径、URL、编解码格式任一变更，都要同时改本仓库与 weiqi-bot，
   并跑 `npm run validate` + weiqi-bot 相关单测。
-- **清单是唯一事实源**：`registry.json` 与 `skills/registry.json` 是条目数量与明细的唯一来源。
-  `index.html` 的两个列表运行时 `fetch` 清单渲染，README 也不逐条列举、不写死数量。
-  新增 / 修订资源**只改对应清单**（技能改 `skills/registry.json`；插件 / 工具改 `registry.json` + 建条目目录），
-  不要同步去改 `index.html` 或 README 里的条目列表 —— 那类手工副本正是过去数字漂移的来源。
+- **分层事实源**：顶层 `registry.json` 是插件 / 工具的索引；技能是 `skills/registry.json` 瘦索引 +
+  每技能一个 `skills/<id>/skill.json` 完整配方为真相（索引只做目录）。
+  `index.html` 的两个列表运行时 `fetch` 顶层清单与技能瘦索引渲染，README 也不逐条列举、不写死数量。
+  新增 / 修订技能按「建目录 + 写 `skill.json` + 写 `README.md` + 追加索引条目」四步走；
+  插件 / 工具改 `registry.json` + 建条目目录。不要同步去改 `index.html` 或 README 里的条目列表 ——
+  那类手工副本正是过去数字漂移的来源。
 
 ## 新增插件
 
@@ -109,45 +111,76 @@ manifest 还要给 `exposes[]`（算子方法名 + 说明 + 参数 JSON Schema�
 
 ## 新增技能配方
 
-技能是**纯声明 JSON**，不含代码、不建目录，只需往 `skills/registry.json` 的 `skills[]` 追加一条：
+技能是**纯声明 JSON**（不含代码），采用两段式清单：`skills/registry.json` 是瘦索引（目录），
+`skills/<id>/skill.json` 才是完整配方（真相）。按下面顺序改：
 
-```json
-{
-  "schemaVersion": 1,
-  "id": "play.start",
-  "version": 1,
-  "name": "围棋对弈",
-  "summary": "一句话说清什么场景、做什么",
-  "routeHint": ["用户想…时", "用户说…时"],
-  "category": "围棋",
-  "primitives": ["navigate_to"],
-  "prompt": "命中后追加给对话模型的自然语言指令……"
-}
-```
+1. **建目录**：`skills/<id>/`（目录名即配方 `id`，发布后不改名、不复用）。
+2. **写完整配方** `skills/<id>/skill.json`（`schemaVersion: 1`，字段从宿主 `SkillRecipe` 契约来）：
+
+   ```json
+   {
+     "schemaVersion": 1,
+     "id": "play.start",
+     "version": 1,
+     "name": "围棋对弈",
+     "summary": "一句话说清什么场景、做什么",
+     "routeHint": ["用户想…时", "用户说…时"],
+     "category": "围棋",
+     "primitives": ["navigate_to"],
+     "prompt": "命中后追加给对话模型的自然语言指令……"
+   }
+   ```
+
+   带 `workflow` 的配方再加 `inputs` / `workflow.steps[]`（形状见 `schema/workflow.schema.json`）；
+   这类配方的 `primitives` 置空数组 `[]`（索引层看不到 workflow，**允许空数组**）。
+3. **写** `skills/<id>/README.md`：说明契约来源（宿主哪个文件）、路由场景与安装形状。
+4. **往 `skills/registry.json` 的 `skills[]` 追加索引条目**（该文件 `schemaVersion: 2`）：
+
+   ```json
+   {
+     "id": "play.start",
+     "version": 1,
+     "name": "围棋对弈",
+     "summary": "一句话说清什么场景、做什么",
+     "routeHint": ["用户想…时", "用户说…时"],
+     "primitives": ["navigate_to"],
+     "category": "围棋",
+     "path": "play.start/skill.json"
+   }
+   ```
+
+   `id` / `version` / `name` / `summary` / `routeHint` / `primitives` / `category` 这些重叠字段
+   **从 `skill.json` 原样抄过来**（数组逐项一致、两边都不写算一致）；`path` 固定为 `<id>/skill.json`。
+   **索引与 `skill.json` 重叠字段不一致会被 `npm run validate` 的 `validateSkillRegistry()` 拦下**
+   （`version` 决定宿主「有更新」判定，索引不能骗人）。
+5. 跑 `npm run validate`（本节只列出步骤，执行由维护者完成）。
 
 要点：
 
 1. `id` 小写字母 / 数字开头，只允许 `[a-z0-9._-]`，全清单唯一；`version` 为正整数，
-   修订同一条配方时递增它（宿主据此提示「有更新」）。
+   修订同一条配方时索引与 `skill.json` 两边一起递增它（宿主据此提示「有更新」）。
 2. `name` / `summary` 说清场景与职责 —— 宿主每轮用 `id | name` 加配方
    **可选声明的路由词短语数组 `routeHint`** 组成目录交给模型做路由：
    没配 `routeHint` 的配方目录只给 `id | name`，此时靠名称路由；配了就把数组里的短语
    用顿号拼成一行接在后面，供模型按用户说法命中。每项须是单行非空短语、由配方从
    自身场景句提炼，宿主不内置词表；`prompt` 是命中后才追加的指令，不参与路由。
    可选 `category` 是面板筛选用的中文标签，取值只能是
-   排名 / 算子 / 围棋 / 财经 / 搜索 / 生活 / 开发 / 未分类 之一（见 README 的分类说明）。
+   排名 / 算子 / 围棋 / 财经 / 搜索 / 生活 / 开发 / 未分类 之一（见 README 的分类说明），
+   且索引与 `skill.json` 两处都写时取值必须一致。
    不写也能用：宿主按 `id` 第一段命名空间兜底推导，推不出来显示「未分类」。
 3. `primitives` 只能引用宿主已注册的原语名（如 `navigate_to` / `web_fetch` /
    `http_fetch_auth` / `secret_prompt` / `web_cache_read`），引用不存在的原语 →
-   只展示、不可安装。可选 `secrets` 按对应宿主契约填写，缺省即「不涉凭据」。`secrets` 的形状见
+   只展示、不可安装；**允许空数组**（带 `workflow` 的配方就是 `[]`）。
+   可选 `secrets` 按对应宿主契约填写，缺省即「不涉凭据」。`secrets` 的形状见
    weiqi-bot `application/skill/SecretSpec.ts`：除 `key` / `label` /
    `allowedHosts` / `header` 外，POST 接口可声明 `method: "POST"` /
    `bodyStatic` / `bodyQueryParams`；POST 专属字段出现在 GET 配方、或缺 method
    的 POST 配方都会在解析阶段被拒。
 4. 结构契约在 weiqi-bot 的 `application/skill/SkillRecipe.ts`（`parseSkillRecipe`），
-   本仓库无对应 schema、`scripts/validate.mjs` 也不校验这份清单；可用该解析器实跑一遍自检。
-5. **只改这一个文件**：站点技能列表实时读取该清单渲染，数量与明细自动跟随，
-   不需要改 `index.html`、README 或重建 Web 资源包。
+   带 workflow 的形状见本仓库 `schema/workflow.schema.json`；`scripts/validate.mjs` 的
+   `validateSkillRegistry()` 校验索引形状 / path 存在 / 索引↔配方重叠字段一致 / category 白名单 /
+   workflow 静态形状。站点技能列表只读取瘦索引渲染，数量与目录字段自动跟随，
+   **不需要改 `index.html` 或重建 Web 资源包**；但完整配方本身必须写进 `skills/<id>/skill.json`。
 
 ## 修改 SGF 分享能力
 

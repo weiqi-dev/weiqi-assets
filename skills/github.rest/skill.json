@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "id": "github.rest",
+  "version": 2,
+  "name": "GitHub REST API",
+  "summary": "用通用 http_fetch_auth 原语直连 GitHub REST API 查仓库 / Issue / PR；Token 规格由本配方 secrets 声明（仅 api.github.com、Authorization: Bearer），宿主强制，模型永远读不到明文。首次或 401 时模型只贴配置链接，用户弹框录入即自动保存。",
+  "routeHint": [
+    "用户想查 GitHub 仓库 / Issue / PR 时",
+    "用户想查最后一个提交时",
+    "用户想查用户信息时"
+  ],
+  "primitives": [
+    "http_fetch_auth",
+    "secret_prompt",
+    "web_cache_read"
+  ],
+  "secrets": [
+    {
+      "key": "github_token",
+      "label": "GitHub Personal Access Token",
+      "setupUrl": "https://github.com/settings/tokens",
+      "hint": "classic 选 repo 权限即可；fine-grained 需授予目标仓库的读权限。只存本机，模型永远读不到。",
+      "allowedHosts": [
+        "api.github.com"
+      ],
+      "header": {
+        "name": "Authorization",
+        "prefix": "Bearer "
+      },
+      "reauthStatuses": [
+        401
+      ]
+    }
+  ],
+  "prompt": "用户想通过 GitHub REST API 查自己的仓库、Issue、Pull Request、用户信息等时才走下面流程；只是聊 Git / GitHub 概念或代码问题就正常回答，不要调用工具。\n\n1. 用 http_fetch_auth 取回目标数据：url 必须是 https://api.github.com/ 开头的 GET 绝对 URL（可带 query），secretKey 固定填 'github_token'。常用端点：\n   - 当前用户信息：https://api.github.com/user\n   - 我的仓库：https://api.github.com/user/repos?per_page=30&sort=updated\n   - 指定用户仓库：https://api.github.com/users/{owner}/repos?per_page=30\n   - 某仓库的 Issue：https://api.github.com/repos/{owner}/{repo}/issues?state=open&per_page=30\n   - 某仓库的 PR：https://api.github.com/repos/{owner}/{repo}/pulls?state=open&per_page=30\n   - 搜索仓库：https://api.github.com/search/repositories?q={关键词}&per_page=20\n   {owner}/{repo} 从用户原话里取；用户没给全就先问，不要臆造仓库名。**允许访问哪些域名、Authorization 头怎么拼、哪些状态码算凭据失效，都由本配方 secrets 声明、宿主强制**：模型只给 url 与 secretKey，绝不自己拼请求头、绝不传 Token 或任何密钥、也绝不改成别的域名或走 web_fetch（那会绕过鉴权）。这套 http_fetch_auth 是宿主通用原语，别的认证 API 只要另写一份 secrets 声明即可复用，不需要改宿主代码。\n\n2. http_fetch_auth 的观察只有开头一小段预览，完整正文已留在宿主缓存里。需要更多条目时用 web_cache_read（url 填 http_fetch_auth 观察里给出的那个绝对 URL）：先用 mode=info 看总字符数，再用 mode=slice 分页读、或用 mode=grep 检索。⚠️ 宿主单条观察有字符上限（CONTEXT_LIMITS.maxCharsPerMessage），完整 JSON 塞不进一次观察；这里不复制具体数值，它由宿主版本决定。不要凭预览猜测未显示的部分；读到能完整列出用户要的条目就停，判定标准是这几条的字段都在已读的字符里。用户没说要几条时默认归纳前 10 条（这是本配方明说的默认呈现量，不是接口限制）。\n\n3. 若观察里出现「🔑 配置 / 修改 GitHub Personal Access Token」链接（凭据未配置，或 GitHub 返回 401 说明已失效 / 权限不足）：**只把这条链接原样贴给用户，然后结束本轮回复**。附一句简短说明：点开弹框录入后会自动保存，下次不再弹；保存完会继续刚才的请求。绝不要索要、猜测、复述或记录任何 Token 明文，绝不要改 URL 重试、也不要自己编一份 GitHub 数据。用户在弹框保存后会在新一轮里重新发起，那时宿主已能读到凭据，http_fetch_auth 会直接成功。\n\n4. 用户说「换 / 修改 / 重新配置 / 更新 GitHub Token」时，调用 secret_prompt 并传 secretKey='github_token'，它无论当前是否已配置都会返回同一条配置链接：只把链接原样贴给用户并结束本轮。同样绝不要索要或复述 Token 明文。\n\n5. 输出用简洁中文归纳：仓库列名称、是否私有、语言、简介、更新时间、星标数、html_url；Issue / PR 列编号、标题、状态、作者、创建时间、html_url；用户信息列 login、公开仓库数等。只写真正读到的字段，字段缺失就不列，不要给未读到的条目补内容。开头说明本次呈现的条数与来源（GitHub REST API），用户明确要链接时才把 html_url 列出，否则不堆链接。\n\n6. 诚实性：HTTP 非 2xx（403 限流 / 404 不存在 / 422 参数错等）时如实说明状态码与 GitHub 返回的 message，不要用常识补数据；网络失败 / CORS 被拦 / 正文不是合法 JSON 时如实说明取不到并停止。403 限流不是凭据失效，不要误叫用户重新配置。除「未配置 / 401 / 用户主动要改」三种情况外，不要主动弹配置链接。",
+  "category": "开发"
+}

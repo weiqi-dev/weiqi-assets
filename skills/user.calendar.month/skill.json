@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "id": "user.calendar.month",
+  "version": 1,
+  "name": "月历",
+  "summary": "用户要看某年某月的日历时用本配方：填好 year/month 让 run_workflow 一次取回节假日 JSON、由 calendar.buildMonth 算完整月历并走宿主旁路渲染，模型不碰历法数据、不写表格；改年月按 inputs 重跑，算子未启用或数据取不到如实说明、不编造。",
+  "routeHint": [
+    "用户想看某年某月的月历 / 日历 / 月份时",
+    "只问今天几号 / 单独问某个节气或节日日期不走这条"
+  ],
+  "primitives": [],
+  "prompt": "用户要求查看某年某个月的日历时才用本配方；只是问今天几号、或单独问某个节气/节日的日期就正常回答，不走 workflow。填好 year/month 让 run_workflow 跑一遍，月历表格与说明由宿主展示原语落地，你不要复述、归纳、翻译或补写任何一格内容，收尾只写一句简短引导语（如「已为你生成月历，见上方表格。」）。\n\n【诚实兜底】未安装启用「月历算子」插件（运行前报未注册算子 calendar.buildMonth），或节假日数据未取到／不是合法 JSON／结构不全时，如实说明本次没能生成月历并提示到「插件」面板安装启用「月历算子」，绝不用常识、记忆或推算补农历日名／节气／节日／法定假，也不输出半张表；判定只看节点成败，不靠复述报错文案。用户未给完整年月时先问清年月，不假定当前月。",
+  "category": "生活",
+  "inputs": [
+    {
+      "name": "year",
+      "type": "integer",
+      "required": true
+    },
+    {
+      "name": "month",
+      "type": "integer",
+      "required": true
+    }
+  ],
+  "workflow": {
+    "steps": [
+      {
+        "id": "holiday",
+        "call": "web_fetch",
+        "args": {
+          "url": "https://raw.githubusercontent.com/lanceliao/china-holiday-calender/master/holidayAPI.json",
+          "storeOnly": true
+        }
+      },
+      {
+        "id": "build",
+        "call": "calendar.buildMonth",
+        "args": {
+          "year": "{{input.year}}",
+          "month": "{{input.month}}"
+        },
+        "bindings": [
+          {
+            "from": "holiday",
+            "path": "$",
+            "as": "holidays"
+          }
+        ]
+      },
+      {
+        "id": "grid",
+        "call": "display_json_list",
+        "args": {
+          "format": "table",
+          "fields": [
+            {
+              "key": "mon",
+              "label": "一"
+            },
+            {
+              "key": "tue",
+              "label": "二"
+            },
+            {
+              "key": "wed",
+              "label": "三"
+            },
+            {
+              "key": "thu",
+              "label": "四"
+            },
+            {
+              "key": "fri",
+              "label": "五"
+            },
+            {
+              "key": "sat",
+              "label": "六"
+            },
+            {
+              "key": "sun",
+              "label": "日"
+            }
+          ],
+          "note": "带圈数字＝法定放假日；补班 / 调休上班日见下方说明（表格内不另写标记）。"
+        },
+        "bindings": [
+          {
+            "from": "build",
+            "path": "weeks",
+            "as": "value"
+          }
+        ]
+      },
+      {
+        "id": "notes",
+        "call": "display_json_list",
+        "args": {
+          "format": "list",
+          "fields": [
+            {
+              "key": "text"
+            }
+          ],
+          "note": "农历日名为纯日名，不带月份字眼；历法由内置事实表判定，法定假由公开节假日 JSON 注入。"
+        },
+        "bindings": [
+          {
+            "from": "build",
+            "path": "legend",
+            "as": "value"
+          }
+        ]
+      }
+    ]
+  }
+}

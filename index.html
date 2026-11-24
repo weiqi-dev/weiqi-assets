@@ -66,22 +66,24 @@
   </div>
 
   <div class="card">
-    <h2>🧠 技能配方入口（独立清单）</h2>
-    <p>技能配方是<strong>另一套清单</strong>，不经过上面的 <code>registry.json</code>。宿主单独取这个地址：</p>
+    <h2>🧠 技能配方入口（瘦索引 + 每技能一个 skill.json）</h2>
+    <p>技能配方是<strong>两段式清单</strong>，不经过上面的 <code>registry.json</code>：
+       <code>skills/registry.json</code> 只是瘦索引（目录），每个技能一个 <code>skills/&lt;id&gt;/skill.json</code> 才是完整配方。宿主先取索引：</p>
     <div class="url">https://weiqi-dev.github.io/weiqi-assets/skills/registry.json</div>
-    <pre>GET /skills/registry.json
- → 解析纯声明配方（schemaVersion / id / version / name / summary / primitives / prompt）
+    <pre>GET /skills/registry.json                ← 瘦索引：schemaVersion=2、每条给 path=&lt;id&gt;/skill.json
+ → GET skills/&lt;id&gt;/skill.json             ← 按 baseUrl + path 逐条取完整配方（schemaVersion=1）
+ → 校验索引↔配方重叠字段一致；单条取不到/校验不过只标 unavailable，不影响其它条目
  → 配方只引用宿主已注册的原语名，不含任何可执行代码
  → 用户在「🧠 技能」→「在线技能」点安装，写进本地技能库
  → 只有本地库里启用的条目才会被 LLM 调用（装了才生效）
  → 引用宿主没有的原语 → 只展示、不可安装</pre>
     <p>结构契约在 weiqi-bot 的 <code>application/skill/SkillRecipe.ts</code> / <code>SkillTypes.ts</code>；
-       本仓库另有 <code>schema/workflow.schema.json</code> 描述带 workflow 配方的形状，
-       <code>scripts/validate.mjs</code> 对 <code>skills[]</code> 校验分类取值与 workflow 声明静态形状/引用
-       （无 workflow 的散文配方跳过）。带 workflow 的技能配方：<code>inputs</code> 填空、<code>steps</code> 声明 DAG、
-       宿主 <code>run_workflow</code> 触发。
+       本仓库另有 <code>schema/workflow.schema.json</code> 描述 <code>skills/&lt;id&gt;/skill.json</code> 里带 workflow 配方的形状，
+       <code>scripts/validate.mjs</code> 的 <code>validateSkillRegistry()</code> 校验索引形状 / path 存在 /
+       索引↔配方重叠字段一致 / category 白名单 / workflow 声明静态形状与引用（无 workflow 的散文配方跳过）。
+       带 workflow 的技能配方：<code>inputs</code> 填空、<code>steps</code> 声明 DAG、宿主 <code>run_workflow</code> 触发。
        默认源是宿主代码常量，用户可在面板改成任意 https 源或一键恢复（内容未经官方审核时需自担信任）。
-       下方列表实时取自该清单，新增 / 修订配方只改这一个文件。</p>
+       下方列表只取一次瘦索引用于展示（站点不安装技能，不需要逐条取 skill.json）；索引只做目录，完整配方在各自 <code>skill.json</code>。</p>
   </div>
 
   <div class="card">
@@ -93,9 +95,10 @@
 
   <div class="card">
     <h2>🧩 技能配方列表（纯声明 · 装了才生效）<span class="count" id="skill-count"></span></h2>
-    <div id="skill-list"><p class="hint">正在从 <code>skills/registry.json</code> 加载…</p></div>
-    <p style="margin-top:12px">上表实时取自 <code>skills/registry.json</code> 的 <code>skills[]</code>，
-       条目数量与明细自动跟随；新增 / 修订配方只改清单、无需重建 Web 资源包。
+    <div id="skill-list"><p class="hint">正在从 <code>skills/registry.json</code> 瘦索引加载…</p></div>
+    <p style="margin-top:12px">上表实时取自 <code>skills/registry.json</code> 瘦索引的 <code>skills[]</code>，
+       条目数量与目录字段自动跟随；索引只做目录，完整配方在各自 <code>skills/&lt;id&gt;/skill.json</code>。
+       新增 / 修订配方按「建目录 + 写 skill.json + 写 README.md + 追加索引条目」四步走，无需重建 Web 资源包。
        与插件「默认停用、人工启用」不同，技能安装即启用（纯声明零代码）。</p>
   </div>
 
@@ -118,7 +121,7 @@
       <a href="docs/contributing.md">贡献指南</a>
       <a href="share/README.md">SGF 分享能力</a>
       <a href="registry.json">扩展资源清单</a>
-      <a href="skills/registry.json">技能配方清单</a>
+      <a href="skills/registry.json">技能瘦索引（清单入口）</a>
       <a href="schema/registry.schema.json">registry schema</a>
       <a href="schema/plugin.schema.json">plugin schema</a>
       <a href="schema/tool.schema.json">tool schema</a>
@@ -135,8 +138,8 @@
 </div>
 
 <script>
-// 清单是唯一事实源：两个列表实时取 registry.json / skills/registry.json 渲染，
-// 本页不维护任何条目数量或逐条描述的副本。新增资源只改对应清单即可。
+// 两个列表实时取顶层 registry.json / 技能瘦索引 skills/registry.json 渲染（站点只展示，不安装技能、不逐条取 skill.json），
+// 本页不维护任何条目数量或逐条描述的副本。技能索引只做目录，完整配方在各自 skills/<id>/skill.json。
 (function () {
   'use strict';
   var ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };

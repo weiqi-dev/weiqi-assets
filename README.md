@@ -9,22 +9,27 @@
 
 ## 三类扩展资源
 
-| 类型 | 目录 | 清单入口（唯一事实源） | 对齐的宿主契约 |
+| 类型 | 目录 | 清单入口 | 对齐的宿主契约 |
 |---|---|---|---|
 | 插件工件 | `plugins/` | 顶层 `registry.json` 的 `resources[]` | `weiqi-bot/domain/plugin/types.ts` 的 `PluginArtifact` / `PluginSpec`（QuickJS 沙箱执行） |
 | LLM 工具声明 | `tools/` | 同上（与插件共用一份清单） | `weiqi-bot/application/model/IModelGateway.ts` 的 `ModelToolDefinition` |
-| 技能配方 | `skills/` | **`skills/registry.json` 的 `skills[]`（独立清单）** | `weiqi-bot/application/skill/SkillRecipe.ts` / `SkillTypes.ts` 的 `SkillRecipe` |
+| 技能配方 | `skills/` | **`skills/registry.json` 瘦索引 + `skills/<id>/skill.json` 完整配方** | `weiqi-bot/application/skill/SkillRecipe.ts` / `SkillTypes.ts` 的 `SkillRecipe` |
 
-清单是唯一事实源：**条目数量与明细一律以两份清单为准**，站点 `index.html` 运行时 `fetch` 清单后渲染列表，
-本 README 不再逐条列举、也不写死数量。新增 / 修订资源只改对应清单（加 skill 改 `skills/registry.json`，
-加插件 / 工具改 `registry.json` + 建条目目录），**不用同步改 README 或 index.html**。
+顶层 `registry.json` 是插件 / 工具的索引；技能是**两段式清单**：`skills/registry.json` 瘦索引只做目录，
+完整配方（真相）在各自 `skills/<id>/skill.json`。站点 `index.html` 运行时只 `fetch` 顶层清单与技能瘦索引渲染列表，
+本 README 不再逐条列举、也不写死数量。新增 / 修订技能按「建 `skills/<id>/` 目录 + 写 `skill.json` + 写 `README.md`
++ 往 `skills/registry.json` 的 `skills[]` 追加索引条目」四步走；新增 / 修订插件 / 工具改 `registry.json` + 建条目目录。
+条目副本一律不进 README 或 `index.html`。
 
 插件是**可执行代码**（在宿主 QuickJS 沙箱里跑，零宿主能力）；工具目前是**声明镜像**（执行器由宿主内置，见各条目 `README.md`）；
 技能配方是**纯声明 JSON**，只引用宿主已注册的原语名，永远不含可执行代码。
 插件与工具通过顶层 `registry.json` 索引，`schema/` 给出 JSON Schema 契约，`scripts/validate.mjs` 做一致性校验。
-**技能配方不进顶层 `registry.json`**：它是另一份清单，结构契约在 weiqi-bot 的 `SkillRecipe.ts`，
-本仓库没有对应 schema，`scripts/validate.mjs` 也不校验它（只校验顶层 registry / 条目 / 代码 / share URL 契约）。
-`index.html` 的两个列表同样直接读取这两份清单渲染，页面里不存任何条目副本。
+**技能配方不进顶层 `registry.json`**：它是**独立两段式清单**（瘦索引 `skills/registry.json` + 每技能一个
+`skills/<id>/skill.json`），结构契约在 weiqi-bot 的 `SkillRecipe.ts`；带 workflow 的配方形状由本仓库
+`schema/workflow.schema.json` 描述，`scripts/validate.mjs` 的 `validateSkillRegistry()` 校验索引形状、path 存在、
+索引↔配方重叠字段一致、category 白名单与 workflow 静态形状/引用。
+`index.html` 的两个列表同样直接读取顶层清单与技能瘦索引渲染（站点只展示、不安装技能，不需要取 `skill.json`），
+页面里不存任何条目副本。
 
 ### 技能怎么被激活
 
@@ -67,17 +72,20 @@
 宿主的在线插件平台**只安装 `type: plugin`**；`type: tool` 只在列表里展示，不提供安装按钮。
 插件默认源 `https://weiqi-dev.github.io/weiqi-assets/registry.json` 只读、由本仓库 git 发布，宿主可另加自定义源但默认源不可覆盖。
 技能源是**单源模型**，默认源 `…/skills/registry.json` 是宿主代码常量（`SkillCatalogSources.DEFAULT_SKILL_REGISTRY_URL`），
+**该文件现在是瘦索引（schemaVersion=2）**，宿主按每条 `path` 以 `baseUrl` 为基准逐条取 `skills/<id>/skill.json` 完整配方
+（schemaVersion=1）；自定义源不带 `baseUrl` 时宿主回落到清单 URL 所在目录，拼出的地址与默认源一致。
 用户可在「🧠 技能」面板改成任意 https 源或一键恢复（自定义源内容未经审核，信任自担）——这点与插件不同。
 
 技能是**安装制**：在线配方不会自动生效，必须经面板「安装」写进本地技能库；只有本地库里启用的条目才会被 LLM 调用。
 引用宿主注册表里没有的原语的配方只展示、不可安装。安装即启用（纯声明零代码，不设插件那道「默认停用」闸门）。
 
-**分类标签（`category`，可选）**：顶层 `registry.json` 的 plugin 条目、`skills/registry.json` 的技能条目、
-以及 plugin manifest 都可声明一个中文分类，供助手页四个列表（本地/在线 × 插件/技能）按标签筛选；
+**分类标签（`category`，可选）**：顶层 `registry.json` 的 plugin 条目、`skills/registry.json` 的索引条目、
+`skills/<id>/skill.json` 配方、以及 plugin manifest 都可声明一个中文分类，供助手页四个列表（本地/在线 × 插件/技能）按标签筛选；
+技能侧两处都写了 `category` 时**取值必须一致**，`scripts/validate.mjs` 的 `validateSkillRegistry()` 会硬比对索引↔配方重叠字段；
 默认「全部」不筛选。取值只有这几个：**排名 / 算子 / 围棋 / 财经 / 搜索 / 生活 / 开发 / 未分类**
 （与 weiqi-bot `presentation/adapters/web/pages/assistant/ChatPage.ts` 内联的 `EXTENSION_CATEGORIES`、本仓库
 `scripts/validate.mjs` 的 `KNOWN_CATEGORIES` 三处同步）。这是人工标注的业务分类表，
-不是从验证集拟合出来的数值：清单是唯一事实源，宿主不认识或没写的标签一律按
+不是从验证集拟合出来的数值：条目明细以各自清单 / 配方文件为准，宿主不认识或没写的标签一律按
 `pointId`（`ranking`→排名 / `workflow-operator`→算子）或技能 `id` 第一段命名空间兜底推导，
 推导不出来就是「未分类」。该字段纯展示，**不参与安装 / 兼容 / 激活判定，也不进 LLM 提示词**；
 老资源、自定义源、LLM 自建技能不写它照样工作。
@@ -114,8 +122,56 @@ weiqi-assets/
 │   └── web-fetch/v1/
 │       ├── tool.json
 │       └── README.md
-├── skills/                    # 技能配方，单文件清单
-│   └── registry.json          # 纯声明配方：只引用宿主原语，不含代码
+├── skills/                    # 技能两段式清单
+│   ├── registry.json          # 瘦索引（schemaVersion=2，只做目录；每条 path=<id>/skill.json）
+│   ├── puzzle.tsumego/
+│   │   ├── skill.json       # 完整配方（schemaVersion=1，含 prompt 等散文指令）
+│   │   └── README.md        # 契约来源与用法
+│   ├── weather.wttr/
+│   │   ├── skill.json       # 完整配方（schemaVersion=1，含 prompt 等散文指令）
+│   │   └── README.md        # 契约来源与用法
+│   ├── stock.quote/
+│   │   ├── skill.json       # 完整配方（schemaVersion=1，含 prompt 等散文指令）
+│   │   └── README.md        # 契约来源与用法
+│   ├── stock.news.10jqka/
+│   │   ├── skill.json       # 完整配方（schemaVersion=1，含 prompt / inputs / workflow.steps[]）
+│   │   └── README.md        # 契约来源与用法
+│   ├── github.rest/
+│   │   ├── skill.json       # 完整配方（schemaVersion=1，含 prompt 等散文指令）
+│   │   └── README.md        # 契约来源与用法
+│   ├── play.start/
+│   │   ├── skill.json       # 完整配方（schemaVersion=1，含 prompt 等散文指令）
+│   │   └── README.md        # 契约来源与用法
+│   ├── player.lookup/
+│   │   ├── skill.json       # 完整配方（schemaVersion=1，含 prompt 等散文指令）
+│   │   └── README.md        # 契约来源与用法
+│   ├── tavily.search/
+│   │   ├── skill.json       # 完整配方（schemaVersion=1，含 prompt 等散文指令）
+│   │   └── README.md        # 契约来源与用法
+│   ├── recorder.open/
+│   │   ├── skill.json       # 完整配方（schemaVersion=1，含 prompt 等散文指令）
+│   │   └── README.md        # 契约来源与用法
+│   ├── opponent.analyze/
+│   │   ├── skill.json       # 完整配方（schemaVersion=1，含 prompt 等散文指令）
+│   │   └── README.md        # 契约来源与用法
+│   ├── joseki.home/
+│   │   ├── skill.json       # 完整配方（schemaVersion=1，含 prompt 等散文指令）
+│   │   └── README.md        # 契约来源与用法
+│   ├── decision.open/
+│   │   ├── skill.json       # 完整配方（schemaVersion=1，含 prompt 等散文指令）
+│   │   └── README.md        # 契约来源与用法
+│   ├── review.open/
+│   │   ├── skill.json       # 完整配方（schemaVersion=1，含 prompt 等散文指令）
+│   │   └── README.md        # 契约来源与用法
+│   ├── event.search/
+│   │   ├── skill.json       # 完整配方（schemaVersion=1，含 prompt 等散文指令）
+│   │   └── README.md        # 契约来源与用法
+│   ├── fetcher.grab/
+│   │   ├── skill.json       # 完整配方（schemaVersion=1，含 prompt 等散文指令）
+│   │   └── README.md        # 契约来源与用法
+│   └── user.calendar.month/
+│       ├── skill.json       # 完整配方（schemaVersion=1，含 prompt / inputs / workflow.steps[]）
+│       └── README.md        # 契约来源与用法
 ├── share/                     # SGF 二维码分享与下载（站点能力，见 share/README.md）
 │   ├── index.html             # 扫码着陆页
 │   ├── share.js               # 编解码 + 二维码库（纯库，无副作用）
@@ -157,20 +213,22 @@ weiqi-assets/
 宿主拼接时以 `registry.baseUrl` 为基准；不要硬编码单条资源的绝对 URL。
 路径用 `new URL(rel, base)` 解析并断言同源，阻止 `..` 越界与绝对外链。
 
-### 技能配方的独立链路（宿主侧）
+### 技能配方的独立链路（宿主侧，两段式）
 
 ```
-1. GET  /skills/registry.json           ← 独立入口，与顶层 registry 无关
-2. 逐条解析 SkillRecipe（schemaVersion / id / version / name / summary / primitives / prompt）
-3. 用户点「安装」→ 校验配方合法 + 引用的原语在宿主注册表里存在
-4. 写进本地技能库（LocalStorageAdapter('weiqi-bot')），安装即启用
-5. 对话时 loadSkills() 只取本地库 enabled 条目；在线源可达与否对对话无影响
-6. 同 id 的 version 不等 → 「有更新」；更新按同 id 覆盖、保留启停状态
-7. 缺原语 → 只展示不可安装；失败转成中文结果，绝不抛到对话 / 面板
+1. GET  /skills/registry.json           ← 瘦索引（schemaVersion=2，独立入口，与顶层 registry 无关）
+2. GET  skills/<id>/skill.json          ← 按索引条目的 baseUrl + path 逐条取完整配方（schemaVersion=1）
+3. 逐条解析 SkillRecipe（id / version / name / summary / primitives / prompt / workflow / inputs / secrets）；
+   校验索引↔配方重叠字段；单条取不到或校验不过只标 unavailable，不影响其它条目
+4. 用户点「安装」→ 校验配方合法 + 引用的原语在宿主注册表里存在
+5. 写进本地技能库（LocalStorageAdapter('weiqi-bot')），安装即启用
+6. 对话时 loadSkills() 只取本地库 enabled 条目；在线源可达与否对对话无影响
+7. 同 id 的 version 不等 → 「有更新」；更新按同 id 覆盖、保留启停状态
+8. 缺原语 → 只展示不可安装；失败转成中文结果，绝不抛到对话 / 面板
 ```
 
-配方只组合宿主已有能力，新增 / 修订一条配方改 `skills/registry.json` 即可，无需重建 Web 资源包。
-「下载」不等于「生效」：装进本地库、且启用，才会被 LLM 调用。
+配方只组合宿主已有能力，新增 / 修订一条配方按「建目录 + 写 skill.json + 写 README.md + 追加索引条目」四步走，
+无需重建 Web 资源包。「下载」不等于「安装」不等于「启用」：装进本地库、且启用，才会被 LLM 调用。
 
 ## 校验
 
@@ -182,10 +240,14 @@ npm run validate      # 或 node scripts/validate.mjs
 插件代码入口存在且不含宿主禁用的全局/动态求值/无界循环、
 `workflow-operator` 的 `exposes[]` / `smoke[]` 契约齐全，以及
 `share/share.js` 的 `decodeUrl` / `libUrl` 与站点 URL 契约一致。
-技能清单还校验：`skills[]` 每条可选 `category` 的取值必须在分类白名单内；带 `workflow` 的配方做
-静态声明校验（`schema/workflow.schema.json` 的形状 + `validateWorkflowSkill()` 的引用/唯一性等语义），
+技能两段式清单由 `validateSkillRegistry()` 校验：瘦索引形状（schemaVersion=2 / name / description / skills 数组）、
+每条 `path` 指向真实存在的 `skills/<id>/skill.json` 且落在 skills/ 内、索引↔配方重叠字段逐字段一致
+（id / version / name / summary / routeHint / primitives / category）、`category` 白名单、
+配方 `prompt` 非空与 `schemaVersion=1`，以及带 `workflow` 配方的静态形状
+（`schema/workflow.schema.json` 的形状 + `validateWorkflowSkill()` 的引用/唯一性等语义），
 无 `workflow` 的散文配方跳过。配方结构契约的另一半仍在宿主 `SkillRecipe.ts`，由宿主安装时逐条解析。
-站点的技能列表也是运行时读取该清单渲染，因此清单本身写错会在页面上直接表现为「列表无法加载」，不会静默显示旧数据。
+站点技能列表运行时只读取瘦索引渲染（不取 `skill.json`），因此索引写错会在页面上直接表现为「列表无法加载」，
+不会静默显示旧数据。
 
 禁用规则与 `weiqi-bot/domain/plugin/PluginValidator.ts` **同源**——注意该校验器对全串做正则，
 **注释里出现禁用词也会被拦下**，示例插件因此刻意不写出那些词。
@@ -201,7 +263,7 @@ npm run validate      # 或 node scripts/validate.mjs
 | 插件禁用规则 | `weiqi-bot/domain/plugin/PluginValidator.ts` |
 | 输出契约（columns / rows / cells） | `weiqi-bot/domain/ranking/RankingTable.ts`（`validateRankingOutput`） |
 | 在线平台默认源 URL | `weiqi-bot/services/share/WeiqiAssetsUrls.ts`（`WEIQI_ASSETS_REGISTRY_URL`） |
-| 技能配方结构 / 解析 | `weiqi-bot/application/skill/SkillRecipe.ts`（`parseSkillRecipe`）、`SkillTypes.ts`（`SkillRecipe`） |
+| 技能配方结构 / 解析 | `weiqi-bot/application/skill/SkillRecipe.ts`（`parseSkillRecipe`）、`SkillTypes.ts`（`SkillRecipe`）；**索引 `schemaVersion=2`、配方 `schemaVersion=1`，两者别混** |
 | 技能源默认 URL / 改源 | `weiqi-bot/services/skill-catalog/SkillCatalogSources.ts`（`DEFAULT_SKILL_REGISTRY_URL` / `setCurrent` / `reset`） |
 | 技能安装 / 生效口径 | `weiqi-bot/services/skill-catalog/SkillCatalogService.ts`（`loadSkills` / `browse` / `install`） |
 | 分享编解码格式 | `share/share.js` 与 `weiqi-bot/domain/share/`（`GameEncoder`） |

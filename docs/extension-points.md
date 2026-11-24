@@ -107,7 +107,8 @@
 通过后默认 `enabled:false`，**必须人工在「本地插件」页启用**才注册进 `OperatorRegistry`。
 角色自建不绕过这道闸门；启用后由 workflow 节点按算子名引用，跨会话复用。
 
-带 `workflow` 的技能配方与这张算子表对接：`inputs` 填空、`steps` 声明 DAG、宿主 `run_workflow` 触发，
+带 `workflow` 的技能配方（数据源在各自 `skills/<id>/skill.json`，`skills/registry.json` 只是瘦索引、不再含配方）
+与这张算子表对接：`inputs` 填空、`steps` 声明 DAG、宿主 `run_workflow` 触发，
 节点 `"call"` 按算子名查表；形状契约在 `schema/workflow.schema.json`，引用/唯一性等语义由
 `scripts/validate.mjs` 的 `validateWorkflowSkill()` 校验，`call` 是否命中已启用算子由宿主运行时决定。
 无 `workflow` 的配方沿用现有散文执行路径。配方形状不在此处校验白名单，避免与宿主算子表漂移。

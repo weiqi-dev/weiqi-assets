@@ -25,8 +25,8 @@ weiqi-assets 是 **weiqi-bot 的开放扩展资源仓库**，不是一个应用�
 | 在线插件平台 | `services/plugin-catalog/*`（取清单/装/更新）、助手页「插件」弹框的「在线插件」标签页 | 取 `registry.json`，按 `pointId` 查 spec 分别试跑，只装 `type: plugin`，默认停用、人工启用 |
 | 工具声明 | `application/model/IModelGateway.ts`（`ModelToolDefinition`） | `tools/` 的 `definition` 对齐它 |
 | 工具注册 | `application/chat/WebToolLoop.ts`（`TOOLS[]` / `EXECUTORS`） | 目前全部宿主内置 |
-| 技能配方模型 | `application/skill/SkillRecipe.ts`（`parseSkillRecipe`）、`SkillTypes.ts`（`SkillRecipe`） | `skills/registry.json` 的纯声明配方对齐它 |
-| 在线技能平台 | `services/skill-catalog/*`（`SkillCatalogService` / `SkillCatalogSources`）、助手页「🧠 技能」面板 | 取独立的 `skills/registry.json`，只供浏览 / 安装；装进本地库才生效 |
+| 技能配方模型 | `application/skill/SkillRecipe.ts`（`parseSkillRecipe`）、`SkillTypes.ts`（`SkillRecipe`） | 每个 `skills/<id>/skill.json` 的完整配方对齐它；`skills/registry.json` 只是瘦索引 |
+| 在线技能平台 | `services/skill-catalog/*`（`SkillCatalogService` / `SkillCatalogSources`）、助手页「🧠 技能」面板 | 先取独立的 `skills/registry.json` 瘦索引，再按 `baseUrl` + `path` 逐条取 `skills/<id>/skill.json` 完整配方；只供浏览 / 安装；装进本地库才生效 |
 | 技能生效 | `application/skill/SkillSelector.ts` / `SkillSystemPrompt.ts` + `UserSkillStore` | `loadSkills()` 只取本地库 enabled 条目，在线源不自动叠加 |
 | 资源下载 | `web-resources.zip` 预下载 + `remoteBase` 按需回源；`scripts/build-assets.mjs` 控制排除项 | 扩展资源天然属于「按需」，不进预加载包 |
 | SGF 分享/下载 | `services/share/ShareService.ts`（编码） + `share/`（解码着陆页与库） | 站点能力，URL 契约见 `share/README.md` |
@@ -39,9 +39,16 @@ weiqi-bot 的 Web 资源分两类：`web-resources.zip` 在客户端启动时预
 
 扩展资源属于第二类。宿主通过 `registry.json` 拉取插件 / 工具清单，而不是把 `plugins/` / `tools/`
 整个塞进预加载 zip —— 那等于把「按需」变回「全量预下载」。
-技能配方是**另一条链路**：宿主直接取 `skills/registry.json`（站点根 + 固定路径，由 `SkillCatalogSources` 的代码常量给出），
-不经过顶层 `registry.json`、不按 `path` 拼条目；清单本身就是配方数组。
-它不在本仓库的 `schema/` / `scripts/validate.mjs` 校验范围内（结构契约在宿主 `SkillRecipe.ts`）。
+技能配方是**另一条链路、两段式清单**：宿主先取 `skills/registry.json` 瘦索引（站点根 + 固定路径，
+由 `SkillCatalogSources` 的代码常量给出），不经过顶层 `registry.json`；再按索引的 `baseUrl` + 每条 `path`
+逐条取 `skills/<id>/skill.json` 完整配方。**索引 `schemaVersion=2` 与配方 `schemaVersion=1` 是两个不同版本**，
+别混：索引只做目录（含 id / version / name / summary / routeHint / primitives / category / path），
+完整配方才有 `prompt` / `workflow` / `inputs` / `secrets`。
+`scripts/validate.mjs` 的 `validateSkillRegistry()` 校验索引形状、path 存在、
+**索引↔配方重叠字段逐字段硬比对**（防索引骗人，version 决定宿主「有更新」判定）、category 白名单与
+workflow 静态形状；带 workflow 的形状契约在 `schema/workflow.schema.json`。
+宿主运行时取不到某条 skill.json 或该条校验不过，只把这一条标 `unavailable`，不影响其它条目；
+结构契约的另一半仍在宿主 `SkillRecipe.ts`。
 
 宿主侧 `services/plugin-catalog/*` 已实现「资源清单客户端」（取 `registry.json` → 过滤 → 取条目 → 安装），
 默认源是 `services/share/WeiqiAssetsUrls.ts` 的 `WEIQI_ASSETS_REGISTRY_URL`，用户可另加自定义源
@@ -68,6 +75,8 @@ weiqi-bot 的 Web 资源分两类：`web-resources.zip` 在客户端启动时预
 - 工具条目带 `version`，同一 `name` 可并存多个版本目录（`tools/<name>/v<N>/`）。
 - 技能配方带 `version`（正整数）；宿主「有更新」判据是远端与本地同 `id` 的 `version` 不等，
   更新按同 id 覆盖并保留用户已设的启停状态，不做版本号大小比较。
+  **所以索引条目的 `version` 必须与 `skills/<id>/skill.json` 里的 `version` 一致**，
+  `validateSkillRegistry()` 会硬比对，不一致直接拦下。
 - 资源 ID 一旦发布即稳定，不复用、不改名；废弃用新条目 + `summary` 说明，不删文件。
   技能配方 id 用语义化命名（如 `weather.wttr` / `stock.quote`），不要占用宿主自建技能保留的 `user.` 前缀。
 - `share/` 的 URL 契约变更按「两仓同步 + 校验通过」处理，不设不可变约束。
