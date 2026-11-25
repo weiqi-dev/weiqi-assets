@@ -134,6 +134,17 @@ function validateWorkflowSkill(sk, ctx, pathHint) {
   if (sk.returnToLLM !== undefined && typeof sk.returnToLLM !== 'boolean') {
     fail(`${ctx}.returnToLLM 若给必须是 boolean`);
   }
+  // llmProjection? 可选：声明式字段白名单 { keep: 非空字符串数组 }（B3）。
+  // 与 returnToLLM 同口径：索引不带此字段，故不加入 SKILL_OVERLAP_FIELDS。
+  // 「非空」只是结构有效性（白名单不能为空＝等于没声明），不是数值阈值。
+  if (sk.llmProjection !== undefined) {
+    const p = sk.llmProjection;
+    if (!p || typeof p !== 'object' || Array.isArray(p)
+        || !Array.isArray(p.keep) || p.keep.length === 0
+        || !p.keep.every((x) => typeof x === 'string' && x.trim() !== '')) {
+      fail(`${ctx}.llmProjection 必须是 { keep: 非空字符串数组 }`);
+    }
+  }
   // inputs? 可选；给了必须是数组，且 name 唯一 / type 在枚举内 / required·enum 形状对
   let inputNames = null;
   if (sk.inputs !== undefined) {

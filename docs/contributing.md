@@ -139,6 +139,11 @@ manifest 还要给 `exposes[]`（算子方法名 + 说明 + 参数 JSON Schema�
    `returnToLLM:true` 配方的 `run_workflow` 只回结果句柄，模型须用宿主内置 `workflow_result_read`
    按 `resultId` 分段读全 `yield` 汇总后再做关系分析；该工具只读、不占决策轮，
    无需在配方 `primitives` 里声明、无需安装插件。
+   可选 `llmProjection`（形状 `{ keep: 非空字符串数组 }`，仅 `returnToLLM:true` 且带 `workflow`
+   的配方有意义）：声明哪些 `yield` 顶层段进 LLM 视图；宿主在写入结果缓存前按 `keep` 做声明式投影 +
+   无损紧凑行（`columns/rows`）后再写入结果缓存，缺省 = 全量 B2 行为（零回归）。字段出处见
+   `schema/workflow.schema.json` 与 weiqi-bot `SkillRecipe.llmProjection`（2026-11-25 B3 契约 A1）；
+   具体出处与能力边界写进技能 README，索引不带此字段、不纳入索引↔配方重叠字段比对。
 3. **写** `skills/<id>/README.md`：说明契约来源（宿主哪个文件）、路由场景与安装形状。
 4. **往 `skills/registry.json` 的 `skills[]` 追加索引条目**（该文件 `schemaVersion: 2`）：
 

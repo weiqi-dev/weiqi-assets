@@ -22,7 +22,14 @@
       "items": { "$ref": "#/$defs/input" }
     },
     "workflow": { "$ref": "#/$defs/workflow" },
-    "returnToLLM": { "type": "boolean", "description": "可选：缺省 false = 成功观察只回「完成 + 句柄」、不回灌业务 value；显式 true = 正常模式也把 yield 汇总 values 回灌到本轮观察，供模型做分析。出处：weiqi-bot 的 SkillRecipe.returnToLLM（应用侧开关，2026-11-25 契约 D）；仅带 workflow 的配方有意义。索引不带此字段，不纳入索引↔配方重叠字段比对。" }
+    "returnToLLM": { "type": "boolean", "description": "可选：缺省 false = 成功观察只回「完成 + 句柄」、不回灌业务 value；显式 true = 正常模式也把 yield 汇总 values 回灌到本轮观察，供模型做分析。出处：weiqi-bot 的 SkillRecipe.returnToLLM（应用侧开关，2026-11-25 契约 D）；仅带 workflow 的配方有意义。索引不带此字段，不纳入索引↔配方重叠字段比对。" },
+    "llmProjection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["keep"],
+      "properties": { "keep": { "type": "array", "items": { "type": "string" } } },
+      "description": "可选：声明式字段白名单，仅 returnToLLM:true 且带 workflow 的配方有意义。出处：宿主 SkillRecipe.llmProjection（2026-11-25 B3 契约 A1）；keep 为非空字符串数组，声明哪些 yield 顶层段进 LLM 视图，宿主做声明式投影 + 无损紧凑行（columns/rows）后再写入结果缓存，能力边界与业务出处写进技能 README。索引不带此字段、不纳入索引↔配方重叠字段比对；缺省 = B2 全量行为（零回归）。"
+    }
   },
   "$defs": {
     "input": {

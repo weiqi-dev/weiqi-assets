@@ -7,7 +7,8 @@
 ## 做什么
 
 用户想分析某个野狐账号的弈友圈、看它最近都跟谁下棋、或找出野狐上经常互相交战的账号群体时用本配方。
-它是一个**三阶段技能**：静态 DAG 两步取数与投影，之后由宿主缓存分页读全、再由 LLM 做关系分析。
+它是一个**三阶段技能**：静态 DAG 两步取数与投影，之后由宿主按 `llmProjection` 投影为关系摘要后缓存、
+LLM 分页读这份摘要，再由 LLM 做关系分析。
 静态 DAG 只有两步：
 
 1. `foxwq_fetch_batch`（宿主内置算子，取数）：按昵称查野狐 uid → 抓主账号棋谱 → 自动扩展到
@@ -17,14 +18,30 @@
    `{stats, nodes, components, edges, commonOpponents}` —— 全部是可复算的计数与图结构。
    `yield:true` + 配方顶层 `returnToLLM:true` 的 `run_workflow` 成功观察只给**结果句柄 `resultId`**，
    数据本体存进宿主进程内结果缓存，不直接回灌。
-3. **宿主缓存分页读全**（LLM 用宿主内置 `workflow_result_read`，无需安装）：先用 `mode:"info"` 看总量，
-   再从 `mode:"slice", offset:0` 起，按每次返回的「请把 offset 设为 X 继续读」递增 offset，
-   直到出现「已到正文末尾」，把 `yield` 汇总全文读全；读全前不下结论、不只据第一片归纳、不复述每片 JSON。
+3. **宿主按 `llmProjection` 投影为关系摘要后缓存、LLM 分页读这份摘要**（宿主内置
+   `workflow_result_read`，无需安装）：宿主在写入结果缓存前，按配方 `llmProjection.keep` 做声明式投影 +
+   无损紧凑行，缓存里只放关系摘要（`stats` / `nodes` / `components` / `commonOpponents` 四段，
+   不含 `edges` 逐边明细）。LLM 先用 `mode:"info"` 看总量，再从 `mode:"slice", offset:0` 起，
+   按每次返回的「请把 offset 设为 X 继续读」递增 offset，直到出现「已到正文末尾」，把这份摘要读全；
+   摘要片数很少。读全前不下结论、不只据第一片归纳、不复述每片 JSON。
    读全之后由 **LLM 做关系分析**：归纳圈层、枢纽、游离账号与共同对手，并逐条给出基于数据的理由。
 
 **分工铁律**：插件只出计数与图结构，**绝不写「达到几局算熟人」「共邻几个算一圈」之类阈值判定**；
 「哪些账号形成弈友圈」由 LLM 依据 `gameCount` / `degree` / `games` / `shared` / `components` 等
 数据归纳并给出理由。本技能不走 `display_json_list` 旁路，也不需要「结果见上方列表」那类展示引导语。
+
+### `llmProjection.keep` 出处与能力边界
+
+- **出处**：用户 2026-11-25 18:09 浏览器实测「返回给 LLM 的内容实在太多了」；实测 `circle.normalize`
+  输出的 `edges` 逐边明细占全量约 68%，且不承载圈层 / 枢纽 / 游离 / 共同对手结论所需信息
+  （结论全在 `nodes.degree` / `gameCount`、`commonOpponents.shared`、`components` 等可复算计数里）。
+  这是明说的业务约束，不是扫验证集挑的经验值、也不是「前 N 条」类阈值。
+- **保留 / 排除**：`keep: ["stats", "nodes", "components", "commonOpponents"]` 四段全保留，
+  逐边明细 `edges` 排除。`circle.normalize` 仍产出全量五段，插件输出契约一字不改。
+- **无损紧凑行 `columns/rows`**：宿主把保留段里的对象数组重编码成 `{ columns, rows }`（列名从对象键推导、
+  不硬编码技能字段名），保留段内信息不丢、全量账号都在，不截断、不取前 N 条。
+- **能力边界**：LLM 视图按配方声明**不含 `edges` 逐边明细**，这是声明式投影、不是数据被截断；
+  不要误判为漏读、不要据此补写或声称读到全量。缺省无 `llmProjection` 时 = B2 全量行为（零回归）。
 
 ## 引用的宿主原语与算子
 
@@ -32,8 +49,9 @@
   不挂任何散文原语工具。
 - `foxwq_fetch_batch`：宿主内置算子（weiqi-bot 实现），复用 `executeWebFetch` 的 `storeOnly` 链路。
 - `circle.normalize`：需先安装并启用「弈友圈关系算子」插件（见下）。
-- `workflow_result_read`：宿主内置只读工具，按 `resultId` 分段读全 `run_workflow` 存入结果缓存的
-  `yield` 汇总；只读、不占决策轮，无需安装插件，也不在配方 `primitives` 里声明。
+- `workflow_result_read`：宿主内置只读工具，按 `resultId` 分段读宿主按 `llmProjection` 投影后写入
+  结果缓存的关系摘要（`yield` 汇总的投影视图，不含 `edges` 逐边明细）；只读、不占决策轮，
+  无需安装插件，也不在配方 `primitives` 里声明。
 
 ## 路由词
 
@@ -70,6 +88,7 @@
 - 未安装 / 未启用「弈友圈关系算子」插件 → `run_workflow` 运行前校验报「未注册算子
   `circle.normalize`」，如实说明并提示到「🧩 插件」面板安装启用，不推算、不补写。
 - `returnToLLM:true` 配方能分页读全：`workflow_result_read` 读全前不下结论、不只据第一片归纳；
+  摘要已声明排除 `edges` 逐边明细（声明式投影、不是截断），不要误判为漏读、不要据此补写；
   分页读取失败或结果缓存缺失时如实说明，不补写、不外推未读到的内容。
 - 判定只看节点成败，不靠复述报错文案。
 
