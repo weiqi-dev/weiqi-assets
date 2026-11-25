@@ -129,6 +129,11 @@ function validateWorkflowSkill(sk, ctx, pathHint) {
   if (typeof ctx !== 'string' || !ctx.trim()) ctx = pathHint || 'skill';
   // 只对带 workflow 字段的配方生效；无 workflow 的散文配方跳过（B 决策，不强制 13 条迁移）
   if (sk.workflow === undefined) return;
+  // returnToLLM? 可选：给了必须是 boolean（与 weiqi-bot parseSkillRecipe 口径一致）。
+  // 索引不带此字段，故不加入 SKILL_OVERLAP_FIELDS，避免强迫索引同步。
+  if (sk.returnToLLM !== undefined && typeof sk.returnToLLM !== 'boolean') {
+    fail(`${ctx}.returnToLLM 若给必须是 boolean`);
+  }
   // inputs? 可选；给了必须是数组，且 name 唯一 / type 在枚举内 / required·enum 形状对
   let inputNames = null;
   if (sk.inputs !== undefined) {

@@ -133,6 +133,9 @@ manifest 还要给 `exposes[]`（算子方法名 + 说明 + 参数 JSON Schema�
 
    带 `workflow` 的配方再加 `inputs` / `workflow.steps[]`（形状见 `schema/workflow.schema.json`）；
    这类配方的 `primitives` 置空数组 `[]`（索引层看不到 workflow，**允许空数组**）。
+   可选 `returnToLLM`（默认 false，仅带 `workflow` 的配方有意义）：显式 `true` 时正常模式也把
+   `yield` 汇总 values 回灌给模型做分析；字段出处见 `schema/workflow.schema.json` 与 weiqi-bot
+   `application/skill/SkillRecipe.ts`，索引不带此字段、不纳入索引↔配方重叠字段比对。
 3. **写** `skills/<id>/README.md`：说明契约来源（宿主哪个文件）、路由场景与安装形状。
 4. **往 `skills/registry.json` 的 `skills[]` 追加索引条目**（该文件 `schemaVersion: 2`）：
 

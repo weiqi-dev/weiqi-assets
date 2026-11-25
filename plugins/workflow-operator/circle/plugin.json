@@ -1,0 +1,305 @@
+{
+  "$schema": "../../../schema/plugin.schema.json",
+  "id": "workflow-operator.circle",
+  "name": "弈友圈关系算子",
+  "type": "plugin",
+  "pointId": "workflow-operator",
+  "specVersion": 1,
+  "entry": "call",
+  "code": "plugins/workflow-operator/circle/index.js",
+  "origin": "manual",
+  "intent": "用户想分析某个野狐账号的弈友圈：看它最近跟谁下棋、同时也看看对手的交战对手，由模型依据可复算的对阵计数与图结构归纳圈层、枢纽、游离账号与共同对手。本插件只做纯计算投影（stats / nodes / components / edges / commonOpponents），零网络、零时钟、零随机数，不含任何「达到几局算熟人」之类的阈值判定；取数由宿主内置算子 foxwq_fetch_batch 完成，关系结论由 LLM 给出并附数据理由。",
+  "readme": "plugins/workflow-operator/circle/README.md",
+  "license": "MIT",
+  "tags": [
+    "workflow-operator",
+    "circle",
+    "foxwq",
+    "graph",
+    "normalize"
+  ],
+  "category": "围棋",
+  "exposes": [
+    {
+      "name": "normalize",
+      "description": "把 foxwq_fetch_batch 取回的紧凑对局行投影成可复算的关系事实。入参 {games:[紧凑对局行], rootUid:字符串}；返回 {stats, nodes, components, edges, commonOpponents}：stats 为 rootUid / 去重局数 / 节点数 / 边数 / 除 root 外账号数，nodes[] 每项 {uid,name,dan,degree,gameCount}，components[] 为无向图连通分量 {size,members}，edges[] 为按对合并的 {a,aName,b,bName,games,aWins,bWins,lastTime}，commonOpponents[] 为 {uid,name,shared,gamesWithRoot}。只出计数与图结构，绝不判定圈层/熟人/枢纽；所有排序与口径确定，可逐字段复算，见同目录 README.md。",
+      "params": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "games",
+          "rootUid"
+        ],
+        "properties": {
+          "games": {
+            "type": "array",
+            "description": "宿主内置算子 foxwq_fetch_batch 的 value.games[]：紧凑对局行，含 chessid / blackuid / blacknick / blackdan / whiteuid / whitenick / whitedan / starttime / winner 等字段；按 chessid 去重。",
+            "items": {
+              "type": "object"
+            }
+          },
+          "rootUid": {
+            "type": "string",
+            "description": "foxwq_fetch_batch 的 value.rootUid：主账号 uid（字符串），共同对手与直接对局数都以它为基准。"
+          }
+        }
+      }
+    }
+  ],
+  "smoke": [
+    {
+      "method": "normalize",
+      "args": [
+        {
+          "games": [
+            {
+              "chessid": "g2",
+              "blackuid": "300",
+              "blacknick": "丙",
+              "blackdan": 3,
+              "whiteuid": "100",
+              "whitenick": "甲",
+              "whitedan": 5,
+              "starttime": "2026-11-20 12:00:00",
+              "winner": 0,
+              "reason": "",
+              "point": ""
+            },
+            {
+              "chessid": "g1",
+              "blackuid": "100",
+              "blacknick": "甲",
+              "blackdan": 5,
+              "whiteuid": "200",
+              "whitenick": "乙",
+              "whitedan": 4,
+              "starttime": "2026-11-19 10:00:00",
+              "winner": 1,
+              "reason": "",
+              "point": ""
+            }
+          ],
+          "rootUid": "100"
+        }
+      ],
+      "expect": {
+        "stats": {
+          "rootUid": "100",
+          "totalGames": 2,
+          "nodeCount": 3,
+          "edgeCount": 2,
+          "expandedCount": 2
+        },
+        "nodes": [
+          {
+            "uid": "100",
+            "name": "甲",
+            "dan": 5,
+            "degree": 2,
+            "gameCount": 2
+          },
+          {
+            "uid": "200",
+            "name": "乙",
+            "dan": 4,
+            "degree": 1,
+            "gameCount": 1
+          },
+          {
+            "uid": "300",
+            "name": "丙",
+            "dan": 3,
+            "degree": 1,
+            "gameCount": 1
+          }
+        ],
+        "components": [
+          {
+            "size": 3,
+            "members": [
+              "100",
+              "200",
+              "300"
+            ]
+          }
+        ],
+        "edges": [
+          {
+            "a": "100",
+            "aName": "甲",
+            "b": "200",
+            "bName": "乙",
+            "games": 1,
+            "aWins": 1,
+            "bWins": 0,
+            "lastTime": "2026-11-19 10:00:00"
+          },
+          {
+            "a": "100",
+            "aName": "甲",
+            "b": "300",
+            "bName": "丙",
+            "games": 1,
+            "aWins": 0,
+            "bWins": 0,
+            "lastTime": "2026-11-20 12:00:00"
+          }
+        ],
+        "commonOpponents": [
+          {
+            "uid": "200",
+            "name": "乙",
+            "shared": 0,
+            "gamesWithRoot": 1
+          },
+          {
+            "uid": "300",
+            "name": "丙",
+            "shared": 0,
+            "gamesWithRoot": 1
+          }
+        ]
+      }
+    },
+    {
+      "method": "normalize",
+      "args": [
+        {
+          "games": [
+            {
+              "chessid": "c1",
+              "blackuid": "u1",
+              "blacknick": "主号",
+              "blackdan": 6,
+              "whiteuid": "u2",
+              "whitenick": "对手A",
+              "whitedan": 5,
+              "starttime": "2026-11-01 09:00:00",
+              "winner": 1,
+              "reason": "",
+              "point": ""
+            },
+            {
+              "chessid": "c2",
+              "blackuid": "u2",
+              "blacknick": "对手A",
+              "blackdan": 5,
+              "whiteuid": "u1",
+              "whitenick": "主号",
+              "whitedan": 6,
+              "starttime": "2026-11-02 09:00:00",
+              "winner": 2,
+              "reason": "",
+              "point": ""
+            },
+            {
+              "chessid": "c3",
+              "blackuid": "u2",
+              "blacknick": "对手A",
+              "blackdan": 5,
+              "whiteuid": "u3",
+              "whitenick": "对手B",
+              "whitedan": 3,
+              "starttime": "2026-11-03 09:00:00",
+              "winner": 0,
+              "reason": "",
+              "point": ""
+            },
+            {
+              "chessid": "c1",
+              "blackuid": "u1",
+              "blacknick": "主号",
+              "blackdan": 6,
+              "whiteuid": "u2",
+              "whitenick": "对手A",
+              "whitedan": 5,
+              "starttime": "2026-11-01 09:00:00",
+              "winner": 1,
+              "reason": "",
+              "point": ""
+            }
+          ],
+          "rootUid": "u1"
+        }
+      ],
+      "expect": {
+        "stats": {
+          "rootUid": "u1",
+          "totalGames": 3,
+          "nodeCount": 3,
+          "edgeCount": 2,
+          "expandedCount": 2
+        },
+        "nodes": [
+          {
+            "uid": "u2",
+            "name": "对手A",
+            "dan": 5,
+            "degree": 2,
+            "gameCount": 3
+          },
+          {
+            "uid": "u1",
+            "name": "主号",
+            "dan": 6,
+            "degree": 1,
+            "gameCount": 2
+          },
+          {
+            "uid": "u3",
+            "name": "对手B",
+            "dan": 3,
+            "degree": 1,
+            "gameCount": 1
+          }
+        ],
+        "components": [
+          {
+            "size": 3,
+            "members": [
+              "u1",
+              "u2",
+              "u3"
+            ]
+          }
+        ],
+        "edges": [
+          {
+            "a": "u1",
+            "aName": "主号",
+            "b": "u2",
+            "bName": "对手A",
+            "games": 2,
+            "aWins": 2,
+            "bWins": 0,
+            "lastTime": "2026-11-02 09:00:00"
+          },
+          {
+            "a": "u2",
+            "aName": "对手A",
+            "b": "u3",
+            "bName": "对手B",
+            "games": 1,
+            "aWins": 0,
+            "bWins": 0,
+            "lastTime": "2026-11-03 09:00:00"
+          }
+        ],
+        "commonOpponents": [
+          {
+            "uid": "u3",
+            "name": "对手B",
+            "shared": 1,
+            "gamesWithRoot": 0
+          },
+          {
+            "uid": "u2",
+            "name": "对手A",
+            "shared": 0,
+            "gamesWithRoot": 2
+          }
+        ]
+      }
+    }
+  ]
+}
