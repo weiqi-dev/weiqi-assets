@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "id": "baidu.hotsearch",
+  "version": 4,
+  "name": "百度热搜",
+  "summary": "获取百度实时热搜榜页面，用正则提取插件抽出热搜关键词并以列表展示",
+  "routeHint": [
+    "用户说「查百度热搜」时",
+    "用户说「看看今天的热搜」时",
+    "用户说「百度热搜榜」时"
+  ],
+  "primitives": [],
+  "workflow": {
+    "steps": [
+      {
+        "id": "fetch",
+        "call": "web_fetch",
+        "args": {
+          "url": "https://top.baidu.com/board?tab=realtime",
+          "storeOnly": true
+        }
+      },
+      {
+        "id": "extract",
+        "call": "regex_extract.extract",
+        "args": {
+          "pattern": "\"word\":\"([^\"]+)\"",
+          "flags": "g",
+          "group": 1,
+          "unique": true,
+          "withIndex": true,
+          "limit": 50
+        },
+        "bindings": [
+          {
+            "from": "fetch",
+            "path": "$",
+            "as": "text"
+          }
+        ]
+      },
+      {
+        "id": "shape",
+        "call": "json_extract",
+        "args": {
+          "path": "$.matches[*]",
+          "pick": [
+            "value",
+            "index"
+          ]
+        },
+        "bindings": [
+          {
+            "from": "extract",
+            "path": "$",
+            "as": "value"
+          }
+        ]
+      },
+      {
+        "id": "show",
+        "call": "display_json_list",
+        "args": {
+          "format": "list",
+          "fields": [
+            {
+              "key": "value",
+              "label": "热搜关键词"
+            }
+          ]
+        },
+        "bindings": [
+          {
+            "from": "shape",
+            "path": "$",
+            "as": "value"
+          }
+        ],
+        "yield": true
+      }
+    ]
+  },
+  "inputs": [],
+  "prompt": "本技能通过固定工作流完成：取回百度实时热搜榜页面 → 用正则提取算子抽出每条热搜的 word 关键词 → 由宿主直接渲染成列表。列表由宿主展示，不要复述或归纳条目内容，也不要把网页正文读回上下文。"
+}
