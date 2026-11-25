@@ -51,6 +51,15 @@
       "specVersion": 1,
       "path": "plugins/workflow-operator/calendar/plugin.json",
       "category": "生活"
+    },
+    {
+      "id": "workflow-operator.regex_extract",
+      "type": "plugin",
+      "name": "正则提取",
+      "summary": "开发一个名为「正则提取」的插件，实现对文本进行正则表达式提取的功能：支持全局/单次匹配、捕获组、去重、返回索引，并提供 test 与 replace 辅助方法。",
+      "pointId": "workflow-operator",
+      "specVersion": 1,
+      "path": "plugins/workflow-operator/regex_extract/plugin.json"
     }
   ]
 }
