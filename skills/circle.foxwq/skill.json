@@ -3,7 +3,7 @@
   "id": "circle.foxwq",
   "version": 1,
   "name": "弈友圈",
-  "summary": "用户想分析某个野狐账号的弈友圈、看它最近都跟谁下棋、找出经常互相交战的账号群体时用本配方：两步静态 DAG 先由 foxwq_fetch_batch 抓野狐公开棋谱（含对手的交战对手），再由 circle.normalize 投影成可复算的对阵计数与图结构；returnToLLM 回灌后由模型归纳圈层、枢纽、游离账号与共同对手并逐条给出数据理由。改条件按 inputs 重跑；算子未启用或取数失败如实说明、不编造。",
+  "summary": "用户想分析某个野狐账号的弈友圈、看它最近都跟谁下棋、找出经常互相交战的账号群体时用本配方：两步静态 DAG 先由 foxwq_fetch_batch 抓野狐公开棋谱（含对手的交战对手），再由 circle.normalize 投影成可复算的对阵计数与图结构；run_workflow 只回结果句柄，模型须用 workflow_result_read 把宿主缓存里的 yield 汇总分页读全后再做关系分析，归纳圈层、枢纽、游离账号与共同对手并逐条给出数据理由。改条件按 inputs 重跑；算子未启用或取数失败如实说明、不编造。",
   "routeHint": [
     "分析某野狐账号的弈友圈",
     "看看这个野狐号最近都跟谁下棋",
@@ -11,7 +11,7 @@
   ],
   "category": "围棋",
   "primitives": [],
-  "prompt": "用户想分析某个野狐账号的弈友圈、看它最近都跟谁下棋、或找出经常互相交战的账号群体时才用本配方；\n只是查单个棋手资料、找定式、看棋谱或做复盘就正常回答，不走 workflow。\n\n填好 inputs 让 run_workflow 跑一遍：foxwq_fetch_batch 抓取野狐公开棋谱列表（含对手的交战对手），\ncircle.normalize 把对局行投影成可复算的计数与图结构（stats / nodes / components / edges / commonOpponents）。\n本配方 returnToLLM 会把 yield 汇总的这份对阵数据回灌到本轮观察，**明确授权你依据它做关系分析**：\n归纳哪些账号形成弈友圈、谁是高连通枢纽、谁游离在外、谁与谁共享对手，并逐条给出基于数据的理由\n（引用具体的 gameCount / degree / games / shared / components 等计数与结构，而不是只下结论）。\n不要把原始 JSON 或整份列表复述一遍，也不要写「结果见上方列表」这类展示型引导语 —— 本技能不走 display_json_list 旁路。\n若数据因单条消息上限被截断，只据可见部分分析，不补写、不外推被裁掉的内容。\n\n【诚实兜底】任一节点失败（如 foxwq_fetch_batch 查不到昵称 / 全部取数失败、circle.normalize 未注册即\n「弈友圈关系算子」插件未安装启用）、返回异常或数据不全时，如实说明本次没能完成分析并提示到「🧩 插件」\n面板安装启用，绝不编造账号、对局或圈层结论；判定只看节点成败，不靠复述报错文案。\n昵称是必填项，用户没给就先问清野狐昵称，不假定某个账号。",
+  "prompt": "用户想分析某个野狐账号的弈友圈、看它最近都跟谁下棋、或找出经常互相交战的账号群体时才用本配方；\n只是查单个棋手资料、找定式、看棋谱或做复盘就正常回答，不走 workflow。\n\n填好 inputs 让 run_workflow 跑一遍：foxwq_fetch_batch 抓取野狐公开棋谱列表（含对手的交战对手），\ncircle.normalize 把对局行投影成可复算的计数与图结构（stats / nodes / components / edges / commonOpponents）。\n本配方 returnToLLM:true，run_workflow 成功观察给的是结果句柄 resultId 而不是数据本体：\n必须用宿主内置 workflow_result_read（resultId 填观察里给的值）分页读全，先 mode:\"info\" 看总字符数，\n再从 mode:\"slice\", offset:0 起，按每次返回的「请把 offset 设为 X 继续读」递增 offset，\n直到出现「已到正文末尾」；读全之前不要下结论、不要只据第一片就归纳，也不要把每片 JSON 复述一遍。\n读全 yield 汇总之后才做关系分析：归纳哪些账号形成弈友圈、谁是高连通枢纽、谁游离在外、谁与谁共享对手，\n并逐条给出基于数据的理由（引用具体的 gameCount / degree / games / shared / components 等计数与结构，\n而不是只下结论）。不要把原始 JSON 或整份列表复述一遍，也不要写「结果见上方列表」这类展示型引导语 ——\n本技能不走 display_json_list 旁路。\n\n【诚实兜底】任一节点失败（如 foxwq_fetch_batch 查不到昵称 / 全部取数失败、circle.normalize 未注册即\n「弈友圈关系算子」插件未安装启用）、返回异常或数据不全时，如实说明本次没能完成分析并提示到「🧩 插件」\n面板安装启用，绝不编造账号、对局或圈层结论；判定只看节点成败，不靠复述报错文案。\n昵称是必填项，用户没给就先问清野狐昵称，不假定某个账号。",
   "inputs": [
     {
       "name": "nickname",

@@ -7,15 +7,20 @@
 ## 做什么
 
 用户想分析某个野狐账号的弈友圈、看它最近都跟谁下棋、或找出野狐上经常互相交战的账号群体时用本配方。
-它是一个**两阶段技能**，静态 DAG 只有两步：
+它是一个**三阶段技能**：静态 DAG 两步取数与投影，之后由宿主缓存分页读全、再由 LLM 做关系分析。
+静态 DAG 只有两步：
 
 1. `foxwq_fetch_batch`（宿主内置算子，取数）：按昵称查野狐 uid → 抓主账号棋谱 → 自动扩展到
    「对手的交战对手」→ 按 `chessid` 去重合并成紧凑对局行，出参 `{games, rootUid, rootName,
    expandedUids, fetchedUids}`。
 2. `circle.normalize`（`workflow-operator` 插件算子，纯计算）：把 `games` / `rootUid` 投影成
    `{stats, nodes, components, edges, commonOpponents}` —— 全部是可复算的计数与图结构。
-   `yield:true` + 配方顶层 `returnToLLM:true` 会把这份汇总回灌到本轮观察，由 **LLM 做关系分析**：
-   归纳圈层、枢纽、游离账号与共同对手，并逐条给出基于数据的理由。
+   `yield:true` + 配方顶层 `returnToLLM:true` 的 `run_workflow` 成功观察只给**结果句柄 `resultId`**，
+   数据本体存进宿主进程内结果缓存，不直接回灌。
+3. **宿主缓存分页读全**（LLM 用宿主内置 `workflow_result_read`，无需安装）：先用 `mode:"info"` 看总量，
+   再从 `mode:"slice", offset:0` 起，按每次返回的「请把 offset 设为 X 继续读」递增 offset，
+   直到出现「已到正文末尾」，把 `yield` 汇总全文读全；读全前不下结论、不只据第一片归纳、不复述每片 JSON。
+   读全之后由 **LLM 做关系分析**：归纳圈层、枢纽、游离账号与共同对手，并逐条给出基于数据的理由。
 
 **分工铁律**：插件只出计数与图结构，**绝不写「达到几局算熟人」「共邻几个算一圈」之类阈值判定**；
 「哪些账号形成弈友圈」由 LLM 依据 `gameCount` / `degree` / `games` / `shared` / `components` 等
@@ -27,6 +32,8 @@
   不挂任何散文原语工具。
 - `foxwq_fetch_batch`：宿主内置算子（weiqi-bot 实现），复用 `executeWebFetch` 的 `storeOnly` 链路。
 - `circle.normalize`：需先安装并启用「弈友圈关系算子」插件（见下）。
+- `workflow_result_read`：宿主内置只读工具，按 `resultId` 分段读全 `run_workflow` 存入结果缓存的
+  `yield` 汇总；只读、不占决策轮，无需安装插件，也不在配方 `primitives` 里声明。
 
 ## 路由词
 
@@ -62,7 +69,8 @@
   不编造账号或对局；单个 uid 失败只跳过该 uid 并继续。
 - 未安装 / 未启用「弈友圈关系算子」插件 → `run_workflow` 运行前校验报「未注册算子
   `circle.normalize`」，如实说明并提示到「🧩 插件」面板安装启用，不推算、不补写。
-- 回灌数据可能被宿主单条消息上限截断 → 只据可见部分分析，不补写、不外推被裁掉的内容。
+- `returnToLLM:true` 配方能分页读全：`workflow_result_read` 读全前不下结论、不只据第一片归纳；
+  分页读取失败或结果缓存缺失时如实说明，不补写、不外推未读到的内容。
 - 判定只看节点成败，不靠复述报错文案。
 
 ## 配方正文
@@ -78,6 +86,7 @@
 `foxwq_fetch_batch` → `circle.normalize`（`bindings.path` 取 `games` / `rootUid`）。
 算子契约见 [扩展点契约](../../docs/extension-points.md)，插件口径见
 [弈友圈关系算子 README](../../plugins/workflow-operator/circle/README.md)。
+DAG 之后由 LLM 用 `workflow_result_read` 按 `resultId` 读全 `yield` 汇总，再做关系分析。
 
 ## 安装形状
 
