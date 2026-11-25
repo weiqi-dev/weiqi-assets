@@ -1,0 +1,268 @@
+{
+  "$schema": "../../../schema/plugin.schema.json",
+  "id": "workflow-operator.regex_extract",
+  "name": "正则提取",
+  "type": "plugin",
+  "pointId": "workflow-operator",
+  "specVersion": 1,
+  "entry": "call",
+  "code": "plugins/workflow-operator/regex_extract/index.js",
+  "readme": "plugins/workflow-operator/regex_extract/README.md",
+  "origin": "llm",
+  "intent": "开发一个名为「正则提取」的插件，实现对文本进行正则表达式提取的功能：支持全局/单次匹配、捕获组、去重、返回索引，并提供 test 与 replace 辅助方法。",
+  "exposes": [
+    {
+      "name": "extract",
+      "description": "按正则提取文本匹配项，支持全局/单次、捕获组、去重、返回索引、条数上限",
+      "params": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "pattern": {
+            "type": "string"
+          },
+          "flags": {
+            "type": "string"
+          },
+          "group": {
+            "type": "integer"
+          },
+          "unique": {
+            "type": "boolean"
+          },
+          "withIndex": {
+            "type": "boolean"
+          },
+          "limit": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "text",
+          "pattern"
+        ]
+      }
+    },
+    {
+      "name": "test",
+      "description": "判断文本是否匹配正则，返回布尔值",
+      "params": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "pattern": {
+            "type": "string"
+          },
+          "flags": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "pattern"
+        ]
+      }
+    },
+    {
+      "name": "replace",
+      "description": "按正则替换文本",
+      "params": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "pattern": {
+            "type": "string"
+          },
+          "flags": {
+            "type": "string"
+          },
+          "replacement": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "pattern",
+          "replacement"
+        ]
+      }
+    }
+  ],
+  "smoke": [
+    {
+      "method": "extract",
+      "args": [
+        {
+          "text": "a1 b2 c3",
+          "pattern": "([a-z])(\\d)",
+          "flags": "g",
+          "group": 1
+        }
+      ],
+      "expect": {
+        "matches": [
+          "a",
+          "b",
+          "c"
+        ],
+        "count": 3
+      }
+    },
+    {
+      "method": "extract",
+      "args": [
+        {
+          "text": "a1 b2 c3",
+          "pattern": "([a-z])(\\d)",
+          "flags": "g",
+          "group": 2
+        }
+      ],
+      "expect": {
+        "matches": [
+          "1",
+          "2",
+          "3"
+        ],
+        "count": 3
+      }
+    },
+    {
+      "method": "extract",
+      "args": [
+        {
+          "text": "x x y x",
+          "pattern": "x",
+          "flags": "g",
+          "unique": true
+        }
+      ],
+      "expect": {
+        "matches": [
+          "x"
+        ],
+        "count": 1
+      }
+    },
+    {
+      "method": "extract",
+      "args": [
+        {
+          "text": "ab cd",
+          "pattern": "cd",
+          "flags": "g",
+          "withIndex": true
+        }
+      ],
+      "expect": {
+        "matches": [
+          {
+            "value": "cd",
+            "index": 3
+          }
+        ],
+        "count": 1
+      }
+    },
+    {
+      "method": "extract",
+      "args": [
+        {
+          "text": "ABC abc",
+          "pattern": "abc",
+          "flags": "gi"
+        }
+      ],
+      "expect": {
+        "matches": [
+          "ABC",
+          "abc"
+        ],
+        "count": 2
+      }
+    },
+    {
+      "method": "extract",
+      "args": [
+        {
+          "text": "hello",
+          "pattern": "zzz",
+          "flags": "g"
+        }
+      ],
+      "expect": {
+        "matches": [],
+        "count": 0
+      }
+    },
+    {
+      "method": "extract",
+      "args": [
+        {
+          "text": "abcdef",
+          "pattern": "",
+          "flags": "g",
+          "limit": 3
+        }
+      ],
+      "expect": {
+        "matches": [
+          "",
+          "",
+          ""
+        ],
+        "count": 3
+      }
+    },
+    {
+      "method": "test",
+      "args": [
+        {
+          "text": "hello world",
+          "pattern": "world"
+        }
+      ],
+      "expect": true
+    },
+    {
+      "method": "test",
+      "args": [
+        {
+          "text": "hello",
+          "pattern": "^world$"
+        }
+      ],
+      "expect": false
+    },
+    {
+      "method": "replace",
+      "args": [
+        {
+          "text": "a1 b2",
+          "pattern": "\\d",
+          "flags": "g",
+          "replacement": "#"
+        }
+      ],
+      "expect": "a# b#"
+    },
+    {
+      "method": "replace",
+      "args": [
+        {
+          "text": "foo",
+          "pattern": "o",
+          "flags": "",
+          "replacement": "0"
+        }
+      ],
+      "expect": "f00"
+    }
+  ]
+}
