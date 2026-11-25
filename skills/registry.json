@@ -267,6 +267,19 @@
       "primitives": [],
       "category": "生活",
       "path": "user.calendar.month/skill.json"
+    },
+    {
+      "id": "baidu.hotsearch",
+      "version": 4,
+      "name": "百度热搜",
+      "summary": "获取百度实时热搜榜页面，用正则提取插件抽出热搜关键词并以列表展示",
+      "primitives": [],
+      "path": "baidu.hotsearch/skill.json",
+      "routeHint": [
+        "用户说「查百度热搜」时",
+        "用户说「看看今天的热搜」时",
+        "用户说「百度热搜榜」时"
+      ]
     }
   ]
 }
