@@ -322,7 +322,10 @@ function validateOperatorPlugin(m, ctx, entryName) {
       if (names.has(e.name)) fail(`${ec}.name 重复：${e.name}`);
       if (e.name) names.add(e.name);
       if (typeof e.description !== 'string' || !e.description.trim()) fail(`${ec}.description 必须是非空字符串`);
-      if (!e.params || typeof e.params !== 'object' || Array.isArray(e.params)) fail(`${ec}.params 必须是对象`);
+      if (!e.inputSchema || typeof e.inputSchema !== 'object' || Array.isArray(e.inputSchema) || e.inputSchema.type !== 'object') fail(`${ec}.inputSchema 必须是根类型为 object 的 JSON Schema`);
+      if (!e.outputSchema || typeof e.outputSchema !== 'object' || Array.isArray(e.outputSchema)) fail(`${ec}.outputSchema 必须是 JSON Schema 对象`);
+      if (!['pure', 'io', 'effect'].includes(e.kind)) fail(`${ec}.kind 必须是 pure / io / effect`);
+      if (typeof e.idempotent !== 'boolean') fail(`${ec}.idempotent 必须是 boolean`);
     }
   }
   if (!Array.isArray(m.smoke) || m.smoke.length === 0) {
