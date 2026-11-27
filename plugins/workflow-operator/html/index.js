@@ -15,7 +15,7 @@ function parseAttributes(source) {
   return out;
 }
 function parseHtml(source) {
-  var root = { tag: "#root", attrs: {}, children: [], parent: null, text: "" };
+  var root = { tag: "#root", attrs: {}, children: [], parent: null };
   var stack = [root];
   var token = /<!--[\s\S]*?-->|<![^>]*>|<\/?[A-Za-z][^>]*>|[^<]+/g;
   var match;
@@ -23,7 +23,7 @@ function parseHtml(source) {
     var part = match[0];
     if (part.slice(0, 4) === "<!--" || part.slice(0, 2) === "<!") continue;
     if (part.charAt(0) !== "<") {
-      stack[stack.length - 1].text += decodeEntities(part);
+      stack[stack.length - 1].children.push(decodeEntities(part));
       continue;
     }
     if (/^<\//.test(part)) {
@@ -38,15 +38,18 @@ function parseHtml(source) {
     var opening = part.match(/^<\s*([A-Za-z0-9:-]+)([\s\S]*?)\/?\s*>$/);
     if (!opening) continue;
     var tag = opening[1].toLowerCase();
-    var node = { tag: tag, attrs: parseAttributes(opening[2]), children: [], parent: stack[stack.length - 1], text: "" };
+    var node = { tag: tag, attrs: parseAttributes(opening[2]), children: [], parent: stack[stack.length - 1] };
     stack[stack.length - 1].children.push(node);
     if (!/^(area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr)$/.test(tag) && !/\/\s*>$/.test(part)) stack.push(node);
   }
   return root;
 }
 function textContent(node) {
-  var value = node.text || "";
-  for (var i = 0; i < node.children.length; i++) value += textContent(node.children[i]);
+  var value = "";
+  for (var i = 0; i < node.children.length; i++) {
+    var child = node.children[i];
+    value += typeof child === "string" ? child : textContent(child);
+  }
   return value.replace(/\s+/g, " ").trim();
 }
 function matchesSimple(node, selector) {
@@ -68,8 +71,8 @@ function matchesSimple(node, selector) {
 }
 function descendants(node, out) {
   for (var i = 0; i < node.children.length; i++) {
-    out.push(node.children[i]);
-    descendants(node.children[i], out);
+    var child = node.children[i];
+    if (typeof child !== "string") { out.push(child); descendants(child, out); }
   }
 }
 function selectNodes(root, selector) {
