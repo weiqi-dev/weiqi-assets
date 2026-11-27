@@ -44,7 +44,7 @@
           "opponentCount": {
             "type": "integer",
             "minimum": 0,
-            "maximum": 100
+            "maximum": 50
           },
           "maxHops": {
             "type": "integer",
