@@ -43,7 +43,7 @@ function cmpRow(x, y) {
  * 避免把多条无 id 的行误并成一条。
  */
 function cleanGames(games) {
-  var seen = {};
+  var seen = Object.create(null);
   var out = [];
   for (var i = 0; i < games.length; i++) {
     var g = games[i];
@@ -80,7 +80,7 @@ function cleanGames(games) {
  * 自对局（两端 uid 相同）不建边：它不是两个账号之间的交战。
  */
 function buildEdges(rows) {
-  var map = {};
+  var map = Object.create(null);
   for (var i = 0; i < rows.length; i++) {
     var g = rows[i];
     var u1 = g.blackuid, u2 = g.whiteuid;
