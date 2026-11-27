@@ -284,9 +284,9 @@
     },
     {
       "id": "circle.foxwq",
-      "version": 1,
+      "version": 2,
       "name": "弈友圈",
-      "summary": "用户想分析某个野狐账号的弈友圈、看它最近都跟谁下棋、找出经常互相交战的账号群体时用本配方：两步静态 DAG 先由 foxwq_fetch_batch 抓野狐公开棋谱（含对手的交战对手），再由 circle.normalize 投影成可复算的对阵计数与图结构；run_workflow 只回结果句柄，模型须用 workflow_result_read 把宿主缓存里的 yield 汇总分页读全后再做关系分析，归纳圈层、枢纽、游离账号与共同对手并逐条给出数据理由。改条件按 inputs 重跑；算子未启用或取数失败如实说明、不编造。",
+      "summary": "按野狐昵称查询 UID，使用通用 Workflow 循环与 JSON/网络算子采集主账号及对手棋谱，再生成弈友圈关系事实供模型分析。",
       "routeHint": [
         "分析某野狐账号的弈友圈",
         "看看这个野狐号最近都跟谁下棋",
