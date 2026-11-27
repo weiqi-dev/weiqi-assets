@@ -340,11 +340,23 @@ function normalize(args) {
   };
 }
 
-/** workflow-operator 扩展点入口：宿主以 call({method,args}) 调用，只认 normalize */
+function summary(args) {
+  if (!args || typeof args.analysis !== 'object' || args.analysis === null) throw new Error('analysis 必须是对象');
+  var value = args.analysis;
+  return {
+    stats: value.stats,
+    nodes: value.nodes,
+    components: value.components,
+    commonOpponents: value.commonOpponents
+  };
+}
+
+/** workflow-operator 扩展点入口：宿主以 call({method,args}) 调用。 */
 function call(input) {
   if (!input || typeof input.method !== 'string') throw new Error('缺少 method');
   if (!Array.isArray(input.args) || input.args.length !== 1) throw new Error('args 必须是含一个参数对象的数组');
   if (input.method === 'pickOpponents') return pickOpponents(input.args[0]);
   if (input.method === 'normalize') return normalize(input.args[0]);
+  if (input.method === 'summary') return summary(input.args[0]);
   throw new Error('不支持的方法：' + input.method);
 }
