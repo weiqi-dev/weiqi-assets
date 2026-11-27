@@ -158,6 +158,9 @@
         },
         {
           "$ref": "#/$defs/repeatStep"
+        },
+        {
+          "$ref": "#/$defs/ifElseStep"
         }
       ]
     },
@@ -252,6 +255,14 @@
               "items": {
                 "$ref": "#/$defs/step"
               }
+            },
+            "onError": {
+              "type": "string",
+              "enum": [
+                "fail",
+                "continue"
+              ],
+              "description": "单项失败策略；缺省 fail，continue 时记录失败并继续后续项。"
             }
           }
         },
@@ -332,6 +343,49 @@
         },
         "path": {
           "type": "string"
+        }
+      }
+    },
+    "ifElseStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "ifElse"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ifElse": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "condition",
+            "then"
+          ],
+          "properties": {
+            "condition": {
+              "$ref": "#/$defs/loopReference"
+            },
+            "then": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/step"
+              }
+            },
+            "else": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/step"
+              }
+            }
+          }
+        },
+        "yield": {
+          "type": "boolean"
         }
       }
     }
