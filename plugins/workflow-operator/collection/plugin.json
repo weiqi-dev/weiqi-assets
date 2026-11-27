@@ -39,6 +39,31 @@
       "idempotent": true
     },
     {
+      "name": "join",
+      "description": "按顺序连接 left 与 right 两个数组。",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "left",
+          "right"
+        ],
+        "properties": {
+          "left": {
+            "type": "array"
+          },
+          "right": {
+            "type": "array"
+          }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "array"
+      },
+      "kind": "pure",
+      "idempotent": true
+    },
+    {
       "name": "concat",
       "description": "按输入顺序连接多个数组，不递归展平。",
       "inputSchema": {
@@ -221,6 +246,25 @@
     }
   ],
   "smoke": [
+    {
+      "method": "join",
+      "args": [
+        {
+          "left": [
+            1,
+            2
+          ],
+          "right": [
+            3
+          ]
+        }
+      ],
+      "expect": [
+        1,
+        2,
+        3
+      ]
+    },
     {
       "method": "singleton",
       "args": [
