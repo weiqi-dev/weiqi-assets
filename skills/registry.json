@@ -284,7 +284,7 @@
     },
     {
       "id": "circle.foxwq",
-      "version": 5,
+      "version": 6,
       "name": "弈友圈",
       "summary": "按野狐昵称查询 UID，使用通用 Workflow 循环与 JSON/网络算子采集主账号及对手棋谱，再生成弈友圈关系事实供模型分析。",
       "routeHint": [
