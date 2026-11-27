@@ -286,7 +286,7 @@ function pickOpponents(args) {
   if (typeof args.rootUid !== "string") throw new Error("rootUid 必须是字符串");
   var count = args.opponentCount === undefined ? 8 : args.opponentCount;
   var hops = args.maxHops === undefined ? 2 : args.maxHops;
-  if (!Number.isInteger(count) || count < 0) throw new Error("opponentCount 必须是非负整数");
+  if (!Number.isInteger(count) || count < 0 || count > 100) throw new Error("opponentCount 必须是 0 到 100 的整数");
   if (hops !== 1 && hops !== 2) throw new Error("maxHops 只能是 1 或 2");
   if (hops === 1 || count === 0) return [];
   var counts = Object.create(null);
