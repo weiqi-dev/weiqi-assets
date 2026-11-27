@@ -55,11 +55,22 @@ function take(args) {
   var count = Math.max(0, Math.floor(args.count));
   return args.fromEnd === true ? args.items.slice(Math.max(0, args.items.length - count)) : args.items.slice(0, count);
 }
+
+function singleton(args) { return [args.value]; }
+function concat(args) {
+  if (!Array.isArray(args.arrays)) throw new Error("arrays 必须是数组");
+  var out = [];
+  for (var i = 0; i < args.arrays.length; i++) {
+    if (!Array.isArray(args.arrays[i])) throw new Error("arrays 中每项都必须是数组");
+    out = out.concat(args.arrays[i]);
+  }
+  return out;
+}
 function call(input) {
   if (!input || typeof input.method !== "string" || !Array.isArray(input.args) || input.args.length !== 1) throw new Error("调用参数无效");
   var args = input.args[0] || {};
   if (!Array.isArray(args.items)) throw new Error("items 必须是数组");
-  if (input.method === "flatten") return flatten(args.items);
+  if (input.method === "singleton") return singleton(args);\n  if (input.method === "concat") return concat(args);\n  if (input.method === "flatten") return flatten(args.items);
   if (input.method === "uniqueBy") return uniqueBy(args);
   if (input.method === "groupBy") return groupBy(args);
   if (input.method === "pluck") return pluck(args);
