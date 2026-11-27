@@ -186,61 +186,99 @@ function validateWorkflowSkill(sk, ctx, pathHint) {
     return;
   }
 
-  // id 唯一、call 非空、args 若给是对象、yield 若给是 boolean；
-  // bindings[].from 指向更靠前的真实 step、as 非空；{{input.xxx}} 引用必须存在。
-  const stepIds = new Set();
-  const priorIds = new Set();
-  for (const [i, st] of wf.steps.entries()) {
-    const sc = `${ctx}.workflow.steps[${i}]`;
-    if (!st || typeof st !== 'object' || Array.isArray(st)) { fail(`${sc} 必须是对象`); continue; }
-    if (typeof st.id !== 'string' || !st.id.trim()) {
-      fail(`${sc}.id 必须是非空字符串`);
-    } else {
-      if (stepIds.has(st.id)) fail(`${sc}.id 重复：${st.id}`);
-      stepIds.add(st.id);
-    }
-    if (typeof st.call !== 'string' || !st.call.trim()) fail(`${sc}.call 必须是非空字符串`);
-    if (st.args !== undefined && (!st.args || typeof st.args !== 'object' || Array.isArray(st.args))) {
-      fail(`${sc}.args 若给必须是对象`);
-    }
-    if (st.yield !== undefined && typeof st.yield !== 'boolean') fail(`${sc}.yield 若给必须是 boolean`);
-
-    // 占位符引用检查：args 里（含嵌套对象/数组）任一字符串值出现 {{input.xxx}}，
-    // 其 xxx 必须在 inputs[] 声明，避免拼错后静默注入。
-    if (st.args && typeof st.args === 'object' && !Array.isArray(st.args)) {
-      const strings = [];
-      collectArgStrings(st.args, strings);
-      for (const s of strings) {
-        for (const m of s.matchAll(INPUT_PLACEHOLDER_RE)) {
-          const name = m[1];
-          if (!inputNames || !inputNames.has(name)) {
-            fail(`${sc}.args 引用了未声明的占位符 {{input.${name}}}（须在 ${ctx}.inputs[] 中存在）`);
-          }
+  const checkInputPlaceholders = (value, at) => {
+    const strings = [];
+    collectArgStrings(value, strings);
+    for (const text of strings) {
+      for (const match of text.matchAll(INPUT_PLACEHOLDER_RE)) {
+        const name = match[1];
+        if (!inputNames || !inputNames.has(name)) {
+          fail(at + " 引用了未声明的占位符 {{input." + name + "}}（须在 " + ctx + ".inputs[] 中存在）");
         }
       }
     }
+  };
 
-    if (st.bindings !== undefined) {
-      if (!Array.isArray(st.bindings)) {
-        fail(`${sc}.bindings 若给必须是数组`);
-      } else {
-        for (const [j, b] of st.bindings.entries()) {
-          const bc = `${sc}.bindings[${j}]`;
-          if (!b || typeof b !== 'object' || Array.isArray(b)) { fail(`${bc} 必须是对象`); continue; }
-          if (typeof b.as !== 'string' || !b.as.trim()) fail(`${bc}.as 必须是非空字符串`);
-          if (typeof b.from !== 'string' || !b.from.trim()) {
-            fail(`${bc}.from 必须是非空字符串`);
-          } else if (!priorIds.has(b.from)) {
-            // 更靠前 + 真实：priorIds 只收集本步之前已校验过的 id
-            fail(`${bc}.from (${b.from}) 必须指向 steps 中位置更靠前的真实节点 id`);
+  const validateSteps = (steps, inheritedIds, at) => {
+    const priorIds = new Set(inheritedIds);
+    const localIds = new Set();
+    for (const [i, st] of steps.entries()) {
+      const sc = at + "[" + i + "]";
+      if (!st || typeof st !== "object" || Array.isArray(st)) { fail(sc + " 必须是对象"); continue; }
+      const validId = typeof st.id === "string" && st.id.trim();
+      if (!validId) fail(sc + ".id 必须是非空字符串");
+      else if (localIds.has(st.id)) fail(sc + ".id 在当前作用域重复：" + st.id);
+
+      if (st.yield !== undefined && typeof st.yield !== "boolean") fail(sc + ".yield 若给必须是 boolean");
+      const hasCall = typeof st.call === "string" && st.call.trim();
+      const hasEach = st.forEach !== undefined;
+      const hasRepeat = st.repeat !== undefined;
+      if (Number(Boolean(hasCall)) + Number(hasEach) + Number(hasRepeat) !== 1) {
+        fail(sc + " 必须且只能声明 call、forEach、repeat 其中一种");
+      }
+
+      if (hasCall) {
+        if (st.args !== undefined && (!st.args || typeof st.args !== "object" || Array.isArray(st.args))) {
+          fail(sc + ".args 若给必须是对象");
+        } else if (st.args) checkInputPlaceholders(st.args, sc + ".args");
+        if (st.bindings !== undefined) {
+          if (!Array.isArray(st.bindings)) fail(sc + ".bindings 若给必须是数组");
+          else for (const [j, binding] of st.bindings.entries()) {
+            const bc = sc + ".bindings[" + j + "]";
+            if (!binding || typeof binding !== "object" || Array.isArray(binding)) { fail(bc + " 必须是对象"); continue; }
+            if (typeof binding.as !== "string" || !binding.as.trim()) fail(bc + ".as 必须是非空字符串");
+            if (typeof binding.from !== "string" || !binding.from.trim()) fail(bc + ".from 必须是非空字符串");
+            else if (!priorIds.has(binding.from)) fail(bc + ".from 必须指向位置更靠前的真实节点：" + binding.from);
+            if (typeof binding.path !== "string") fail(bc + ".path 必须是字符串");
           }
-          if (typeof b.path !== 'string') fail(`${bc}.path 必须是字符串`);
+        }
+      } else if (hasEach) {
+        if (st.args !== undefined || st.bindings !== undefined) fail(sc + " 循环控制节点不能声明 args 或 bindings");
+        const each = st.forEach;
+        if (!each || typeof each !== "object" || Array.isArray(each)) fail(sc + ".forEach 必须是对象");
+        else {
+          if (typeof each.from !== "string" || !priorIds.has(each.from)) fail(sc + ".forEach.from 必须指向位置更靠前的节点");
+          if (typeof each.path !== "string") fail(sc + ".forEach.path 必须是字符串");
+          if (!Array.isArray(each.steps) || each.steps.length === 0) fail(sc + ".forEach.steps 必须是非空数组");
+          else validateSteps(each.steps, priorIds, sc + ".forEach.steps");
+        }
+      } else if (hasRepeat) {
+        if (st.args !== undefined || st.bindings !== undefined) fail(sc + " 循环控制节点不能声明 args 或 bindings");
+        const repeat = st.repeat;
+        if (!repeat || typeof repeat !== "object" || Array.isArray(repeat)) fail(sc + ".repeat 必须是对象");
+        else {
+          const max = repeat.maxIterations;
+          if (!(Number.isInteger(max) && max > 0) &&
+              !(typeof max === "string" && /^\{\{input\.[^{}]+\}\}$/.test(max))) {
+            fail(sc + ".repeat.maxIterations 必须是正整数或完整 input 占位符");
+          }
+          if (repeat.initialState !== undefined) {
+            if (!repeat.initialState || typeof repeat.initialState !== "object" || Array.isArray(repeat.initialState)) {
+              fail(sc + ".repeat.initialState 若给必须是对象");
+            } else checkInputPlaceholders(repeat.initialState, sc + ".repeat.initialState");
+          }
+          if (!Array.isArray(repeat.steps) || repeat.steps.length === 0) fail(sc + ".repeat.steps 必须是非空数组");
+          else {
+            const nestedIds = validateSteps(repeat.steps, priorIds, sc + ".repeat.steps");
+            for (const field of ["stateFrom", "until"]) {
+              const ref = repeat[field];
+              const rc = sc + ".repeat." + field;
+              if (!ref || typeof ref !== "object" || Array.isArray(ref)) { fail(rc + " 必须是对象"); continue; }
+              if (typeof ref.from !== "string" || !nestedIds.has(ref.from)) fail(rc + ".from 必须指向循环体内节点");
+              if (typeof ref.path !== "string") fail(rc + ".path 必须是字符串");
+            }
+          }
         }
       }
+
+      if (validId) {
+        localIds.add(st.id);
+        priorIds.add(st.id);
+      }
     }
-    // 本步校验完才加入 priorIds，供后续步骤引用（from 只能指更靠前）
-    if (typeof st.id === 'string' && st.id.trim()) priorIds.add(st.id);
-  }
+    return localIds;
+  };
+  validateSteps(wf.steps, new Set(), ctx + ".workflow.steps");
 }
 
 /** 与 weiqi-bot/domain/plugin/PluginValidator.ts 的禁用规则同源 */
