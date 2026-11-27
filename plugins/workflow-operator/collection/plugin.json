@@ -39,6 +39,25 @@
       "idempotent": true
     },
     {
+      "name": "asArray",
+      "description": "把标量/对象包装成数组；输入已是数组则原样返回，null/undefined 转为空数组。",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "value"
+        ],
+        "properties": {
+          "value": {}
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "array"
+      },
+      "kind": "pure",
+      "idempotent": true
+    },
+    {
       "name": "join",
       "description": "按顺序连接 left 与 right 两个数组。",
       "inputSchema": {
@@ -287,6 +306,21 @@
     }
   ],
   "smoke": [
+    {
+      "method": "asArray",
+      "args": [
+        {
+          "value": {
+            "uid": "1"
+          }
+        }
+      ],
+      "expect": [
+        {
+          "uid": "1"
+        }
+      ]
+    },
     {
       "method": "statusSummary",
       "args": [
