@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "id": "circle.foxwq",
-  "version": 8,
+  "version": 9,
   "name": "弈友圈",
-  "summary": "分析某个野狐账号的弈友圈：按昵称查 UID，使用通用 web_fetch 与 JSON 沙箱算子分页获取主账号棋谱、提取交战对手并逐个抓取，再由 circle.normalize 生成关系事实供模型分析。",
+  "summary": "分析某个野狐账号的弈友圈：按昵称查 UID，使用通用 web_fetch 与 宿主 JSON 算子分页获取主账号棋谱、提取交战对手并逐个抓取，再由 circle.normalize 生成关系事实供模型分析。",
   "routeHint": [
     "分析某野狐账号的弈友圈",
     "看看这个野狐号最近都跟谁下棋",
@@ -11,7 +11,7 @@
   ],
   "category": "围棋",
   "primitives": [],
-  "prompt": "用户想分析某个野狐账号的弈友圈时使用本配方；只查单个棋手资料、定式或棋谱时不要使用。先确认用户给出野狐昵称。Workflow 使用通用 web_fetch 请求公开接口，repeat 负责分页，forEach 负责逐个采集对手，JSON 沙箱算子负责解析、筛选、去重与整理，circle.normalize 只计算关系事实。\\n\\n分析时依据 stats、nodes、components、commonOpponents 中的实际计数归纳关系，不要把局数当作熟人阈值。stats.fetchFailures 大于 0 时必须说明有部分对手采集失败，结论只基于成功取得的数据；不要声称数据完整。pages 和 opponentCount 是本次采集规模限制，不代表账号全部历史棋谱。\\n\\n任一必要节点失败或数据结构不合法时，如实说明本次无法完成，不编造账号、棋谱或关系结论。",
+  "prompt": "用户想分析某个野狐账号的弈友圈时使用本配方；只查单个棋手资料、定式或棋谱时不要使用。先确认用户给出野狐昵称。Workflow 使用通用 web_fetch 请求公开接口，repeat 负责分页，forEach 负责逐个采集对手，宿主 JSON 算子负责解析、筛选、去重与整理，circle.normalize 只计算关系事实。\\n\\n分析时依据 stats、nodes、components、commonOpponents 中的实际计数归纳关系，不要把局数当作熟人阈值。stats.fetchFailures 大于 0 时必须说明有部分对手采集失败，结论只基于成功取得的数据；不要声称数据完整。pages 和 opponentCount 是本次采集规模限制，不代表账号全部历史棋谱。\\n\\n任一必要节点失败或数据结构不合法时，如实说明本次无法完成，不编造账号、棋谱或关系结论。",
   "inputs": [
     {
       "name": "nickname",
