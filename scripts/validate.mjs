@@ -251,7 +251,7 @@ function validateWorkflowSkill(sk, ctx, pathHint) {
           if (!(Number.isInteger(max) && max > 0) &&
               !(typeof max === "string" && /^\{\{input\.[^{}]+\}\}$/.test(max))) {
             fail(sc + ".repeat.maxIterations 必须是正整数或完整 input 占位符");
-          }
+          } else if (typeof max === "string") checkInputPlaceholders(max, sc + ".repeat.maxIterations");
           if (repeat.initialState !== undefined) {
             if (!repeat.initialState || typeof repeat.initialState !== "object" || Array.isArray(repeat.initialState)) {
               fail(sc + ".repeat.initialState 若给必须是对象");
