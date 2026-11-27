@@ -213,8 +213,9 @@ function validateWorkflowSkill(sk, ctx, pathHint) {
       const hasCall = typeof st.call === "string" && st.call.trim();
       const hasEach = st.forEach !== undefined;
       const hasRepeat = st.repeat !== undefined;
-      if (Number(Boolean(hasCall)) + Number(hasEach) + Number(hasRepeat) !== 1) {
-        fail(sc + " 必须且只能声明 call、forEach、repeat 其中一种");
+      const hasIfElse = st.ifElse !== undefined;
+      if (Number(Boolean(hasCall)) + Number(hasEach) + Number(hasRepeat) + Number(hasIfElse) !== 1) {
+        fail(sc + " 必须且只能声明 call、forEach、repeat、ifElse 其中一种");
       }
 
       if (hasCall) {
@@ -239,8 +240,27 @@ function validateWorkflowSkill(sk, ctx, pathHint) {
         else {
           if (typeof each.from !== "string" || !priorIds.has(each.from)) fail(sc + ".forEach.from 必须指向位置更靠前的节点");
           if (typeof each.path !== "string") fail(sc + ".forEach.path 必须是字符串");
+          if (each.onError !== undefined && !["fail", "continue"].includes(each.onError)) fail(sc + ".forEach.onError 只允许 fail 或 continue");
           if (!Array.isArray(each.steps) || each.steps.length === 0) fail(sc + ".forEach.steps 必须是非空数组");
           else validateSteps(each.steps, priorIds, sc + ".forEach.steps");
+        }
+      } else if (hasIfElse) {
+        if (st.args !== undefined || st.bindings !== undefined) fail(sc + " 控制节点不能声明 args 或 bindings");
+        const branch = st.ifElse;
+        if (!branch || typeof branch !== "object" || Array.isArray(branch)) fail(sc + ".ifElse 必须是对象");
+        else {
+          const condition = branch.condition;
+          if (!condition || typeof condition !== "object" || Array.isArray(condition)) fail(sc + ".ifElse.condition 必须是对象");
+          else {
+            if (typeof condition.from !== "string" || !priorIds.has(condition.from)) fail(sc + ".ifElse.condition.from 必须指向位置更靠前的节点");
+            if (typeof condition.path !== "string") fail(sc + ".ifElse.condition.path 必须是字符串");
+          }
+          if (!Array.isArray(branch.then) || branch.then.length === 0) fail(sc + ".ifElse.then 必须是非空数组");
+          else validateSteps(branch.then, priorIds, sc + ".ifElse.then");
+          if (branch.else !== undefined) {
+            if (!Array.isArray(branch.else)) fail(sc + ".ifElse.else 若给必须是数组");
+            else validateSteps(branch.else, priorIds, sc + ".ifElse.else");
+          }
         }
       } else if (hasRepeat) {
         if (st.args !== undefined || st.bindings !== undefined) fail(sc + " 循环控制节点不能声明 args 或 bindings");
