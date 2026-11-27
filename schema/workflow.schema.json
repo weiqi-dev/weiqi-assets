@@ -207,7 +207,7 @@
         },
         "args": {
           "type": "object",
-          "description": "字面量参数；可使用 {{input.xxx}}、循环体内的 {{item.path}} / {{index}} / {{state.path}} 占位符。"
+          "description": "字面量参数；可使用 {{input.xxx}}、循环体内的 {{item.path}} / {{index}} / {{state.path}} 占位符。；URL 参数可使用 {{urlencode.input.xxx}} / {{urlencode.item.xxx}} / {{urlencode.state.xxx}} 进行安全编码。"
         },
         "bindings": {
           "type": "array",
