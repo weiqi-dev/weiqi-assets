@@ -115,7 +115,13 @@ function call(input) {
     if (!Array.isArray(a.pick) || !a.pick.length) return rows;
     return rows.map(function (x) {
       var out = {};
-      for (var i = 0; i < a.pick.length; i++) out[a.pick[i]] = getPath(x, a.pick[i]);
+      for (var i = 0; i < a.pick.length; i++) {
+        if (typeof a.pick[i] !== 'string') throw new Error('pick 每项必须是路径字符串');
+        var key = safeKey(a.pick[i]);
+        Object.defineProperty(out, key, {
+          value: getPath(x, key), enumerable: true, configurable: true, writable: true
+        });
+      }
       return out;
     });
   }
