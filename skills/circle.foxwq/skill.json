@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "id": "circle.foxwq",
-  "version": 1,
+  "version": 8,
   "name": "弈友圈",
-  "summary": "用户想分析某个野狐账号的弈友圈、看它最近都跟谁下棋、找出经常互相交战的账号群体时用本配方：两步静态 DAG 先由 foxwq_fetch_batch 抓野狐公开棋谱（含对手的交战对手），再由 circle.normalize 投影成可复算的对阵计数与图结构；run_workflow 只回结果句柄，模型须用 workflow_result_read 把宿主缓存里的 yield 汇总分页读全后再做关系分析，归纳圈层、枢纽、游离账号与共同对手并逐条给出数据理由。改条件按 inputs 重跑；算子未启用或取数失败如实说明、不编造。",
+  "summary": "分析某个野狐账号的弈友圈：按昵称查 UID，使用通用 web_fetch 与 JSON 沙箱算子分页获取主账号棋谱、提取交战对手并逐个抓取，再由 circle.normalize 生成关系事实供模型分析。",
   "routeHint": [
     "分析某野狐账号的弈友圈",
     "看看这个野狐号最近都跟谁下棋",
@@ -11,7 +11,7 @@
   ],
   "category": "围棋",
   "primitives": [],
-  "prompt": "用户想分析某个野狐账号的弈友圈、看它最近都跟谁下棋、或找出经常互相交战的账号群体时才用本配方；\n只是查单个棋手资料、找定式、看棋谱或做复盘就正常回答，不走 workflow。\n\n填好 inputs 让 run_workflow 跑一遍：foxwq_fetch_batch 抓取野狐公开棋谱列表（含对手的交战对手），\ncircle.normalize 把对局行投影成可复算的计数与图结构（stats / nodes / components / edges / commonOpponents）。\n本配方 returnToLLM:true，并声明 llmProjection.keep 只保留 stats / nodes / components / commonOpponents 四段：\n宿主已按配方 llmProjection 把 yield 汇总投影成关系摘要（不含 edges 逐边明细，保留上述四段的全部账号），\nrun_workflow 成功观察给的仍是结果句柄 resultId 而不是数据本体。\n请用宿主内置 workflow_result_read（resultId 填观察里给的值）读这份关系摘要：先 mode:\"info\" 看总字符数，\n再从 mode:\"slice\", offset:0 起，按每次返回的「请把 offset 设为 X 继续读」按 offset 提示递增，\n直到出现「已到正文末尾」即可，摘要片数很少；读全之前不要下结论、不要只据第一片就归纳，\n也不要把每片 JSON 复述一遍。\n【能力边界】摘要按配方声明不含逐边明细 edges；这是声明式投影、不是数据被截断，\n不要据此补写或声称读到全量。\n读全关系摘要之后才做关系分析：归纳哪些账号形成弈友圈、谁是高连通枢纽、谁游离在外、谁与谁共享对手，\n并逐条给出基于数据的理由（引用具体的 gameCount / degree / games / shared / components 等计数与结构，\n而不是只下结论）。不要把原始 JSON 或整份列表复述一遍，也不要写「结果见上方列表」这类展示型引导语 ——\n本技能不走 display_json_list 旁路。\n\n【诚实兜底】任一节点失败（如 foxwq_fetch_batch 查不到昵称 / 全部取数失败、circle.normalize 未注册即\n「弈友圈关系算子」插件未安装启用）、返回异常或数据不全时，如实说明本次没能完成分析并提示到「🧩 插件」\n面板安装启用，绝不编造账号、对局或圈层结论；判定只看节点成败，不靠复述报错文案。\n昵称是必填项，用户没给就先问清野狐昵称，不假定某个账号。",
+  "prompt": "用户想分析某个野狐账号的弈友圈时使用本配方；只查单个棋手资料、定式或棋谱时不要使用。先确认用户给出野狐昵称。Workflow 使用通用 web_fetch 请求公开接口，repeat 负责分页，forEach 负责逐个采集对手，JSON 沙箱算子负责解析、筛选、去重与整理，circle.normalize 只计算关系事实。\\n\\n分析时依据 stats、nodes、components、commonOpponents 中的实际计数归纳关系，不要把局数当作熟人阈值。stats.fetchFailures 大于 0 时必须说明有部分对手采集失败，结论只基于成功取得的数据；不要声称数据完整。pages 和 opponentCount 是本次采集规模限制，不代表账号全部历史棋谱。\\n\\n任一必要节点失败或数据结构不合法时，如实说明本次无法完成，不编造账号、棋谱或关系结论。",
   "inputs": [
     {
       "name": "nickname",
@@ -27,48 +27,615 @@
       "name": "opponentCount",
       "type": "integer",
       "default": 8
-    },
-    {
-      "name": "maxHops",
-      "type": "integer",
-      "default": 2,
-      "enum": [
-        1,
-        2
-      ]
     }
   ],
   "workflow": {
     "steps": [
       {
-        "id": "fetch",
-        "call": "foxwq_fetch_batch",
+        "id": "fetchUser",
+        "call": "web_fetch",
         "args": {
-          "nickname": "{{input.nickname}}",
-          "pages": "{{input.pages}}",
-          "opponentCount": "{{input.opponentCount}}",
-          "maxHops": "{{input.maxHops}}"
+          "url": "https://newframe.foxwq.com/cgi/QueryUserInfoPanel?srcuid=0&username={{urlencode.input.nickname}}",
+          "storeOnly": true
         }
+      },
+      {
+        "id": "checkUser",
+        "call": "json.assert",
+        "args": {
+          "equals": 0,
+          "message": "野狐昵称未查到或账号接口返回失败"
+        },
+        "bindings": [
+          {
+            "from": "fetchUser",
+            "path": "result",
+            "as": "value"
+          }
+        ]
+      },
+      {
+        "id": "uidRaw",
+        "call": "json.get",
+        "args": {
+          "path": "uid"
+        },
+        "bindings": [
+          {
+            "from": "fetchUser",
+            "path": "$",
+            "as": "value"
+          }
+        ]
+      },
+      {
+        "id": "checkUid",
+        "call": "json.assert",
+        "args": {
+          "notEquals": 0,
+          "message": "野狐昵称对应的 UID 无效"
+        },
+        "bindings": [
+          {
+            "from": "uidRaw",
+            "path": "$",
+            "as": "value"
+          }
+        ]
+      },
+      {
+        "id": "rootUid",
+        "call": "json.toString",
+        "args": {},
+        "bindings": [
+          {
+            "from": "uidRaw",
+            "path": "$",
+            "as": "value"
+          }
+        ]
+      },
+      {
+        "id": "rootUidList",
+        "call": "json.append",
+        "args": {
+          "items": []
+        },
+        "bindings": [
+          {
+            "from": "rootUid",
+            "path": "$",
+            "as": "value"
+          }
+        ]
+      },
+      {
+        "id": "rootFetch",
+        "forEach": {
+          "from": "rootUidList",
+          "path": "$",
+          "steps": [
+            {
+              "id": "rootPages",
+              "repeat": {
+                "maxIterations": "{{input.pages}}",
+                "initialState": {
+                  "lastcode": "0"
+                },
+                "stateFrom": {
+                  "from": "rootFetchPage",
+                  "path": "$"
+                },
+                "until": {
+                  "from": "rootCursorEmpty",
+                  "path": "$"
+                },
+                "steps": [
+                  {
+                    "id": "rootFetchPage",
+                    "call": "web_fetch",
+                    "args": {
+                      "url": "https://h5.foxwq.com/yehuDiamond/chessbook_local/YHWQFetchChessList?srcuid=0&dstuid={{urlencode.item}}&type=1&lastcode={{urlencode.state.lastcode}}&searchkey=&uin={{urlencode.item}}",
+                      "storeOnly": true
+                    }
+                  },
+                  {
+                    "id": "rootPageCheck",
+                    "call": "json.assert",
+                    "args": {
+                      "equals": 0,
+                      "message": "野狐棋谱接口返回失败"
+                    },
+                    "bindings": [
+                      {
+                        "from": "rootFetchPage",
+                        "path": "result",
+                        "as": "value"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "rootCursor",
+                    "call": "json.get",
+                    "args": {
+                      "path": "lastcode",
+                      "default": ""
+                    },
+                    "bindings": [
+                      {
+                        "from": "rootFetchPage",
+                        "path": "$",
+                        "as": "value"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "rootCursorEmpty",
+                    "call": "json.isEmpty",
+                    "args": {},
+                    "bindings": [
+                      {
+                        "from": "rootCursor",
+                        "path": "$",
+                        "as": "value"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "rootPageGames",
+                    "call": "json.get",
+                    "args": {
+                      "path": "chesslist"
+                    },
+                    "bindings": [
+                      {
+                        "from": "rootFetchPage",
+                        "path": "$",
+                        "as": "value"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      {
+        "id": "rootPageArrays",
+        "call": "json.get",
+        "args": {
+          "path": "0.items"
+        },
+        "bindings": [
+          {
+            "from": "rootFetch",
+            "path": "$",
+            "as": "value"
+          }
+        ]
+      },
+      {
+        "id": "rootGames",
+        "call": "json.flatten",
+        "args": {},
+        "bindings": [
+          {
+            "from": "rootPageArrays",
+            "path": "$",
+            "as": "items"
+          }
+        ]
+      },
+      {
+        "id": "whereWhiteRoot",
+        "call": "json.set",
+        "args": {
+          "value": {
+            "whiteuid": {
+              "stringEq": ""
+            },
+            "blackuid": {
+              "notIn": [
+                "",
+                null
+              ]
+            }
+          },
+          "path": "whiteuid.stringEq"
+        },
+        "bindings": [
+          {
+            "from": "rootUid",
+            "path": "$",
+            "as": "nextValue"
+          }
+        ]
+      },
+      {
+        "id": "whiteRootRows",
+        "call": "json.select",
+        "args": {},
+        "bindings": [
+          {
+            "from": "rootGames",
+            "path": "$",
+            "as": "items"
+          },
+          {
+            "from": "whereWhiteRoot",
+            "path": "$",
+            "as": "where"
+          }
+        ]
+      },
+      {
+        "id": "blackOpponents",
+        "call": "json.pluck",
+        "args": {
+          "path": "blackuid"
+        },
+        "bindings": [
+          {
+            "from": "whiteRootRows",
+            "path": "$",
+            "as": "items"
+          }
+        ]
+      },
+      {
+        "id": "whereBlackRoot",
+        "call": "json.set",
+        "args": {
+          "value": {
+            "blackuid": {
+              "stringEq": ""
+            },
+            "whiteuid": {
+              "notIn": [
+                "",
+                null
+              ]
+            }
+          },
+          "path": "blackuid.stringEq"
+        },
+        "bindings": [
+          {
+            "from": "rootUid",
+            "path": "$",
+            "as": "nextValue"
+          }
+        ]
+      },
+      {
+        "id": "blackRootRows",
+        "call": "json.select",
+        "args": {},
+        "bindings": [
+          {
+            "from": "rootGames",
+            "path": "$",
+            "as": "items"
+          },
+          {
+            "from": "whereBlackRoot",
+            "path": "$",
+            "as": "where"
+          }
+        ]
+      },
+      {
+        "id": "whiteOpponents",
+        "call": "json.pluck",
+        "args": {
+          "path": "whiteuid"
+        },
+        "bindings": [
+          {
+            "from": "blackRootRows",
+            "path": "$",
+            "as": "items"
+          }
+        ]
+      },
+      {
+        "id": "opponentCandidates",
+        "call": "json.concat",
+        "args": {},
+        "bindings": [
+          {
+            "from": "blackOpponents",
+            "path": "$",
+            "as": "left"
+          },
+          {
+            "from": "whiteOpponents",
+            "path": "$",
+            "as": "right"
+          }
+        ]
+      },
+      {
+        "id": "opponentCounts",
+        "call": "json.groupCount",
+        "args": {
+          "path": "$"
+        },
+        "bindings": [
+          {
+            "from": "opponentCandidates",
+            "path": "$",
+            "as": "items"
+          }
+        ]
+      },
+      {
+        "id": "whereNotRoot",
+        "call": "json.set",
+        "args": {
+          "value": {
+            "key": {
+              "notIn": [
+                ""
+              ]
+            }
+          },
+          "path": "$['key'].notIn[1]"
+        },
+        "bindings": [
+          {
+            "from": "rootUid",
+            "path": "$",
+            "as": "nextValue"
+          }
+        ]
+      },
+      {
+        "id": "validOpponents",
+        "call": "json.select",
+        "args": {},
+        "bindings": [
+          {
+            "from": "opponentCounts",
+            "path": "$",
+            "as": "items"
+          },
+          {
+            "from": "whereNotRoot",
+            "path": "$",
+            "as": "where"
+          }
+        ]
+      },
+      {
+        "id": "topOpponents",
+        "call": "json.take",
+        "args": {
+          "count": "{{input.opponentCount}}"
+        },
+        "bindings": [
+          {
+            "from": "validOpponents",
+            "path": "$",
+            "as": "items"
+          }
+        ]
+      },
+      {
+        "id": "opponentUids",
+        "call": "json.pluck",
+        "args": {
+          "path": "key"
+        },
+        "bindings": [
+          {
+            "from": "topOpponents",
+            "path": "$",
+            "as": "items"
+          }
+        ]
+      },
+      {
+        "id": "opponentFetch",
+        "forEach": {
+          "from": "opponentUids",
+          "path": "$",
+          "onError": "continue",
+          "steps": [
+            {
+              "id": "opponentPages",
+              "repeat": {
+                "maxIterations": "{{input.pages}}",
+                "initialState": {
+                  "lastcode": "0"
+                },
+                "stateFrom": {
+                  "from": "opponentFetchPage",
+                  "path": "$"
+                },
+                "until": {
+                  "from": "opponentCursorEmpty",
+                  "path": "$"
+                },
+                "steps": [
+                  {
+                    "id": "opponentFetchPage",
+                    "call": "web_fetch",
+                    "args": {
+                      "url": "https://h5.foxwq.com/yehuDiamond/chessbook_local/YHWQFetchChessList?srcuid=0&dstuid={{urlencode.item}}&type=1&lastcode={{urlencode.state.lastcode}}&searchkey=&uin={{urlencode.item}}",
+                      "storeOnly": true
+                    }
+                  },
+                  {
+                    "id": "opponentPageCheck",
+                    "call": "json.assert",
+                    "args": {
+                      "equals": 0,
+                      "message": "野狐棋谱接口返回失败"
+                    },
+                    "bindings": [
+                      {
+                        "from": "opponentFetchPage",
+                        "path": "result",
+                        "as": "value"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "opponentCursor",
+                    "call": "json.get",
+                    "args": {
+                      "path": "lastcode",
+                      "default": ""
+                    },
+                    "bindings": [
+                      {
+                        "from": "opponentFetchPage",
+                        "path": "$",
+                        "as": "value"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "opponentCursorEmpty",
+                    "call": "json.isEmpty",
+                    "args": {},
+                    "bindings": [
+                      {
+                        "from": "opponentCursor",
+                        "path": "$",
+                        "as": "value"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "opponentPageGames",
+                    "call": "json.get",
+                    "args": {
+                      "path": "chesslist"
+                    },
+                    "bindings": [
+                      {
+                        "from": "opponentFetchPage",
+                        "path": "$",
+                        "as": "value"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      {
+        "id": "opponentPageArrays",
+        "call": "json.pluck",
+        "args": {
+          "path": "value.items",
+          "where": {
+            "ok": true
+          }
+        },
+        "bindings": [
+          {
+            "from": "opponentFetch",
+            "path": "$",
+            "as": "items"
+          }
+        ]
+      },
+      {
+        "id": "opponentGames",
+        "call": "json.flatten",
+        "args": {},
+        "bindings": [
+          {
+            "from": "opponentPageArrays",
+            "path": "$",
+            "as": "items"
+          }
+        ]
+      },
+      {
+        "id": "allGames",
+        "call": "json.concat",
+        "args": {},
+        "bindings": [
+          {
+            "from": "rootGames",
+            "path": "$",
+            "as": "left"
+          },
+          {
+            "from": "opponentGames",
+            "path": "$",
+            "as": "right"
+          }
+        ]
+      },
+      {
+        "id": "failedOpponents",
+        "call": "json.select",
+        "args": {
+          "where": {
+            "ok": false
+          }
+        },
+        "bindings": [
+          {
+            "from": "opponentFetch",
+            "path": "$",
+            "as": "items"
+          }
+        ]
+      },
+      {
+        "id": "failureCount",
+        "call": "json.get",
+        "args": {
+          "path": "length"
+        },
+        "bindings": [
+          {
+            "from": "failedOpponents",
+            "path": "$",
+            "as": "value"
+          }
+        ]
       },
       {
         "id": "normalize",
         "call": "circle.normalize",
         "bindings": [
           {
-            "from": "fetch",
-            "path": "games",
+            "from": "allGames",
+            "path": "$",
             "as": "games"
           },
           {
-            "from": "fetch",
-            "path": "rootUid",
+            "from": "rootUid",
+            "path": "$",
             "as": "rootUid"
+          },
+          {
+            "from": "failureCount",
+            "path": "$",
+            "as": "fetchFailures"
           }
         ],
         "yield": true
       }
     ]
   },
-  "llmProjection": { "keep": ["stats", "nodes", "components", "commonOpponents"] },
+  "llmProjection": {
+    "keep": [
+      "stats",
+      "nodes",
+      "components",
+      "commonOpponents"
+    ]
+  },
   "returnToLLM": true
 }

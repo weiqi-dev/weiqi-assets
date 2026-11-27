@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "id": "baidu.hotsearch",
-  "version": 5,
+  "version": 6,
   "name": "百度热搜",
-  "summary": "取回百度实时热搜榜页面，用宿主内置正则算子提取热搜关键词，并由宿主以列表直接展示",
+  "summary": "取回百度实时热搜榜页面，用沙箱正则算子提取热搜关键词，并由宿主通用 display 展示",
   "category": "搜索",
   "routeHint": [
     "用户说「查百度热搜」时",
@@ -23,7 +23,7 @@
       },
       {
         "id": "extract",
-        "call": "regex_extract",
+        "call": "regex.extract",
         "args": {
           "pattern": "\"word\":\"([^\"]+)\"",
           "group": 1,
@@ -40,7 +40,7 @@
       },
       {
         "id": "show",
-        "call": "display_json_list",
+        "call": "display",
         "args": {
           "format": "list",
           "fields": [
@@ -63,5 +63,5 @@
     ]
   },
   "inputs": [],
-  "prompt": "本技能通过固定工作流完成：取回百度实时热搜榜页面 → 用宿主内置的 regex_extract 正则算子抽出每条热搜的 word 关键词 → 由宿主直接渲染成列表。列表由宿主展示，不要复述或归纳条目内容，也不要把网页正文读回上下文。"
+  "prompt": "本技能通过固定工作流完成：取回百度实时热搜榜页面 → 用沙箱插件 regex.extract 正则算子抽出每条热搜的 word 关键词 → 由宿主直接渲染成列表。列表由宿主展示，不要复述或归纳条目内容，也不要把网页正文读回上下文。"
 }

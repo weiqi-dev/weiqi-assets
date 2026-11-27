@@ -766,7 +766,7 @@ function holidayMarks(holidays, y, m) {
 /**
  * 单元格文本：公历日 + 一个内容。
  * 标记约定（出处见 README）：法定放假日用带圈数字 ①..㉛（历史月历配方 v12 明文列出的标识，
- * 且带圈数字不是 markdown 语法字符，能穿过宿主 display_json_list 的 cell() 转义）；
+ * 且带圈数字不是 markdown 语法字符，能穿过宿主 display 的 cell() 转义）；
  * 补班日与其余日子都是普通数字 —— v12 靠「其余日子加粗」区分，但宿主 cell() 会把
  * '*' 转成 '&#42;'，加粗在旁路里不可表达，故不写「班」字、不新造标记，
  * 调休上班日改由表格外说明（buildLegend）逐日列出，信息不丢。
@@ -841,8 +841,8 @@ function buildLegend(cal, marks, holidays) {
 /**
  * 日历月表算子：一次算完「历法 + 法定假 + 排版」，产出宿主可直接渲染的结构。
  * 入参 {year, month, holidays}；出参 {weeks, legend}：
- *   weeks[]  每项 {mon..sun} 七个纯文本单元格（display_json_list 的 table 模式）
- *   legend[] 每项 {text} 一行说明（display_json_list 的 list 模式）
+ *   weeks[]  每项 {mon..sun} 七个纯文本单元格（display 的 table 模式）
+ *   legend[] 每项 {text} 一行说明（display 的 list 模式）
  * 两段都由宿主 effects 旁路交付，模型不接触任何业务数据。
  */
 function buildMonth(spec) {

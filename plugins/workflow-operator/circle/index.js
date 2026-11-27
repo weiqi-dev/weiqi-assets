@@ -1,14 +1,14 @@
 /**
  * 弈友圈关系算子（workflow-operator 扩展点的插件工件）
  *
- * 对外只暴露一个方法 normalize({games, rootUid})：把上游 foxwq_fetch_batch 取回的
+ * 对外只暴露一个方法 normalize({games, rootUid})：把上游 web_fetch + JSON 算子 取回的
  * 「紧凑对局行」投影成一份纯计数与图结构 —— stats / nodes / components / edges /
  * commonOpponents。插件不做任何圈层判定，不写「达到几局算熟人」「共邻几个算一圈」之类阈值；
  * 哪些账号形成弈友圈、谁是高连通枢纽、谁游离在外，一律由模型依据这些可复算的事实归纳。
  *
  * 确定性：先按 (starttime, chessid) 升序稳定排序，再只做字符串比较、整数计数与稳定排序；
  * 零网络、零时钟、零随机数、零宿主能力。uid 一律字符串化后参与相等比较
- * （与 foxwq_fetch_batch 的 String(...) 口径一致）。全部统计口径逐条写在同目录 README.md。
+ * （与 web_fetch + JSON 算子 的 String(...) 口径一致）。全部统计口径逐条写在同目录 README.md。
  * 输出字段顺序即重要度顺序：摘要在前、明细在后，便于回灌被裁剪时保住关键信息。
  */
 
@@ -287,6 +287,8 @@ function normalize(args) {
   if (!Array.isArray(args.games)) throw new Error('games 必须是数组');
   if (typeof args.rootUid !== 'string') throw new Error('rootUid 必须是字符串');
   var rootUid = args.rootUid;
+  var fetchFailures = args.fetchFailures === undefined ? 0 : args.fetchFailures;
+  if (!Number.isInteger(fetchFailures) || fetchFailures < 0) throw new Error('fetchFailures 必须是非负整数');
   var rows = cleanGames(args.games);
   var edges = buildEdges(rows);
   var nodes = buildNodes(rows, edges);
@@ -301,7 +303,8 @@ function normalize(args) {
       totalGames: rows.length,
       nodeCount: nodes.length,
       edgeCount: edges.length,
-      expandedCount: expandedCount
+      expandedCount: expandedCount,
+      fetchFailures: fetchFailures
     },
     nodes: nodes,
     components: components,

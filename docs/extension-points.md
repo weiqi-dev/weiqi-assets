@@ -64,11 +64,10 @@
 ## `workflow-operator` 扩展点（工作流算子插件）
 
 `workflow-operator` 是**工作流算子插件**：它不挂模型 `tools[]`，
-不进 `ModelRequest.tools`，也不向 system 提示词注入任何算子清单。工件 `exposes[]` 的**每个方法按名注册成一条宿主算子**
+不进 `ModelRequest.tools`，也不向 system 提示词注入任何算子清单。工件 `exposes[]` 的**每个方法必须声明 `inputSchema`、`outputSchema`、`kind`、`idempotent`，并按名注册成一条宿主算子**
 （内置算子用 snake_case，插件算子用 `<slug>.<exposes[].name>`，如 `my-operator.compute`），
 由宿主 `OperatorRegistry` 统一持有；**阶段二的 workflow/DAG runner** 在节点里写
-`"call": "<算子名>"` 按名查表并按名执行（value→value）。阶段一只提供这张「按名查/按名执行」的地基，
-不解析配方、不做拓扑排序、不跑 DAG。
+`"call": "<算子名>"` 按名查表并按名执行（value→value）。Workflow runner 按名执行普通算子节点，并提供通用有界 `forEach`、`repeat` 与 `ifElse` 控制块；循环体仍只调用独立算子，不承载业务逻辑。
 
 `workflow-operator` 与 `ranking` 共用同一套工件、存储、在线安装与 QuickJS 沙箱，差别只在**契约**：
 
@@ -76,22 +75,21 @@
 |---|---|---|
 | 入口 | `rank({matches})` | `call({method,args})` |
 | 输入 | 原始对阵表 | 方法名 + 一个 JSON 参数对象 |
-| 输出 | 严格 `{ columns, rows }`，由 `validateRankingOutput` 校验 | 任意可 JSON 序列化值，宿主不解读语义 |
+| 输出 | 严格 `{ columns, rows }`，由 `validateRankingOutput` 校验 | 按 `outputSchema` 校验的 JSON 值 |
 | 生效位置 | 赛事详情页排名管线 | 宿主 `OperatorRegistry`（阶段二 workflow runner 按名调用） |
 | 方法白名单 | 无（只有一个入口） | `plugin.json` 的 `exposes[]`，宿主只放行这里声明的 `method` |
 | 安装前试跑 | `SAMPLE_RANKING_INPUT` + 排名契约 | `smoke[]` 样例（可带 method）逐字段比对 `expect` |
 
 关键安全边界（与 skill 配方「宿主内置执行器」同构）：
 
-- 插件源码只在一次性 QuickJS Worker 里 `evalCode`，**不进主线程 JS 环境、不进模型上下文**；
+- 插件源码只在复用的 QuickJS Worker 里 `evalCode`，**不进主线程 JS 环境、不进模型上下文**；
   workflow runner 只按算子名提交 `{method, args}`，模型看不到、也不需要算子清单。
 - `method` 必须命中 `exposes[]`；`args` 只作为 JSON 数据写入 `__PLUGIN_INPUT__`，
   绝不参与代码拼接（胶水由宿主固定生成）。
 - 插件必须是经典脚本或 `module.exports` 形态；QuickJS 不支持 ESM `export`。
 - 不提供、也不自检 `new Date()` 依赖的非确定性字段（如 `isToday`、节气、生肖），
   因为沙箱里的时间来自宿主真实时钟，逐次运行结果会变。
-- 工件默认停用，**人工启用闸门**后才注册进 `OperatorRegistry`；缓存命中即零网络下载，
-  每次仍是一次性 Worker。
+- 工件默认停用，**人工启用闸门**后才注册进 `OperatorRegistry`；缓存命中即零网络下载；正常调用复用 Worker，但每次调用创建独立 QuickJS Runtime / Context；超时、崩溃、OOM 或栈溢出后回收 Worker 并在下次调用重建。
 
 ### 两条落地路径：在线安装与插件开发角色自建
 
@@ -108,7 +106,7 @@
 角色自建不绕过这道闸门；启用后由 workflow 节点按算子名引用，跨会话复用。
 
 带 `workflow` 的技能配方（数据源在各自 `skills/<id>/skill.json`，`skills/registry.json` 只是瘦索引、不再含配方）
-与这张算子表对接：`inputs` 填空、`steps` 声明 DAG、宿主 `run_workflow` 触发，
+与这张算子表对接：`inputs` 填空、`steps` 声明普通算子节点与有界循环控制块、宿主 `run_workflow` 触发，
 节点 `"call"` 按算子名查表；形状契约在 `schema/workflow.schema.json`，引用/唯一性等语义由
 `scripts/validate.mjs` 的 `validateWorkflowSkill()` 校验，`call` 是否命中已启用算子由宿主运行时决定。
 无 `workflow` 的配方沿用现有散文执行路径。配方形状不在此处校验白名单，避免与宿主算子表漂移。

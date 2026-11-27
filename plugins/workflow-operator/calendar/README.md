@@ -3,11 +3,11 @@
 `workflow-operator` 扩展点的**工作流算子插件**。装进宿主、人工启用后，`OperatorRegistry`
 把 `exposes[]` 里的 `buildMonth` 按名注册为算子 **`calendar.buildMonth`**（`<slug>.<method>`，
 slug 来自资源 id `workflow-operator.calendar`）。带 `workflow` 的「月历」配方用 `"call"` 节点
-按名引用它，和 `web_fetch` / `display_json_list` 一起组成一条**纯 workflow** DAG：
+按名引用它，和 `web_fetch` / `display` 一起组成一条**纯 workflow** DAG：
 
 ```
-web_fetch(storeOnly)  →  calendar.buildMonth  →  display_json_list(table, weeks)
-        └─ $ 绑定整份节假日 JSON ────────────┬──→  display_json_list(list, legend)
+web_fetch(storeOnly)  →  calendar.buildMonth  →  display(table, weeks)
+        └─ $ 绑定整份节假日 JSON ────────────┬──→  display(list, legend)
 ```
 
 整张月历由 DAG 自己算完并走宿主 `displayMarkdown` 旁路交付。**模型只填 `year` / `month`、
@@ -28,7 +28,7 @@ web_fetch(storeOnly)  →  calendar.buildMonth  →  display_json_list(table, we
 - `legend[]`：每项 `{text}` 一行表格外说明（本月农历月段、节气、传统节日、法定放假日、
   调休上班日、数据来源）。
 
-两段分别交给两个 `display_json_list` 节点：`format=table` 配 `fields=[mon..sun]` 渲染周表，
+两段分别交给两个 `display` 节点：`format=table` 配 `fields=[mon..sun]` 渲染周表，
 `format=list` 配 `fields=[text]` 渲染说明。宿主 `WorkflowTool` 把多段 `displayMarkdown`
 按节点顺序用空行拼成一条旁路消息，模型不复述、归纳或补写。
 
@@ -36,7 +36,7 @@ web_fetch(storeOnly)  →  calendar.buildMonth  →  display_json_list(table, we
 
 | 元素 | 规则 | 出处 |
 |---|---|---|
-| 法定放假日 | 公历日写成带圈数字 `①…㉛`，不加粗 | 已下架月历配方 v12 明文列出的标识；且带圈数字不是 markdown 语法字符，能穿过宿主 `DisplayJsonListPrimitive.cell()` 的转义 |
+| 法定放假日 | 公历日写成带圈数字 `①…㉛`，不加粗 | 已下架月历配方 v12 明文列出的标识；且带圈数字不是 markdown 语法字符，能穿过宿主 `DisplayPrimitive.cell()` 的转义 |
 | 补班 / 其余日子 | 都是普通数字；**不写「班」字、不新造标记** | v12 靠「其余日子加粗」区分，但宿主 `cell()` 把 `*` 转成 `&#42;`，加粗在旁路里不可表达；调休上班日改由 `legend` 逐日列出，信息不丢 |
 | 单元格内容 | 传统节日 > 节气 > 农历日名，只取一个 | v12 明文口径；节日判定用结构化农历字段，不靠字符串剥离 |
 | 农历日名 | 只有「初一 / 廿五」这类纯日名，闰月加「闰」前缀 | 旧 `monthCalendar` 的 `dayText()` 天然不带月份字眼 |
