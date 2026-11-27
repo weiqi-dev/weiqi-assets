@@ -93,7 +93,17 @@ function call(input) {
     if (encoded === undefined) throw new Error('value 不是可序列化 JSON');
     return encoded;
   }
-  if (m === 'get') return getPath(a.value, a.path);
+  if (m === 'get') {
+    try { return getPath(a.value, a.path); }
+    catch (error) {
+      if (Object.prototype.hasOwnProperty.call(a, 'default')) return a.default;
+      throw error;
+    }
+  }
+  if (m === 'toString') {
+    if (a.value === null || a.value === undefined || (typeof a.value === 'object')) throw new Error('value 必须是非空原始值');
+    return String(a.value);
+  }
   if (m === 'set') return setPath(cloneJson(a.value), a.path, a.nextValue);
   if (m === 'select') {
     if (!Array.isArray(a.items)) throw new Error('items 必须是数组');
