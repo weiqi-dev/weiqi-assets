@@ -1,0 +1,98 @@
+{
+  "$schema": "../../../schema/plugin.schema.json",
+  "id": "workflow-operator.url",
+  "name": "URL 构造算子",
+  "type": "plugin",
+  "pointId": "workflow-operator",
+  "specVersion": 1,
+  "entry": "call",
+  "code": "plugins/workflow-operator/url/index.js",
+  "origin": "manual",
+  "intent": "在受限沙箱中确定性地构造和解析 HTTP/HTTPS URL 查询参数。用于把技能参数、分页游标和动态 ID 转换为请求地址；网络请求仍由宿主通用原语执行。",
+  "readme": "plugins/workflow-operator/url/README.md",
+  "license": "MIT",
+  "tags": [
+    "workflow-operator",
+    "url",
+    "query",
+    "encoding"
+  ],
+  "category": "算子",
+  "exposes": [
+    {
+      "name": "build",
+      "description": "根据 base 与 params 构造 URL，查询参数按键排序并正确百分号编码；数组值生成重复键。",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "base"
+        ],
+        "properties": {
+          "base": {
+            "type": "string"
+          },
+          "params": {
+            "type": "object"
+          }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "string"
+      },
+      "kind": "pure",
+      "idempotent": true
+    },
+    {
+      "name": "parse",
+      "description": "解析 URL 查询参数；重复键返回字符串数组。",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "url"
+        ],
+        "properties": {
+          "url": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object"
+      },
+      "kind": "pure",
+      "idempotent": true
+    }
+  ],
+  "smoke": [
+    {
+      "method": "build",
+      "args": [
+        {
+          "base": "https://example.com/list",
+          "params": {
+            "b": "two words",
+            "a": "1"
+          }
+        }
+      ],
+      "expect": "https://example.com/list?a=1&b=two%20words"
+    },
+    {
+      "method": "parse",
+      "args": [
+        {
+          "url": "https://example.com/?uid=7&tag=a&tag=b"
+        }
+      ],
+      "expect": {
+        "uid": "7",
+        "tag": [
+          "a",
+          "b"
+        ]
+      }
+    }
+  ]
+}
