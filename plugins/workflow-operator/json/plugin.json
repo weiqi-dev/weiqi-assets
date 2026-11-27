@@ -8,7 +8,7 @@
   "entry": "call",
   "code": "plugins/workflow-operator/json/index.js",
   "origin": "manual",
-  "intent": "为 Workflow 提供通用 JSON 解析、路径读取与设置、数组筛选投影、合并去重、分组计数、排序与截取。所有方法纯计算，不访问宿主资源。",
+  "intent": "为 Workflow 提供通用 JSON 解析、路径读取与设置、筛选投影、数组合并去重、分组计数、排序截取、空值判断、断言、展平与标量字符串化。所有方法纯计算，不访问宿主资源。",
   "readme": "plugins/workflow-operator/json/README.md",
   "license": "MIT",
   "tags": [
