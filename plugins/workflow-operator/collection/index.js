@@ -57,6 +57,10 @@ function take(args) {
 }
 
 function singleton(args) { return [args.value]; }
+function singletonIfNotEmpty(args) {
+  if (!Array.isArray(args.items)) throw new Error('items 必须是数组');
+  return args.items.length ? [args.items] : [];
+}
 function asArray(args) { return args.value === null || args.value === undefined ? [] : (Array.isArray(args.value) ? args.value : [args.value]); }
 function join(args) {
   if (!Array.isArray(args.left) || !Array.isArray(args.right)) throw new Error("left 与 right 必须是数组");
@@ -83,6 +87,7 @@ function call(input) {
   var args = input.args[0] || {};
   if (!Array.isArray(args.items)) throw new Error("items 必须是数组");
   if (input.method === "singleton") return singleton(args);
+  if (input.method === "singletonIfNotEmpty") return singletonIfNotEmpty(args);
   if (input.method === "asArray") return asArray(args);
   if (input.method === "join") return join(args);
   if (input.method === "statusSummary") return statusSummary(args);\n  if (input.method === "concat") return concat(args);\n  if (input.method === "flatten") return flatten(args.items);
