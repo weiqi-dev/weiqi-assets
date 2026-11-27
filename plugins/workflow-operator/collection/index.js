@@ -57,6 +57,10 @@ function take(args) {
 }
 
 function singleton(args) { return [args.value]; }
+function join(args) {
+  if (!Array.isArray(args.left) || !Array.isArray(args.right)) throw new Error("left 与 right 必须是数组");
+  return args.left.concat(args.right);
+}
 function concat(args) {
   if (!Array.isArray(args.arrays)) throw new Error("arrays 必须是数组");
   var out = [];
@@ -70,7 +74,8 @@ function call(input) {
   if (!input || typeof input.method !== "string" || !Array.isArray(input.args) || input.args.length !== 1) throw new Error("调用参数无效");
   var args = input.args[0] || {};
   if (!Array.isArray(args.items)) throw new Error("items 必须是数组");
-  if (input.method === "singleton") return singleton(args);\n  if (input.method === "concat") return concat(args);\n  if (input.method === "flatten") return flatten(args.items);
+  if (input.method === "singleton") return singleton(args);
+  if (input.method === "join") return join(args);\n  if (input.method === "concat") return concat(args);\n  if (input.method === "flatten") return flatten(args.items);
   if (input.method === "uniqueBy") return uniqueBy(args);
   if (input.method === "groupBy") return groupBy(args);
   if (input.method === "pluck") return pluck(args);
