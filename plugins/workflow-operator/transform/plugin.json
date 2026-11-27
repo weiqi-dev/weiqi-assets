@@ -1,0 +1,76 @@
+{
+  "$schema": "../../../schema/plugin.schema.json",
+  "id": "workflow-operator.transform",
+  "name": "字段转换算子",
+  "type": "plugin",
+  "pointId": "workflow-operator",
+  "specVersion": 1,
+  "entry": "call",
+  "code": "plugins/workflow-operator/transform/index.js",
+  "origin": "manual",
+  "intent": "对上游 JSON 对象执行确定性的字段类型转换与结构变换。只处理传入数据，不访问网络、DOM 或宿主状态。",
+  "readme": "plugins/workflow-operator/transform/README.md",
+  "license": "MIT",
+  "tags": [
+    "workflow-operator",
+    "transform",
+    "json",
+    "mapping"
+  ],
+  "category": "算子",
+  "exposes": [
+    {
+      "name": "castFields",
+      "description": "按 fields 声明把对象顶层字段转换为 string/number/boolean，其他字段原样保留。",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "value",
+          "fields"
+        ],
+        "properties": {
+          "value": {
+            "type": "object"
+          },
+          "fields": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "enum": [
+                "string",
+                "number",
+                "boolean"
+              ]
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object"
+      },
+      "kind": "pure",
+      "idempotent": true
+    }
+  ],
+  "smoke": [
+    {
+      "method": "castFields",
+      "args": [
+        {
+          "value": {
+            "uid": 123,
+            "name": "棋手"
+          },
+          "fields": {
+            "uid": "string"
+          }
+        }
+      ],
+      "expect": {
+        "uid": "123",
+        "name": "棋手"
+      }
+    }
+  ]
+}
