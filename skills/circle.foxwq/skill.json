@@ -74,7 +74,7 @@
         ]
       },
       {
-        "id": "user-info",
+        "id": "user-info-raw",
         "call": "json_extract",
         "args": {
           "path": "$",
@@ -96,6 +96,22 @@
           {
             "from": "user-fetch",
             "path": "[0].value",
+            "as": "value"
+          }
+        ]
+      },
+      {
+        "id": "user-info",
+        "call": "transform.castFields",
+        "args": {
+          "fields": {
+            "uid": "string"
+          }
+        },
+        "bindings": [
+          {
+            "from": "user-info-raw",
+            "path": "$",
             "as": "value"
           }
         ]
