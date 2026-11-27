@@ -138,6 +138,36 @@
       "outputSchema": {},
       "kind": "pure",
       "idempotent": true
+    },
+    {
+      "name": "isEmpty",
+      "description": "判断 JSON 值是否为空。",
+      "inputSchema": {
+        "type": "object"
+      },
+      "outputSchema": {},
+      "kind": "pure",
+      "idempotent": true
+    },
+    {
+      "name": "assert",
+      "description": "验证值满足等值或不等值条件，不满足时抛出声明的错误。",
+      "inputSchema": {
+        "type": "object"
+      },
+      "outputSchema": {},
+      "kind": "pure",
+      "idempotent": true
+    },
+    {
+      "name": "flatten",
+      "description": "递归展开嵌套数组，保持原有元素顺序。",
+      "inputSchema": {
+        "type": "object"
+      },
+      "outputSchema": {},
+      "kind": "pure",
+      "idempotent": true
     }
   ],
   "smoke": [
@@ -364,6 +394,46 @@
       "expect": [
         1,
         2
+      ]
+    },
+    {
+      "method": "isEmpty",
+      "args": [
+        {
+          "value": ""
+        }
+      ],
+      "expect": true
+    },
+    {
+      "method": "assert",
+      "args": [
+        {
+          "value": 0,
+          "equals": 0
+        }
+      ],
+      "expect": true
+    },
+    {
+      "method": "flatten",
+      "args": [
+        {
+          "items": [
+            [
+              1,
+              [
+                2
+              ]
+            ],
+            3
+          ]
+        }
+      ],
+      "expect": [
+        1,
+        2,
+        3
       ]
     }
   ]
