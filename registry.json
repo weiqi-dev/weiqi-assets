@@ -61,26 +61,6 @@
       "specVersion": 1,
       "path": "plugins/workflow-operator/circle/plugin.json",
       "category": "围棋"
-    },
-    {
-      "id": "workflow-operator.json",
-      "type": "plugin",
-      "name": "JSON 与集合算子",
-      "summary": "通用 JSON 解析、路径操作、数组筛选投影、合并去重、分组计数与排序，全部在受限沙箱纯计算。",
-      "pointId": "workflow-operator",
-      "specVersion": 1,
-      "path": "plugins/workflow-operator/json/plugin.json",
-      "category": "算子"
-    },
-    {
-      "id": "workflow-operator.regex",
-      "type": "plugin",
-      "name": "正则算子",
-      "summary": "通用正则匹配、提取与替换，使用 ECMAScript RegExp 语义，在受限沙箱纯计算。",
-      "pointId": "workflow-operator",
-      "specVersion": 1,
-      "path": "plugins/workflow-operator/regex/plugin.json",
-      "category": "算子"
     }
   ]
 }
