@@ -60,7 +60,7 @@
     },
     {
       "id": "stock.news.10jqka",
-      "version": 4,
+      "version": 5,
       "name": "同花顺财经新闻",
       "summary": "用户想看最新财经新闻 / 股市快讯时用本配方：填好 inputs 让 run_workflow 一次取回同花顺推送 JSON 并渲染成标题列表，模型不读新闻正文；改条件（翻页 / 分类 / 展示字段）按 inputs 重跑，取不到如实说明、不编造。inputs 缺省值（page=1 首页、pagesize=20 默认一次展示量、tag 空、format=list、fields 默认只显示标题、note 沿用旧配方免责原文）均有旧配方明文出处，不是拟合常数。",
       "routeHint": [
@@ -257,7 +257,7 @@
     },
     {
       "id": "user.calendar.month",
-      "version": 1,
+      "version": 2,
       "name": "月历",
       "summary": "用户要看某年某月的日历时用本配方：填好 year/month 让 run_workflow 一次取回节假日 JSON、由 calendar.buildMonth 算完整月历并走宿主旁路渲染，模型不碰历法数据、不写表格；改年月按 inputs 重跑，算子未启用或数据取不到如实说明、不编造。",
       "routeHint": [
@@ -270,7 +270,7 @@
     },
     {
       "id": "baidu.hotsearch",
-      "version": 5,
+      "version": 6,
       "name": "百度热搜",
       "summary": "取回百度实时热搜榜页面，用宿主内置正则算子提取热搜关键词，并由宿主以列表直接展示",
       "category": "搜索",
