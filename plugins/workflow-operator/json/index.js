@@ -69,6 +69,8 @@ function matches(item, where) {
     var expected = where[key];
     if (isObject(expected) && Object.prototype.hasOwnProperty.call(expected, 'notIn')) {
       if (!Array.isArray(expected.notIn) || expected.notIn.indexOf(actual) >= 0) return false;
+    } else if (isObject(expected) && Object.prototype.hasOwnProperty.call(expected, 'stringEq')) {
+      if (String(actual) !== String(expected.stringEq)) return false;
     } else if (isObject(expected) && Object.prototype.hasOwnProperty.call(expected, 'in')) {
       if (!Array.isArray(expected.in) || expected.in.indexOf(actual) < 0) return false;
     } else if (isObject(expected) && Object.prototype.hasOwnProperty.call(expected, 'ne')) {
