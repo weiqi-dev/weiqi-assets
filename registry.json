@@ -91,6 +91,16 @@
       "specVersion": 1,
       "path": "plugins/workflow-operator/url/plugin.json",
       "category": "算子"
+    },
+    {
+      "id": "workflow-operator.pagination",
+      "type": "plugin",
+      "name": "游标分页算子",
+      "summary": "把通用游标分页响应转换为下一页状态、停止标记与当前页数据，配合 Workflow repeat 调度。",
+      "pointId": "workflow-operator",
+      "specVersion": 1,
+      "path": "plugins/workflow-operator/pagination/plugin.json",
+      "category": "算子"
     }
   ]
 }
