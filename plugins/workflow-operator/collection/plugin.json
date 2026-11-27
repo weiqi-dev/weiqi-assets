@@ -64,6 +64,47 @@
       "idempotent": true
     },
     {
+      "name": "statusSummary",
+      "description": "统计 boolean 状态数组中的失败项，返回 total / failed / complete。",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "statuses"
+        ],
+        "properties": {
+          "statuses": {
+            "type": "array",
+            "items": {
+              "type": "boolean"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "total",
+          "failed",
+          "complete"
+        ],
+        "properties": {
+          "total": {
+            "type": "integer"
+          },
+          "failed": {
+            "type": "integer"
+          },
+          "complete": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "kind": "pure",
+      "idempotent": true
+    },
+    {
       "name": "concat",
       "description": "按输入顺序连接多个数组，不递归展平。",
       "inputSchema": {
@@ -246,6 +287,23 @@
     }
   ],
   "smoke": [
+    {
+      "method": "statusSummary",
+      "args": [
+        {
+          "statuses": [
+            true,
+            false,
+            true
+          ]
+        }
+      ],
+      "expect": {
+        "total": 3,
+        "failed": 1,
+        "complete": false
+      }
+    },
     {
       "method": "join",
       "args": [
