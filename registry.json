@@ -2,7 +2,7 @@
   "$schema": "./schema/registry.schema.json",
   "schemaVersion": 1,
   "name": "weiqi-assets",
-  "description": "weiqi-bot 的开放扩展资源库：插件工件与 LLM 工具声明，供宿主按需下载。",
+  "description": "可组合的技能、工具与沙箱算子资源目录；Workflow 组合通用宿主原语和可复用算子插件。",
   "baseUrl": "https://weiqi-dev.github.io/weiqi-assets/",
   "resources": [
     {
