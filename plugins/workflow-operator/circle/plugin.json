@@ -21,6 +21,50 @@
   "category": "围棋",
   "exposes": [
     {
+      "name": "pickOpponents",
+      "description": "从 rootUid 的对局中按出现局数降序、uid 升序选取 opponentCount 个对手；maxHops=1 时返回空数组。仅计算围棋对手关系，不采集棋谱。",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "games",
+          "rootUid",
+          "opponentCount",
+          "maxHops"
+        ],
+        "properties": {
+          "games": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "rootUid": {
+            "type": "string"
+          },
+          "opponentCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "maxHops": {
+            "type": "integer",
+            "enum": [
+              1,
+              2
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "kind": "pure",
+      "idempotent": true
+    },
+    {
       "name": "normalize",
       "description": "把标准化对局行投影成可复算的关系事实。入参 {games:[对局行], rootUid:字符串}；返回 {stats, nodes, components, edges, commonOpponents}。只做围棋关系图计算，不负责取数、页面解析或字段提取。",
       "inputSchema": {
@@ -50,6 +94,38 @@
     }
   ],
   "smoke": [
+    {
+      "method": "pickOpponents",
+      "args": [
+        {
+          "games": [
+            {
+              "blackuid": "root",
+              "whiteuid": "b"
+            },
+            {
+              "blackuid": "root",
+              "whiteuid": "b"
+            },
+            {
+              "blackuid": "c",
+              "whiteuid": "root"
+            },
+            {
+              "blackuid": "root",
+              "whiteuid": "a"
+            }
+          ],
+          "rootUid": "root",
+          "opponentCount": 2,
+          "maxHops": 2
+        }
+      ],
+      "expect": [
+        "b",
+        "a"
+      ]
+    },
     {
       "method": "normalize",
       "args": [
