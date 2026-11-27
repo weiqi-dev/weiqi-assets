@@ -83,6 +83,11 @@
               "path": "result",
               "op": "eq",
               "value": 0
+            },
+            {
+              "path": "uid",
+              "op": "ne",
+              "value": 0
             }
           ],
           "pick": [
