@@ -120,7 +120,7 @@
       "args": [
         {
           "text": "x12 y34",
-          "pattern": "\\\\d+",
+          "pattern": "\\d+",
           "withIndex": true
         }
       ],
