@@ -134,7 +134,7 @@ function call(input) {
   }
   if (m === 'groupCount') {
     if (!Array.isArray(a.items) || typeof a.path !== 'string') throw new Error('items/path 参数无效');
-    var counts = {};
+    var counts = Object.create(null);
     for (var n = 0; n < a.items.length; n++) {
       var groupKey = String(getPath(a.items[n], a.path));
       counts[groupKey] = (counts[groupKey] || 0) + 1;
