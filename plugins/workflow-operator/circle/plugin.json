@@ -91,6 +91,48 @@
       "outputSchema": {},
       "kind": "pure",
       "idempotent": true
+    },
+    {
+      "name": "summary",
+      "description": "从 normalize 的完整关系图结果中提取 LLM 分析所需的 stats/nodes/components/commonOpponents，排除 edges 明细。",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "analysis"
+        ],
+        "properties": {
+          "analysis": {
+            "type": "object"
+          }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "stats",
+          "nodes",
+          "components",
+          "commonOpponents"
+        ],
+        "properties": {
+          "stats": {
+            "type": "object"
+          },
+          "nodes": {
+            "type": "array"
+          },
+          "components": {
+            "type": "array"
+          },
+          "commonOpponents": {
+            "type": "array"
+          }
+        },
+        "additionalProperties": false
+      },
+      "kind": "pure",
+      "idempotent": true
     }
   ],
   "smoke": [
@@ -378,6 +420,51 @@
             "gamesWithRoot": 2
           }
         ]
+      }
+    },
+    {
+      "method": "summary",
+      "args": [
+        {
+          "analysis": {
+            "stats": {
+              "totalGames": 2
+            },
+            "nodes": [
+              {
+                "uid": "a"
+              }
+            ],
+            "components": [
+              {
+                "size": 1
+              }
+            ],
+            "edges": [
+              {
+                "a": "a",
+                "b": "b"
+              }
+            ],
+            "commonOpponents": []
+          }
+        }
+      ],
+      "expect": {
+        "stats": {
+          "totalGames": 2
+        },
+        "nodes": [
+          {
+            "uid": "a"
+          }
+        ],
+        "components": [
+          {
+            "size": 1
+          }
+        ],
+        "commonOpponents": []
       }
     }
   ]
