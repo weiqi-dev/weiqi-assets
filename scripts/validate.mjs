@@ -187,7 +187,7 @@ function validateWorkflowSkill(sk, ctx, pathHint) {
     return;
   }
 
-  const checkInputPlaceholders = (value, at) => {
+  const checkInputPlaceholders = (value, at, scope) => {
     const strings = [];
     collectArgStrings(value, strings);
     for (const text of strings) {
@@ -197,10 +197,20 @@ function validateWorkflowSkill(sk, ctx, pathHint) {
           fail(at + " 引用了未声明的 input 占位符：" + match[0] + "（须在 " + ctx + ".inputs[] 中存在）");
         }
       }
+      for (const match of [...text.matchAll(SCOPE_PLACEHOLDER_RE), ...text.matchAll(URL_SCOPE_PLACEHOLDER_RE)]) {
+        const root = match[1].split('.')[0];
+        if (root === 'item' && !scope.inForEach) fail(at + ' 使用了仅允许在 forEach 内的占位符 ' + match[0]);
+        if (root === 'index' && !scope.inForEach) fail(at + ' 使用了仅允许在 forEach 内的占位符 ' + match[0]);
+        if (root === 'state' && !scope.inRepeat) fail(at + ' 使用了仅允许在 repeat 内的占位符 ' + match[0]);
+      }
     }
   };
 
-  const validateSteps = (steps, inheritedIds, at) => {
+  const validateSteps = (steps, inheritedIds, at, scope, depth = 0) => {
+    if (depth > MAX_WORKFLOW_NESTING) {
+      fail(at + ' 控制结构嵌套超过上限 ' + MAX_WORKFLOW_NESTING);
+      return new Set();
+    }
     const priorIds = new Set(inheritedIds);
     const localIds = new Set();
     for (const [i, st] of steps.entries()) {
@@ -222,7 +232,7 @@ function validateWorkflowSkill(sk, ctx, pathHint) {
       if (hasCall) {
         if (st.args !== undefined && (!st.args || typeof st.args !== "object" || Array.isArray(st.args))) {
           fail(sc + ".args 若给必须是对象");
-        } else if (st.args) checkInputPlaceholders(st.args, sc + ".args");
+        } else if (st.args) checkInputPlaceholders(st.args, sc + ".args", scope);
         if (st.bindings !== undefined) {
           if (!Array.isArray(st.bindings)) fail(sc + ".bindings 若给必须是数组");
           else for (const [j, binding] of st.bindings.entries()) {
@@ -243,7 +253,7 @@ function validateWorkflowSkill(sk, ctx, pathHint) {
           if (typeof each.path !== "string") fail(sc + ".forEach.path 必须是字符串");
           if (each.onError !== undefined && !["fail", "continue"].includes(each.onError)) fail(sc + ".forEach.onError 只允许 fail 或 continue");
           if (!Array.isArray(each.steps) || each.steps.length === 0) fail(sc + ".forEach.steps 必须是非空数组");
-          else validateSteps(each.steps, priorIds, sc + ".forEach.steps");
+          else validateSteps(each.steps, priorIds, sc + ".forEach.steps", { inForEach: true, inRepeat: scope.inRepeat }, depth + 1);
         }
       } else if (hasIfElse) {
         if (st.args !== undefined || st.bindings !== undefined) fail(sc + " 控制节点不能声明 args 或 bindings");
@@ -257,10 +267,10 @@ function validateWorkflowSkill(sk, ctx, pathHint) {
             if (typeof condition.path !== "string") fail(sc + ".ifElse.condition.path 必须是字符串");
           }
           if (!Array.isArray(branch.then) || branch.then.length === 0) fail(sc + ".ifElse.then 必须是非空数组");
-          else validateSteps(branch.then, priorIds, sc + ".ifElse.then");
+          else validateSteps(branch.then, priorIds, sc + ".ifElse.then", scope, depth + 1);
           if (branch.else !== undefined) {
             if (!Array.isArray(branch.else)) fail(sc + ".ifElse.else 若给必须是数组");
-            else validateSteps(branch.else, priorIds, sc + ".ifElse.else");
+            else validateSteps(branch.else, priorIds, sc + ".ifElse.else", scope, depth + 1);
           }
         }
       } else if (hasRepeat) {
@@ -276,11 +286,11 @@ function validateWorkflowSkill(sk, ctx, pathHint) {
           if (repeat.initialState !== undefined) {
             if (!repeat.initialState || typeof repeat.initialState !== "object" || Array.isArray(repeat.initialState)) {
               fail(sc + ".repeat.initialState 若给必须是对象");
-            } else checkInputPlaceholders(repeat.initialState, sc + ".repeat.initialState");
+            } else checkInputPlaceholders(repeat.initialState, sc + ".repeat.initialState", scope);
           }
           if (!Array.isArray(repeat.steps) || repeat.steps.length === 0) fail(sc + ".repeat.steps 必须是非空数组");
           else {
-            const nestedIds = validateSteps(repeat.steps, priorIds, sc + ".repeat.steps");
+            const nestedIds = validateSteps(repeat.steps, priorIds, sc + ".repeat.steps", { inForEach: scope.inForEach, inRepeat: true }, depth + 1);
             for (const field of ["stateFrom", "until"]) {
               const ref = repeat[field];
               const rc = sc + ".repeat." + field;
@@ -299,7 +309,7 @@ function validateWorkflowSkill(sk, ctx, pathHint) {
     }
     return localIds;
   };
-  validateSteps(wf.steps, new Set(), ctx + ".workflow.steps");
+  validateSteps(wf.steps, new Set(), ctx + ".workflow.steps", { inForEach: false, inRepeat: false });
 }
 
 /** 与 weiqi-bot/domain/plugin/PluginValidator.ts 的禁用规则同源 */
