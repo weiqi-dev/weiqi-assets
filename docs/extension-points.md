@@ -8,7 +8,7 @@
 | pointId | specVersion | 入口 | 输入 | 输出契约 | 宿主接入点 |
 |---|---|---|---|---|---|
 | `ranking` | 1 | `rank` | `{ matches: MatchData[] }`（原始对阵表的只读 JSON 拷贝） | `{ columns: { key, label }[], rows: { id, name, rank, cells }[] }` | `application/plugin/RankingPluginAdapter.ts` → `domain/ranking/RankingPipeline.ts` |
-| `workflow-operator` | 1 | `call` | `{ method: string, args: [参数对象] }`（method 只能取 manifest `exposes[]` 白名单） | 任意可 JSON 序列化的值（形状由各插件的 `exposes[].description` 声明） | 宿主 `OperatorRegistry`（阶段二 workflow runner 按名调用） |
+| `workflow-operator` | 1 | `call` | `{ method: string, args: [参数对象] }`（method 只能取 manifest `exposes[]` 白名单） | 由各方法的 `exposes[].outputSchema` 声明并在运行时校验的 JSON 值 | 宿主 `OperatorRegistry`（阶段二 workflow runner 按名调用） |
 
 来源：
 
@@ -76,7 +76,7 @@
 |---|---|---|
 | 入口 | `rank({matches})` | `call({method,args})` |
 | 输入 | 原始对阵表 | 方法名 + 一个 JSON 参数对象 |
-| 输出 | 严格 `{ columns, rows }`，由 `validateRankingOutput` 校验 | 任意可 JSON 序列化值，宿主不解读语义 |
+| 输出 | 严格 `{ columns, rows }`，由 `validateRankingOutput` 校验 | 按 `outputSchema` 校验的 JSON 值 |
 | 生效位置 | 赛事详情页排名管线 | 宿主 `OperatorRegistry`（阶段二 workflow runner 按名调用） |
 | 方法白名单 | 无（只有一个入口） | `plugin.json` 的 `exposes[]`，宿主只放行这里声明的 `method` |
 | 安装前试跑 | `SAMPLE_RANKING_INPUT` + 排名契约 | `smoke[]` 样例（可带 method）逐字段比对 `expect` |
@@ -153,3 +153,12 @@ interface ModelToolDefinition {
 2. 本仓库：`docs/extension-points.md` 登记 → `schema/` 的 `pointId.enum` 与
    `scripts/validate.mjs` 的 `KNOWN_POINT_IDS` 同步 → 加示例条目；
 3. 两边都 commit 后再发布资源，避免「资源先到、宿主不认」。
+
+
+## 通用算子插件的职责边界
+
+工作流算子插件运行在一次性 QuickJS 沙箱中，默认没有网络、DOM、时钟、存储或其它宿主 API。插件应以确定性计算为主：解析上游传入的 HTML/JSON、提取字段、转换结构、集合运算、领域分析等。
+
+需要外部 I/O 时，由宿主提供通用原语（例如 `fetch_batch`）执行；原语只承担通用能力，不认识网站、围棋或具体业务协议。站点 URL 规则、分页策略和字段语义由 Workflow 配方与可复用算子组合表达。
+
+优先把跨业务能力拆成可组合的插件，例如 HTML 选择器提取、集合去重/分组/展平、字段映射。领域插件只保留确实属于该领域的计算逻辑，不包揽采集、解析和数据搬运。
