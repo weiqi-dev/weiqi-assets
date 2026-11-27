@@ -56,7 +56,7 @@
   `XMLHttpRequest`、`importScripts`、`require`、`postMessage`、`self`、`navigator`、`WebSocket`；
 - 不得动态求值、动态模块加载、无界循环；
 - 代码必须能被 `ctx.evalCode` 编译，入口必须是全局可解析的标识符；
-- 入口返回值必须可 JSON 序列化（无循环引用 / 函数 / BigInt），且能被 `validateRankingOutput` 接受。
+- 入口返回值必须可 JSON 序列化（无循环引用 / 函数 / BigInt）；ranking 由 `validateRankingOutput` 校验，workflow-operator 由各方法 `outputSchema` 校验。
 
 ⚠️ `PluginValidator` 是**对整串源码做正则**，注释与字符串里出现上述禁用词同样会被拦截。
 `scripts/validate.mjs` 复刻了这一点，示例插件的注释因此刻意规避了这些词。
@@ -66,11 +66,9 @@
 `workflow-operator` 是**工作流算子插件**：它不挂模型 `tools[]`，
 不进 `ModelRequest.tools`，也不向 system 提示词注入任何算子清单。工件 `exposes[]` 的**每个方法按名注册成一条宿主算子**
 （内置算子用 snake_case，插件算子用 `<slug>.<exposes[].name>`，如 `my-operator.compute`），
-由宿主 `OperatorRegistry` 统一持有；**阶段二的 workflow/DAG runner** 在节点里写
-`"call": "<算子名>"` 按名查表并按名执行（value→value）。阶段一只提供这张「按名查/按名执行」的地基，
-不解析配方、不做拓扑排序、不跑 DAG。
+由宿主 `OperatorRegistry` 统一持有；Workflow 节点写 `"call": "<算子名>"` 按名查表并按名执行（value→value）。宿主 runner 还提供通用 `forEach` 与有界 `repeat` 控制块；循环体仍然只调用独立算子，不把循环业务逻辑塞进插件。
 
-`workflow-operator` 与 `ranking` 共用同一套工件、存储、在线安装与 QuickJS 沙箱，差别只在**契约**：
+`workflow-operator` 与 `ranking` 共用同一套工件、存储、在线安装与 QuickJS 沙箱，差别只在**契约**。每个方法必须声明 `inputSchema`、`outputSchema`、`kind` 与 `idempotent`；插件执行时不获得宿主 API：
 
 | 维度 | ranking | workflow-operator |
 |---|---|---|
@@ -107,10 +105,7 @@
 通过后默认 `enabled:false`，**必须人工在「本地插件」页启用**才注册进 `OperatorRegistry`。
 角色自建不绕过这道闸门；启用后由 workflow 节点按算子名引用，跨会话复用。
 
-带 `workflow` 的技能配方（数据源在各自 `skills/<id>/skill.json`，`skills/registry.json` 只是瘦索引、不再含配方）
-与这张算子表对接：`inputs` 填空、`steps` 声明 DAG、宿主 `run_workflow` 触发，
-节点 `"call"` 按算子名查表；形状契约在 `schema/workflow.schema.json`，引用/唯一性等语义由
-`scripts/validate.mjs` 的 `validateWorkflowSkill()` 校验，`call` 是否命中已启用算子由宿主运行时决定。
+带 `workflow` 的技能配方与这张算子表对接：`inputs` 填空、`steps` 声明普通节点与循环控制块，宿主 `run_workflow` 触发；节点 `"call"` 按算子名查表。安装技能时，宿主从 Workflow（包括嵌套循环体）递归推导插件依赖，按资源 ID 去重，自动安装缺少的插件并启用；已满足的依赖不重复安装。形状契约在 `schema/workflow.schema.json`，作用域引用与唯一性由 `scripts/validate.mjs` 校验，算子是否已启用由宿主运行时决定。
 无 `workflow` 的配方沿用现有散文执行路径。配方形状不在此处校验白名单，避免与宿主算子表漂移。
 
 `plugin_write` 省略 `pointId` 时仍是原来的 ranking 排名插件（行为逐字不变），只有给了
@@ -162,3 +157,21 @@ interface ModelToolDefinition {
 需要外部 I/O 时，由宿主提供通用原语（例如 `fetch_batch`）执行；原语只承担通用能力，不认识网站、围棋或具体业务协议。站点 URL 规则、分页策略和字段语义由 Workflow 配方与可复用算子组合表达。
 
 优先把跨业务能力拆成可组合的插件，例如 HTML 选择器提取、集合去重/分组/展平、字段映射。领域插件只保留确实属于该领域的计算逻辑，不包揽采集、解析和数据搬运。
+
+
+## Workflow 循环控制块
+
+- `forEach` 从更早节点的 value 按 path 取数组，对每项执行一个嵌套 steps 列表；循环体可用 `{{item}}`、`{{item.path}}` 与 `{{index}}` 数据占位符。
+- `repeat` 执行一个有界 steps 列表；每轮用 `{{state.path}}` 读取状态，由 `stateFrom` 更新对象状态，由 `until` 指向 boolean 停止条件。
+- `repeat.maxIterations` 可使用整数或 `{{input.name}}`；宿主对单个循环控制块设置统一迭代上限，防止失控展开。
+- 循环节点输出数组（forEach）或 `{ items, state, stopped }`（repeat）；普通下游节点通过标准 bindings 消费，不需要模型逐轮协调。
+
+## 新增的通用算子插件
+
+- `workflow-operator.html`：HTML 字符串解析与常用 CSS 选择器提取。
+- `workflow-operator.url`：URL 查询参数构造与解析。
+- `workflow-operator.collection`：数组包装、连接、去重、分组、排序、状态汇总等。
+- `workflow-operator.pagination`：把游标分页响应转换为下一轮状态与停止标记。
+- `workflow-operator.transform`：通用 JSON 字段类型转换。
+
+这些插件都只处理传入数据；网络请求仍由宿主通用原语负责。
