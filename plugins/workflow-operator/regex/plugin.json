@@ -1,0 +1,139 @@
+{
+  "$schema": "../../../schema/plugin.schema.json",
+  "id": "workflow-operator.regex",
+  "name": "正则算子",
+  "type": "plugin",
+  "pointId": "workflow-operator",
+  "specVersion": 1,
+  "entry": "call",
+  "code": "plugins/workflow-operator/regex/index.js",
+  "origin": "manual",
+  "intent": "为 Workflow 提供通用正则匹配、提取与替换，使用 ECMAScript RegExp 语义，纯计算，不访问宿主资源。",
+  "readme": "plugins/workflow-operator/regex/README.md",
+  "license": "MIT",
+  "tags": [
+    "workflow-operator",
+    "regex",
+    "text"
+  ],
+  "category": "算子",
+  "exposes": [
+    {
+      "name": "match",
+      "description": "执行一次正则匹配，返回命中值、位置和捕获组。",
+      "inputSchema": {
+        "type": "object"
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "matched",
+          "value",
+          "index",
+          "groups"
+        ],
+        "properties": {
+          "matched": {
+            "type": "boolean"
+          },
+          "index": {
+            "type": "integer"
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "kind": "pure",
+      "idempotent": true
+    },
+    {
+      "name": "extract",
+      "description": "全局提取并返回数组；默认元素为字符串，withIndex:true 时元素为 { value: string, index: number }，index 是原文中的 UTF-16 起始偏移。",
+      "inputSchema": {
+        "type": "object"
+      },
+      "outputSchema": {
+        "type": "array"
+      },
+      "kind": "pure",
+      "idempotent": true
+    },
+    {
+      "name": "replace",
+      "description": "按正则替换文本，默认全局替换。",
+      "inputSchema": {
+        "type": "object"
+      },
+      "outputSchema": {
+        "type": "string"
+      },
+      "kind": "pure",
+      "idempotent": true
+    }
+  ],
+  "smoke": [
+    {
+      "method": "match",
+      "args": [
+        {
+          "text": "abc123",
+          "pattern": "\\d+"
+        }
+      ],
+      "expect": {
+        "matched": true,
+        "value": "123",
+        "index": 3,
+        "groups": []
+      }
+    },
+    {
+      "method": "extract",
+      "args": [
+        {
+          "text": "a1 b2",
+          "pattern": "\\d+"
+        }
+      ],
+      "expect": [
+        "1",
+        "2"
+      ]
+    },
+    {
+      "method": "replace",
+      "args": [
+        {
+          "text": "a1 b2",
+          "pattern": "\\d+",
+          "replacement": "#"
+        }
+      ],
+      "expect": "a# b#"
+    },
+    {
+      "method": "extract",
+      "args": [
+        {
+          "text": "x12 y34",
+          "pattern": "\\d+",
+          "withIndex": true
+        }
+      ],
+      "expect": [
+        {
+          "value": "12",
+          "index": 1
+        },
+        {
+          "value": "34",
+          "index": 5
+        }
+      ]
+    }
+  ]
+}
