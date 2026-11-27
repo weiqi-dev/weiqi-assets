@@ -110,6 +110,7 @@ function call(input) {
     return a.items.filter(function (x) { return matches(x, a.where); }).map(function (x) { return getPath(x, a.path); });
   }
   if (m === 'concat') {
+    if (a.arrays === undefined && Array.isArray(a.left) && Array.isArray(a.right)) return a.left.concat(a.right);
     if (!Array.isArray(a.arrays)) throw new Error('arrays 必须是数组');
     var joined = [];
     for (var j = 0; j < a.arrays.length; j++) {
@@ -146,6 +147,31 @@ function call(input) {
     if (!Array.isArray(a.items) || typeof a.path !== 'string') throw new Error('items/path 参数无效');
     var direction = a.order === 'desc' ? -1 : 1;
     return a.items.slice().sort(function (x, y) { return direction * compare(getPath(x, a.path), getPath(y, a.path)); });
+  }
+  if (m === 'isEmpty') {
+    var v = a.value;
+    return v === null || v === undefined || v === '' ||
+      (Array.isArray(v) && v.length === 0) || (isObject(v) && Object.keys(v).length === 0);
+  }
+  if (m === 'assert') {
+    if (Object.prototype.hasOwnProperty.call(a, 'equals') && a.value !== a.equals) {
+      throw new Error(typeof a.message === 'string' ? a.message : '断言失败');
+    }
+    if (Object.prototype.hasOwnProperty.call(a, 'notEquals') && a.value === a.notEquals) {
+      throw new Error(typeof a.message === 'string' ? a.message : '断言失败');
+    }
+    return true;
+  }
+  if (m === 'flatten') {
+    if (!Array.isArray(a.items)) throw new Error('items 必须是数组');
+    var stack = a.items.slice().reverse(), flattened = [];
+    while (stack.length) {
+      var next = stack.pop();
+      if (Array.isArray(next)) {
+        for (var z = next.length - 1; z >= 0; z--) stack.push(next[z]);
+      } else flattened.push(next);
+    }
+    return flattened;
   }
   if (m === 'take') {
     if (!Array.isArray(a.items) || !Number.isInteger(a.count) || a.count < 0) throw new Error('items/count 参数无效');
