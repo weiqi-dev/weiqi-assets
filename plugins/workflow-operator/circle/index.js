@@ -287,6 +287,8 @@ function normalize(args) {
   if (!Array.isArray(args.games)) throw new Error('games 必须是数组');
   if (typeof args.rootUid !== 'string') throw new Error('rootUid 必须是字符串');
   var rootUid = args.rootUid;
+  var fetchFailures = args.fetchFailures === undefined ? 0 : args.fetchFailures;
+  if (!Number.isInteger(fetchFailures) || fetchFailures < 0) throw new Error('fetchFailures 必须是非负整数');
   var rows = cleanGames(args.games);
   var edges = buildEdges(rows);
   var nodes = buildNodes(rows, edges);
@@ -301,7 +303,8 @@ function normalize(args) {
       totalGames: rows.length,
       nodeCount: nodes.length,
       edgeCount: edges.length,
-      expandedCount: expandedCount
+      expandedCount: expandedCount,
+      fetchFailures: fetchFailures
     },
     nodes: nodes,
     components: components,
