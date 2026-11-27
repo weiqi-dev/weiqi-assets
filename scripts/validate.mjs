@@ -120,11 +120,28 @@ const URL_SCOPE_PLACEHOLDER_RE = /\{\{urlencode\.(item(?:\.[^{}]+)?|state(?:\.[^
 // 限制控制结构嵌套，避免递归校验器被深层声明耗尽调用栈。
 const MAX_WORKFLOW_NESTING = 16;
 
-/** 递归收集 args 里出现的所有字符串（用于 {{input.xxx}} 占位符引用检查） */
-function collectArgStrings(v, out) {
-  if (typeof v === 'string') { out.push(v); return; }
-  if (Array.isArray(v)) { for (const x of v) collectArgStrings(x, out); return; }
-  if (v && typeof v === 'object') { for (const x of Object.values(v)) collectArgStrings(x, out); }
+/** 迭代收集 args 字符串，避免深层 JSON 让静态校验器自身递归溢出。 */
+function collectArgStrings(v, out, at) {
+  const stack = [{ value: v, depth: 0 }];
+  let visited = 0;
+  while (stack.length > 0) {
+    const current = stack.pop();
+    visited += 1;
+    if (visited > 10000) {
+      fail(at + ' 的参数结构超过静态校验节点预算 10000');
+      return;
+    }
+    if (current.depth > 64) {
+      fail(at + ' 的参数结构嵌套超过静态校验深度 64');
+      return;
+    }
+    if (typeof current.value === 'string') out.push(current.value);
+    else if (Array.isArray(current.value)) {
+      for (const item of current.value) stack.push({ value: item, depth: current.depth + 1 });
+    } else if (current.value && typeof current.value === 'object') {
+      for (const item of Object.values(current.value)) stack.push({ value: item, depth: current.depth + 1 });
+    }
+  }
 }
 
 function validateWorkflowSkill(sk, ctx, pathHint) {
@@ -193,7 +210,7 @@ function validateWorkflowSkill(sk, ctx, pathHint) {
 
   const checkInputPlaceholders = (value, at, scope) => {
     const strings = [];
-    collectArgStrings(value, strings);
+    collectArgStrings(value, strings, at);
     for (const text of strings) {
       for (const match of [...text.matchAll(INPUT_PLACEHOLDER_RE), ...text.matchAll(URL_INPUT_PLACEHOLDER_RE)]) {
         const name = match[1];
