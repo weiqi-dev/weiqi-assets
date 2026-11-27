@@ -21,7 +21,7 @@
   "exposes": [
     {
       "name": "build",
-      "description": "根据 base 与 params 构造 URL，查询参数按键排序并正确百分号编码；数组值生成重复键。",
+      "description": "根据 base 与 params 构造 URL，返回 {url} 对象；查询参数按键排序并正确百分号编码，数组值生成重复键。",
       "inputSchema": {
         "type": "object",
         "required": [
@@ -38,7 +38,16 @@
         "additionalProperties": false
       },
       "outputSchema": {
-        "type": "string"
+        "type": "object",
+        "required": [
+          "url"
+        ],
+        "properties": {
+          "url": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
       },
       "kind": "pure",
       "idempotent": true
@@ -77,7 +86,9 @@
           }
         }
       ],
-      "expect": "https://example.com/list?a=1&b=two%20words"
+      "expect": {
+        "url": "https://example.com/list?a=1&b=two%20words"
+      }
     },
     {
       "method": "parse",
