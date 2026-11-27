@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "circle.foxwq",
-  "version": 7,
+  "version": 8,
   "name": "弈友圈",
   "summary": "分析某个野狐账号的弈友圈：按昵称查 UID，使用通用 web_fetch 与 JSON 沙箱算子分页获取主账号棋谱、提取交战对手并逐个抓取，再由 circle.normalize 生成关系事实供模型分析。",
   "routeHint": [
@@ -231,8 +231,18 @@
         "id": "whereWhiteRoot",
         "call": "json.set",
         "args": {
-          "value": {},
-          "path": "whiteuid"
+          "value": {
+            "whiteuid": {
+              "stringEq": ""
+            },
+            "blackuid": {
+              "notIn": [
+                "",
+                null
+              ]
+            }
+          },
+          "path": "whiteuid.stringEq"
         },
         "bindings": [
           {
@@ -277,8 +287,18 @@
         "id": "whereBlackRoot",
         "call": "json.set",
         "args": {
-          "value": {},
-          "path": "blackuid"
+          "value": {
+            "blackuid": {
+              "stringEq": ""
+            },
+            "whiteuid": {
+              "notIn": [
+                "",
+                null
+              ]
+            }
+          },
+          "path": "blackuid.stringEq"
         },
         "bindings": [
           {
