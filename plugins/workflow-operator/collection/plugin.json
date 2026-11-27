@@ -20,6 +20,49 @@
   "category": "算子",
   "exposes": [
     {
+      "name": "singleton",
+      "description": "把任意 JSON 值包装成单元素数组。",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "value"
+        ],
+        "properties": {
+          "value": {}
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "array"
+      },
+      "kind": "pure",
+      "idempotent": true
+    },
+    {
+      "name": "concat",
+      "description": "按输入顺序连接多个数组，不递归展平。",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "arrays"
+        ],
+        "properties": {
+          "arrays": {
+            "type": "array",
+            "items": {
+              "type": "array"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "array"
+      },
+      "kind": "pure",
+      "idempotent": true
+    },
+    {
       "name": "flatten",
       "description": "递归展平嵌套数组。",
       "inputSchema": {
@@ -178,6 +221,42 @@
     }
   ],
   "smoke": [
+    {
+      "method": "singleton",
+      "args": [
+        {
+          "value": {
+            "url": "https://example.com"
+          }
+        }
+      ],
+      "expect": [
+        {
+          "url": "https://example.com"
+        }
+      ]
+    },
+    {
+      "method": "concat",
+      "args": [
+        {
+          "arrays": [
+            [
+              1,
+              2
+            ],
+            [
+              3
+            ]
+          ]
+        }
+      ],
+      "expect": [
+        1,
+        2,
+        3
+      ]
+    },
     {
       "method": "uniqueBy",
       "args": [
