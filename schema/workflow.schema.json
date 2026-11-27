@@ -2,32 +2,93 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://weiqi-dev.github.io/weiqi-assets/schema/workflow.schema.json",
   "title": "带 workflow 的 weiqi-bot 技能配方",
-  "description": "描述 skills/<id>/skill.json 里「带 workflow 字段」的单条技能配方的形状（skills/registry.json 只是瘦索引，完整配方在各技能自己的文件里）。配方是纯 JSON 零代码：inputs[] 填空 + workflow.steps[] 声明 DAG + 宿主 run_workflow 触发。资源侧只校验形状，不校验 call 是否命中算子白名单（内置算子名来自 weiqi-bot、插件算子来自对应资源 plugin.json 的 exposes[].name 拼 <slug>.<method>，运行时未注册由 runner 结构化失败回灌）；steps 非空、bindings.from 指向更靠前的真实 step id 这类跨项语义由 scripts/validate.mjs 的 validateWorkflowSkill() 手写校验，纯 JSON Schema 表达不了。占位符只能是字符串值（如 \"{{input.year}}\"），宿主 runner 做纯数据注入、不做表达式求值；call 白名单不在此硬编码，避免与 bot 运行时 registry 漂移。minLength / minItems 的 1 只表示「非空」，不是步数阈值。",
+  "description": "描述 workflow 技能配方：静态算子节点、forEach 数组展开与有界 repeat 状态循环。循环由宿主 Workflow runner 调度，循环体仍只调用已注册的宿主原语或沙箱算子插件；占位符只做数据注入，不执行表达式。",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "id", "version", "name", "summary", "primitives", "prompt", "workflow"],
+  "required": [
+    "schemaVersion",
+    "id",
+    "version",
+    "name",
+    "summary",
+    "primitives",
+    "prompt",
+    "workflow"
+  ],
   "properties": {
-    "schemaVersion": { "type": "integer", "const": 1, "description": "技能配方自身结构版本（=1），与清单索引的 schemaVersion（=2）无关，别混。" },
-    "id": { "type": "string", "minLength": 1, "description": "配方 id。" },
-    "version": { "type": "integer", "minimum": 1, "description": "配方内容版本，语义改写时递增。" },
-    "name": { "type": "string", "minLength": 1 },
-    "summary": { "type": "string", "minLength": 1, "description": "何时用 + 如实兜底，供路由提示。" },
-    "primitives": { "type": "array", "items": { "type": "string" }, "description": "带 workflow 的配方置空数组；不再靠 hasAllPrimitives 挂散文原语工具。" },
-    "category": { "type": "string", "minLength": 1, "description": "面板筛选分类（纯展示）。" },
-    "secrets": { "type": "array", "description": "可选：凭据声明，宿主强制；散文路径配方沿用。" },
-    "prompt": { "type": "string", "minLength": 1, "description": "何时用 + 结果由宿主旁路输出 + 诚实性约束；不再写逐步指令。" },
+    "schemaVersion": {
+      "type": "integer",
+      "const": 1,
+      "description": "技能配方自身结构版本（=1），与清单索引的 schemaVersion（=2）无关，别混。"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "配方 id。"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "配方内容版本，语义改写时递增。"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "description": "何时用 + 如实兜底，供路由提示。"
+    },
+    "primitives": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "带 workflow 的配方置空数组；不再靠 hasAllPrimitives 挂散文原语工具。"
+    },
+    "category": {
+      "type": "string",
+      "minLength": 1,
+      "description": "面板筛选分类（纯展示）。"
+    },
+    "secrets": {
+      "type": "array",
+      "description": "可选：凭据声明，宿主强制；散文路径配方沿用。"
+    },
+    "prompt": {
+      "type": "string",
+      "minLength": 1,
+      "description": "何时用 + 结果由宿主旁路输出 + 诚实性约束；不再写逐步指令。"
+    },
     "inputs": {
       "type": "array",
       "description": "可选：模型在 yield 边界填的参数契约；缺省表示无需模型填参。name 唯一、占位符引用校验由 validateWorkflowSkill() 完成。",
-      "items": { "$ref": "#/$defs/input" }
+      "items": {
+        "$ref": "#/$defs/input"
+      }
     },
-    "workflow": { "$ref": "#/$defs/workflow" },
-    "returnToLLM": { "type": "boolean", "description": "可选：缺省 false = 成功观察只回「完成 + 句柄」、不回灌业务 value；显式 true = 正常模式也把 yield 汇总 values 回灌到本轮观察，供模型做分析。出处：weiqi-bot 的 SkillRecipe.returnToLLM（应用侧开关，2026-11-25 契约 D）；仅带 workflow 的配方有意义。索引不带此字段，不纳入索引↔配方重叠字段比对。" },
+    "workflow": {
+      "$ref": "#/$defs/workflow"
+    },
+    "returnToLLM": {
+      "type": "boolean",
+      "description": "可选：缺省 false = 成功观察只回「完成 + 句柄」、不回灌业务 value；显式 true = 正常模式也把 yield 汇总 values 回灌到本轮观察，供模型做分析。出处：weiqi-bot 的 SkillRecipe.returnToLLM（应用侧开关，2026-11-25 契约 D）；仅带 workflow 的配方有意义。索引不带此字段，不纳入索引↔配方重叠字段比对。"
+    },
     "llmProjection": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["keep"],
-      "properties": { "keep": { "type": "array", "items": { "type": "string" } } },
+      "required": [
+        "keep"
+      ],
+      "properties": {
+        "keep": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
       "description": "可选：声明式字段白名单，仅 returnToLLM:true 且带 workflow 的配方有意义。出处：宿主 SkillRecipe.llmProjection（2026-11-25 B3 契约 A1）；keep 为非空字符串数组，声明哪些 yield 顶层段进 LLM 视图，宿主做声明式投影 + 无损紧凑行（columns/rows）后再写入结果缓存，能力边界与业务出处写进技能 README。索引不带此字段、不纳入索引↔配方重叠字段比对；缺省 = B2 全量行为（零回归）。"
     }
   },
@@ -35,48 +96,243 @@
     "input": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["name", "type"],
+      "required": [
+        "name",
+        "type"
+      ],
       "properties": {
-        "name": { "type": "string", "minLength": 1, "description": "参数名；inputs[] 内唯一，也是 {{input.<name>}} 占位符的引用目标。" },
-        "type": { "type": "string", "enum": ["string", "number", "integer", "boolean", "object", "array"], "description": "参数类型枚举；宿主 runner 只做形状校验，不做表达式求值。" },
-        "required": { "type": "boolean", "description": "是否必须由模型填；缺省不强制。" },
-        "default": { "description": "配方写死的缺省值（任意 JSON 值）；与占位符注入同属数据注入，取值来自旧配方明文说明，不是拟合常数。" },
-        "enum": { "type": "array", "description": "可选枚举表，配方数据；宿主只做校验。" }
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "参数名；inputs[] 内唯一，也是 {{input.<name>}} 占位符的引用目标。"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "string",
+            "number",
+            "integer",
+            "boolean",
+            "object",
+            "array"
+          ],
+          "description": "参数类型枚举；宿主 runner 只做形状校验，不做表达式求值。"
+        },
+        "required": {
+          "type": "boolean",
+          "description": "是否必须由模型填；缺省不强制。"
+        },
+        "default": {
+          "description": "配方写死的缺省值（任意 JSON 值）；与占位符注入同属数据注入，取值来自旧配方明文说明，不是拟合常数。"
+        },
+        "enum": {
+          "type": "array",
+          "description": "可选枚举表，配方数据；宿主只做校验。"
+        }
       }
     },
     "workflow": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["steps"],
+      "required": [
+        "steps"
+      ],
       "properties": {
         "steps": {
           "type": "array",
           "minItems": 1,
-          "description": "非空步骤数组；steps 顺序即拓扑序（bindings.from 只能指向更靠前的节点），步骤数 = 声明长度，不设上限。",
-          "items": { "$ref": "#/$defs/step" }
+          "description": "非空步骤数组；普通节点按声明顺序执行，循环节点由 runner 展开；bindings 只引用当前作用域中更靠前的节点。",
+          "items": {
+            "$ref": "#/$defs/step"
+          }
         }
       }
     },
     "step": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["id", "call"],
-      "properties": {
-        "id": { "type": "string", "minLength": 1, "description": "节点 id；steps 内唯一，bindings[].from 的引用目标。" },
-        "call": { "type": "string", "minLength": 1, "description": "算子名（内置 snake_case 或插件 <slug>.<method>）；不校验白名单，由宿主运行时 OperatorRegistry 决定。" },
-        "args": { "type": "object", "description": "字面量参数对象；字符串值可含 {{input.xxx}} 数据注入占位符（整值占位保留原始类型、嵌入文本转字符串），bindings 注入值按 as 键覆写同名参数。" },
-        "bindings": { "type": "array", "description": "引用绑定数组；每条即声明一条依赖边（fan-out/fan-in），无独立 edges[]。", "items": { "$ref": "#/$defs/binding" } },
-        "yield": { "type": "boolean", "description": "仅显式 true 时该节点 .value 进宿主结果汇总；成功观察只回完成状态与句柄、不回灌业务 value；缺省 false。" }
-      }
+      "oneOf": [
+        {
+          "$ref": "#/$defs/operatorStep"
+        },
+        {
+          "$ref": "#/$defs/forEachStep"
+        },
+        {
+          "$ref": "#/$defs/repeatStep"
+        }
+      ]
     },
     "binding": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["from", "path", "as"],
+      "required": [
+        "from",
+        "path",
+        "as"
+      ],
       "properties": {
-        "from": { "type": "string", "minLength": 1, "description": "上游步骤 id，必须指向本 steps 中位置更靠前的真实节点；跨节点引用校验在 validateWorkflowSkill()，纯 JSON Schema 无法表达。" },
-        "path": { "type": "string", "description": "从上游 StepResult.value 取值的路径（如 '$' 或 'data.list'）；纯引用取值，不做拼接/表达式。" },
-        "as": { "type": "string", "minLength": 1, "description": "注入下游 args 的参数键名；非空。" }
+        "from": {
+          "type": "string",
+          "minLength": 1,
+          "description": "上游步骤 id，必须指向本 steps 中位置更靠前的真实节点；跨节点引用校验在 validateWorkflowSkill()，纯 JSON Schema 无法表达。"
+        },
+        "path": {
+          "type": "string",
+          "description": "从上游 StepResult.value 取值的路径（如 '$' 或 'data.list'）；纯引用取值，不做拼接/表达式。"
+        },
+        "as": {
+          "type": "string",
+          "minLength": 1,
+          "description": "注入下游 args 的参数键名；非空。"
+        }
+      }
+    },
+    "operatorStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "call"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "call": {
+          "type": "string",
+          "minLength": 1
+        },
+        "args": {
+          "type": "object",
+          "description": "字面量参数；可使用 {{input.xxx}}、循环体内的 {{item.path}} / {{index}} / {{state.path}} 占位符。"
+        },
+        "bindings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/binding"
+          }
+        },
+        "yield": {
+          "type": "boolean"
+        }
+      }
+    },
+    "forEachStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "forEach"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "forEach": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "from",
+            "path",
+            "steps"
+          ],
+          "properties": {
+            "from": {
+              "type": "string",
+              "minLength": 1,
+              "description": "更靠前节点的 id，其 value 经 path 取出的值必须是数组。"
+            },
+            "path": {
+              "type": "string"
+            },
+            "steps": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/step"
+              }
+            }
+          }
+        },
+        "yield": {
+          "type": "boolean"
+        }
+      }
+    },
+    "repeatStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "repeat"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "repeat": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "maxIterations",
+            "stateFrom",
+            "until",
+            "steps"
+          ],
+          "properties": {
+            "maxIterations": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 100
+                },
+                {
+                  "type": "string",
+                  "pattern": "^\\{\\{input\\.[^{}]+\\}\\}$"
+                }
+              ]
+            },
+            "initialState": {
+              "type": "object"
+            },
+            "stateFrom": {
+              "$ref": "#/$defs/loopReference"
+            },
+            "until": {
+              "$ref": "#/$defs/loopReference"
+            },
+            "steps": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/step"
+              }
+            }
+          }
+        },
+        "yield": {
+          "type": "boolean"
+        }
+      }
+    },
+    "loopReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "from",
+        "path"
+      ],
+      "properties": {
+        "from": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "type": "string"
+        }
       }
     }
   }
