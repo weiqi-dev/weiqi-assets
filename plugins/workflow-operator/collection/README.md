@@ -4,7 +4,7 @@
 
 | 方法 | 用途 |
 |---|---|
-| `collection.singleton` | 把任意值包装成单元素数组 |\n| `collection.concat` | 按顺序连接多个数组 |\n| `collection.join` | 连接两个数组 |\n| `collection.statusSummary` | 汇总批量 boolean 状态 |\n| `collection.flatten` | 递归展平数组 |
+| `collection.asArray` | 确保值为数组（标量包装、null 变空数组） |\n| `collection.singleton` | 把任意值包装成单元素数组 |\n| `collection.concat` | 按顺序连接多个数组 |\n| `collection.join` | 连接两个数组 |\n| `collection.statusSummary` | 汇总批量 boolean 状态 |\n| `collection.flatten` | 递归展平数组 |
 | `collection.uniqueBy` | 按字段路径去重，保留首次出现项 |
 | `collection.groupBy` | 按字段路径分组 |
 | `collection.pluck` | 提取字段值 |
