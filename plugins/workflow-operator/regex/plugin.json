@@ -24,17 +24,41 @@
       "inputSchema": {
         "type": "object"
       },
-      "outputSchema": {},
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "matched",
+          "value",
+          "index",
+          "groups"
+        ],
+        "properties": {
+          "matched": {
+            "type": "boolean"
+          },
+          "index": {
+            "type": "integer"
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
       "kind": "pure",
       "idempotent": true
     },
     {
       "name": "extract",
-      "description": "提取全部正则命中，可选捕获组、去重、位置与条数限制。",
+      "description": "全局提取并返回数组；默认元素为字符串，withIndex:true 时元素为 { value: string, index: number }，index 是原文中的 UTF-16 起始偏移。",
       "inputSchema": {
         "type": "object"
       },
-      "outputSchema": {},
+      "outputSchema": {
+        "type": "array"
+      },
       "kind": "pure",
       "idempotent": true
     },
@@ -44,7 +68,9 @@
       "inputSchema": {
         "type": "object"
       },
-      "outputSchema": {},
+      "outputSchema": {
+        "type": "string"
+      },
       "kind": "pure",
       "idempotent": true
     }
@@ -88,6 +114,26 @@
         }
       ],
       "expect": "a# b#"
+    },
+    {
+      "method": "extract",
+      "args": [
+        {
+          "text": "x12 y34",
+          "pattern": "\\\\d+",
+          "withIndex": true
+        }
+      ],
+      "expect": [
+        {
+          "value": "12",
+          "index": 1
+        },
+        {
+          "value": "34",
+          "index": 5
+        }
+      ]
     }
   ]
 }
