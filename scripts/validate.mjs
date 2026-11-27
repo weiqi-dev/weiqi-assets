@@ -115,6 +115,10 @@ function validateRouteHint(obj, ctx) {
 const WORKFLOW_INPUT_TYPES = ['string', 'number', 'integer', 'boolean', 'object', 'array'];
 const INPUT_PLACEHOLDER_RE = /\{\{input\.([^}]+)\}\}/g;
 const URL_INPUT_PLACEHOLDER_RE = /\{\{urlencode\.input\.([^}]+)\}\}/g;
+const SCOPE_PLACEHOLDER_RE = /\{\{(item(?:\.[^{}]+)?|index|state(?:\.[^{}]+)?)\}\}/g;
+const URL_SCOPE_PLACEHOLDER_RE = /\{\{urlencode\.(item(?:\.[^{}]+)?|state(?:\.[^{}]+)?)\}\}/g;
+// 限制控制结构嵌套，避免递归校验器被深层声明耗尽调用栈。
+const MAX_WORKFLOW_NESTING = 16;
 
 /** 递归收集 args 里出现的所有字符串（用于 {{input.xxx}} 占位符引用检查） */
 function collectArgStrings(v, out) {
