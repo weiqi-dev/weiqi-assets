@@ -8,7 +8,7 @@
   "entry": "call",
   "code": "plugins/workflow-operator/calendar/index.js",
   "origin": "manual",
-  "intent": "为宿主工作流算子表提供一个纯计算算子 buildMonth：把公历月表所需的历法事实（朔闰、24 节气、传统节日）与 workflow 注入的法定节假日 JSON 一次合并并排版成 {weeks[], legend[]}，供宿主 display_json_list 旁路渲染。整张月历由 DAG 自产出，模型只填 year/month、只收完成与句柄，不接触业务数据。不联网、不读取运行时时钟；历法来自内置 HKO 1901-2100 事实表，法定假由上游节点注入，取不到即抛错，绝不编造。",
+  "intent": "为宿主工作流算子表提供一个纯计算算子 buildMonth：把公历月表所需的历法事实（朔闰、24 节气、传统节日）与 workflow 注入的法定节假日 JSON 一次合并并排版成 {weeks[], legend[]}，供宿主 display 旁路渲染。整张月历由 DAG 自产出，模型只填 year/month、只收完成与句柄，不接触业务数据。不联网、不读取运行时时钟；历法来自内置 HKO 1901-2100 事实表，法定假由上游节点注入，取不到即抛错，绝不编造。",
   "readme": "plugins/workflow-operator/calendar/README.md",
   "license": "MIT",
   "tags": [
