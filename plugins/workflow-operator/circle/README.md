@@ -22,11 +22,12 @@ web_fetch + json.*（通用 Workflow 采集与整理）  →  circle.normalize�
 
 ### `normalize` — 对阵关系的纯计算投影
 
-入参 `{ games: [...], rootUid: "..." }`：
+入参 `{ games: [...], rootUid: "...", fetchFailures?: 0 }`：
 
 - `games` = 通用 Workflow 的 `web_fetch` 与 JSON 算子 的 采集流程整理后的 games 数组（紧凑对局行；字段名见契约 §A：
   `chessid, blackuid, blacknick, blackdan, whiteuid, whitenick, whitedan, starttime, winner, reason, point`）。
-- `rootUid` = 同算子的 主账号 uid（主账号 uid，字符串）。
+- `rootUid` = 主账号 uid（字符串）。
+- `fetchFailures` = Workflow 中 `forEach.onError=continue` 记录的失败对手账号数，缺省为 0。
 
 出参 `{ stats, nodes, components, edges, commonOpponents }`，**字段顺序即重要度顺序（摘要在前、
 明细在后）**，便于回灌被单条上限裁剪时保住关键信息：
