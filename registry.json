@@ -81,6 +81,16 @@
       "specVersion": 1,
       "path": "plugins/workflow-operator/collection/plugin.json",
       "category": "算子"
+    },
+    {
+      "id": "workflow-operator.url",
+      "type": "plugin",
+      "name": "URL 构造算子",
+      "summary": "通用 URL 查询参数构造与解析，负责编码和分页参数拼装，不执行网络请求。",
+      "pointId": "workflow-operator",
+      "specVersion": 1,
+      "path": "plugins/workflow-operator/url/plugin.json",
+      "category": "算子"
     }
   ]
 }
