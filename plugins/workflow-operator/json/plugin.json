@@ -168,6 +168,18 @@
       "outputSchema": {},
       "kind": "pure",
       "idempotent": true
+    },
+    {
+      "name": "toString",
+      "description": "将字符串、数字或布尔值转换为字符串。",
+      "inputSchema": {
+        "type": "object"
+      },
+      "outputSchema": {
+        "type": "string"
+      },
+      "kind": "pure",
+      "idempotent": true
     }
   ],
   "smoke": [
@@ -435,6 +447,15 @@
         2,
         3
       ]
+    },
+    {
+      "method": "toString",
+      "args": [
+        {
+          "value": 123
+        }
+      ],
+      "expect": "123"
     }
   ]
 }
