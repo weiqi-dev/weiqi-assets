@@ -67,7 +67,9 @@ function matches(item, where) {
     var key = keys[i], actual;
     try { actual = getPath(item, key); } catch (e) { return false; }
     var expected = where[key];
-    if (isObject(expected) && Object.prototype.hasOwnProperty.call(expected, 'in')) {
+    if (isObject(expected) && Object.prototype.hasOwnProperty.call(expected, 'notIn')) {
+      if (!Array.isArray(expected.notIn) || expected.notIn.indexOf(actual) >= 0) return false;
+    } else if (isObject(expected) && Object.prototype.hasOwnProperty.call(expected, 'in')) {
       if (!Array.isArray(expected.in) || expected.in.indexOf(actual) < 0) return false;
     } else if (isObject(expected) && Object.prototype.hasOwnProperty.call(expected, 'ne')) {
       if (actual === expected.ne) return false;
