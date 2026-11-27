@@ -114,6 +114,7 @@ function validateRouteHint(obj, ctx) {
  */
 const WORKFLOW_INPUT_TYPES = ['string', 'number', 'integer', 'boolean', 'object', 'array'];
 const INPUT_PLACEHOLDER_RE = /\{\{input\.([^}]+)\}\}/g;
+const URL_INPUT_PLACEHOLDER_RE = /\{\{urlencode\.input\.([^}]+)\}\}/g;
 
 /** 递归收集 args 里出现的所有字符串（用于 {{input.xxx}} 占位符引用检查） */
 function collectArgStrings(v, out) {
@@ -190,10 +191,10 @@ function validateWorkflowSkill(sk, ctx, pathHint) {
     const strings = [];
     collectArgStrings(value, strings);
     for (const text of strings) {
-      for (const match of text.matchAll(INPUT_PLACEHOLDER_RE)) {
+      for (const match of [...text.matchAll(INPUT_PLACEHOLDER_RE), ...text.matchAll(URL_INPUT_PLACEHOLDER_RE)]) {
         const name = match[1];
         if (!inputNames || !inputNames.has(name)) {
-          fail(at + " 引用了未声明的占位符 {{input." + name + "}}（须在 " + ctx + ".inputs[] 中存在）");
+          fail(at + " 引用了未声明的 input 占位符：" + match[0] + "（须在 " + ctx + ".inputs[] 中存在）");
         }
       }
     }
