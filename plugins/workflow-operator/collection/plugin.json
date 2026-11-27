@@ -58,6 +58,27 @@
       "idempotent": true
     },
     {
+      "name": "singletonIfNotEmpty",
+      "description": "items 非空时包装为单元素数组；空数组时返回空数组，适合可选批次扇出。",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array"
+          }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "array"
+      },
+      "kind": "pure",
+      "idempotent": true
+    },
+    {
       "name": "join",
       "description": "按顺序连接 left 与 right 两个数组。",
       "inputSchema": {
@@ -306,6 +327,15 @@
     }
   ],
   "smoke": [
+    {
+      "method": "singletonIfNotEmpty",
+      "args": [
+        {
+          "items": []
+        }
+      ],
+      "expect": []
+    },
     {
       "method": "asArray",
       "args": [
