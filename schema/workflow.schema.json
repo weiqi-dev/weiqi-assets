@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://weiqi-dev.github.io/weiqi-assets/schema/workflow.schema.json",
   "title": "带 workflow 的 weiqi-bot 技能配方",
-  "description": "描述 workflow 技能配方：静态算子节点、forEach 数组展开与有界 repeat 状态循环。循环由宿主 Workflow runner 调度，循环体仍只调用已注册的宿主原语或沙箱算子插件；占位符只做数据注入，不执行表达式。",
+  "description": "描述 workflow 技能配方：静态算子节点、forEach 数组展开、有界 repeat 状态循环与 ifElse 条件分支。循环由宿主 Workflow runner 调度，循环体仍只调用已注册的宿主原语或沙箱算子插件；占位符只做数据注入，不执行表达式。",
   "type": "object",
   "additionalProperties": false,
   "required": [
