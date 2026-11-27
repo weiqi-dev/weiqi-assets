@@ -1,0 +1,105 @@
+{
+  "$schema": "../../../schema/plugin.schema.json",
+  "id": "workflow-operator.html",
+  "name": "HTML 提取算子",
+  "type": "plugin",
+  "pointId": "workflow-operator",
+  "specVersion": 1,
+  "entry": "call",
+  "code": "plugins/workflow-operator/html/index.js",
+  "origin": "manual",
+  "intent": "在受限沙箱中解析上游提供的 HTML 字符串，按常用 CSS 简单选择器提取文本或属性；不联网、不访问页面环境，适用于不同站点的通用 HTML 数据处理。",
+  "readme": "plugins/workflow-operator/html/README.md",
+  "license": "MIT",
+  "tags": [
+    "workflow-operator",
+    "html",
+    "extract",
+    "css-selector"
+  ],
+  "category": "算子",
+  "exposes": [
+    {
+      "name": "extract",
+      "description": "从 HTML 字符串按简单 CSS 选择器提取文本或属性。支持标签、#id、.class、[attr]、[attr=value] 和后代组合；返回字符串数组，first=true 时返回首项或 null。",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "html",
+          "selector"
+        ],
+        "properties": {
+          "html": {
+            "type": "string"
+          },
+          "selector": {
+            "type": "string"
+          },
+          "attribute": {
+            "type": "string"
+          },
+          "first": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {},
+      "kind": "pure",
+      "idempotent": true
+    },
+    {
+      "name": "links",
+      "description": "从 HTML 中提取链接地址；selector 缺省为 a[href]，可覆盖选择器。",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "html"
+        ],
+        "properties": {
+          "html": {
+            "type": "string"
+          },
+          "selector": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "kind": "pure",
+      "idempotent": true
+    }
+  ],
+  "smoke": [
+    {
+      "method": "extract",
+      "args": [
+        {
+          "html": "<ul><li class='x'>甲</li><li>乙</li></ul>",
+          "selector": "li.x"
+        }
+      ],
+      "expect": [
+        "甲"
+      ]
+    },
+    {
+      "method": "links",
+      "args": [
+        {
+          "html": "<a href='/a'>A</a><a href='/b'>B</a>"
+        }
+      ],
+      "expect": [
+        "/a",
+        "/b"
+      ]
+    }
+  ]
+}
