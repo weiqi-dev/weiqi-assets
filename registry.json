@@ -56,7 +56,7 @@
       "id": "workflow-operator.circle",
       "type": "plugin",
       "name": "弈友圈关系算子",
-      "summary": "workflow-operator 算子插件：normalize 把 foxwq_fetch_batch 取回的野狐对局行投影成可复算的 stats/nodes/components/edges/commonOpponents 计数与图结构，零网络、零时钟、零判定阈值，供「弈友圈」技能回灌模型做关系分析。",
+      "summary": "workflow-operator 算子插件：normalize 将通用 Workflow 采集的围棋对局行投影成可复算的 stats/nodes/components/edges/commonOpponents 关系事实，零网络、零时钟、零判定阈值。",
       "pointId": "workflow-operator",
       "specVersion": 1,
       "path": "plugins/workflow-operator/circle/plugin.json",
