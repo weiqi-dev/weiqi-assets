@@ -56,11 +56,31 @@
       "id": "workflow-operator.circle",
       "type": "plugin",
       "name": "弈友圈关系算子",
-      "summary": "workflow-operator 算子插件：normalize 把 foxwq_fetch_batch 取回的野狐对局行投影成可复算的 stats/nodes/components/edges/commonOpponents 计数与图结构，零网络、零时钟、零判定阈值，供「弈友圈」技能回灌模型做关系分析。",
+      "summary": "围棋关系分析算子：把通用采集与解析节点产出的对局行转换为可复算的 stats/nodes/components/edges/commonOpponents，不负责网络采集。",
       "pointId": "workflow-operator",
       "specVersion": 1,
       "path": "plugins/workflow-operator/circle/plugin.json",
       "category": "围棋"
+    },
+    {
+      "id": "workflow-operator.html",
+      "type": "plugin",
+      "name": "HTML 提取算子",
+      "summary": "通用 HTML 字符串解析与 CSS 选择器文本/属性提取，不联网、不访问浏览器页面环境。",
+      "pointId": "workflow-operator",
+      "specVersion": 1,
+      "path": "plugins/workflow-operator/html/plugin.json",
+      "category": "算子"
+    },
+    {
+      "id": "workflow-operator.collection",
+      "type": "plugin",
+      "name": "集合处理算子",
+      "summary": "通用数组展平、去重、分组、字段投影、排序与切片，供多个 Workflow 复用。",
+      "pointId": "workflow-operator",
+      "specVersion": 1,
+      "path": "plugins/workflow-operator/collection/plugin.json",
+      "category": "算子"
     }
   ]
 }
