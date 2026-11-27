@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "name": "weiqi-bot skills",
-  "description": "通用能力配方：只组合宿主已注册的原语，不含可执行代码。",
+  "description": "技能配方只声明 Workflow 与宿主原语/算子插件依赖，不含可执行代码；算子插件在受限沙箱中执行。",
   "baseUrl": "https://weiqi-dev.github.io/weiqi-assets/skills/",
   "skills": [
     {
