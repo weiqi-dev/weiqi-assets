@@ -456,6 +456,37 @@
         }
       ],
       "expect": "123"
+    },
+    {
+      "method": "select",
+      "args": [
+        {
+          "items": [
+            {
+              "uid": "a"
+            },
+            {
+              "uid": "b"
+            },
+            {
+              "uid": ""
+            }
+          ],
+          "where": {
+            "uid": {
+              "notIn": [
+                "a",
+                ""
+              ]
+            }
+          }
+        }
+      ],
+      "expect": [
+        {
+          "uid": "b"
+        }
+      ]
     }
   ]
 }
