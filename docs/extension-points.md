@@ -67,7 +67,7 @@
 不进 `ModelRequest.tools`，也不向 system 提示词注入任何算子清单。工件 `exposes[]` 的**每个方法必须声明 `inputSchema`、`outputSchema`、`kind`、`idempotent`，并按名注册成一条宿主算子**
 （内置算子用 snake_case，插件算子用 `<slug>.<exposes[].name>`，如 `my-operator.compute`），
 由宿主 `OperatorRegistry` 统一持有；**阶段二的 workflow/DAG runner** 在节点里写
-`"call": "<算子名>"` 按名查表并按名执行（value→value）。Workflow runner 按名执行普通算子节点，并提供通用有界 `forEach` 与 `repeat` 控制块；循环体仍只调用独立算子，不承载业务逻辑。
+`"call": "<算子名>"` 按名查表并按名执行（value→value）。Workflow runner 按名执行普通算子节点，并提供通用有界 `forEach`、`repeat` 与 `ifElse` 控制块；循环体仍只调用独立算子，不承载业务逻辑。
 
 `workflow-operator` 与 `ranking` 共用同一套工件、存储、在线安装与 QuickJS 沙箱，差别只在**契约**：
 
@@ -82,15 +82,14 @@
 
 关键安全边界（与 skill 配方「宿主内置执行器」同构）：
 
-- 插件源码只在一次性 QuickJS Worker 里 `evalCode`，**不进主线程 JS 环境、不进模型上下文**；
+- 插件源码只在复用的 QuickJS Worker 里 `evalCode`，**不进主线程 JS 环境、不进模型上下文**；
   workflow runner 只按算子名提交 `{method, args}`，模型看不到、也不需要算子清单。
 - `method` 必须命中 `exposes[]`；`args` 只作为 JSON 数据写入 `__PLUGIN_INPUT__`，
   绝不参与代码拼接（胶水由宿主固定生成）。
 - 插件必须是经典脚本或 `module.exports` 形态；QuickJS 不支持 ESM `export`。
 - 不提供、也不自检 `new Date()` 依赖的非确定性字段（如 `isToday`、节气、生肖），
   因为沙箱里的时间来自宿主真实时钟，逐次运行结果会变。
-- 工件默认停用，**人工启用闸门**后才注册进 `OperatorRegistry`；缓存命中即零网络下载，
-  每次仍是一次性 Worker。
+- 工件默认停用，**人工启用闸门**后才注册进 `OperatorRegistry`；缓存命中即零网络下载；正常调用复用 Worker，但每次调用创建独立 QuickJS Runtime / Context；超时、崩溃、OOM 或栈溢出后回收 Worker 并在下次调用重建。
 
 ### 两条落地路径：在线安装与插件开发角色自建
 
