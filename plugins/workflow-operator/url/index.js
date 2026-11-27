@@ -17,7 +17,7 @@ function build(args) {
   var base = hashAt < 0 ? args.base : args.base.slice(0, hashAt);
   var hash = hashAt < 0 ? "" : args.base.slice(hashAt);
   var join = base.indexOf("?") < 0 ? "?" : (/[?&]$/.test(base) ? "" : "&");
-  return base + (pairs.length ? join + pairs.join("&") : "") + hash;
+  return { url: base + (pairs.length ? join + pairs.join("&") : "") + hash };
 }
 function parse(args) {
   if (typeof args.url !== "string") throw new Error("url 必须是字符串");
