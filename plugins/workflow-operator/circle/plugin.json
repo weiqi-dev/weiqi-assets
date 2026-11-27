@@ -77,14 +77,14 @@
         "properties": {
           "games": {
             "type": "array",
-            "description": "由上游 Workflow 节点提供的标准化对局行数组，不绑定任何特定网站或采集原语。",
+            "description": "通用采集/解析节点产出的标准化对局行数组；不绑定野狐或任何特定来源。",
             "items": {
               "type": "object"
             }
           },
           "rootUid": {
             "type": "string",
-            "description": "foxwq_fetch_batch 的 value.rootUid：主账号 uid（字符串），共同对手与直接对局数都以它为基准。"
+            "description": "主账号 uid；Workflow 上游的通用字段转换节点应先统一为字符串。"
           }
         }
       },
