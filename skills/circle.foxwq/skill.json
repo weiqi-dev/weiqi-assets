@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "id": "circle.foxwq",
-  "version": 1,
+  "version": 2,
   "name": "弈友圈",
-  "summary": "用户想分析某个野狐账号的弈友圈、看它最近都跟谁下棋、找出经常互相交战的账号群体时用本配方：两步静态 DAG 先由 foxwq_fetch_batch 抓野狐公开棋谱（含对手的交战对手），再由 circle.normalize 投影成可复算的对阵计数与图结构；run_workflow 只回结果句柄，模型须用 workflow_result_read 把宿主缓存里的 yield 汇总分页读全后再做关系分析，归纳圈层、枢纽、游离账号与共同对手并逐条给出数据理由。改条件按 inputs 重跑；算子未启用或取数失败如实说明、不编造。",
+  "summary": "分析野狐账号的弈友圈：Workflow 从通用 fetch_batch 开始，组合 URL、游标分页、集合处理与围棋关系算子，抓取主账号及高频对手棋谱，最后生成可复算的关系摘要。",
   "routeHint": [
     "分析某野狐账号的弈友圈",
     "看看这个野狐号最近都跟谁下棋",
@@ -11,7 +11,7 @@
   ],
   "category": "围棋",
   "primitives": [],
-  "prompt": "用户想分析某个野狐账号的弈友圈、看它最近都跟谁下棋、或找出经常互相交战的账号群体时才用本配方；\n只是查单个棋手资料、找定式、看棋谱或做复盘就正常回答，不走 workflow。\n\n填好 inputs 让 run_workflow 跑一遍：foxwq_fetch_batch 抓取野狐公开棋谱列表（含对手的交战对手），\ncircle.normalize 把对局行投影成可复算的计数与图结构（stats / nodes / components / edges / commonOpponents）。\n本配方 returnToLLM:true，并声明 llmProjection.keep 只保留 stats / nodes / components / commonOpponents 四段：\n宿主已按配方 llmProjection 把 yield 汇总投影成关系摘要（不含 edges 逐边明细，保留上述四段的全部账号），\nrun_workflow 成功观察给的仍是结果句柄 resultId 而不是数据本体。\n请用宿主内置 workflow_result_read（resultId 填观察里给的值）读这份关系摘要：先 mode:\"info\" 看总字符数，\n再从 mode:\"slice\", offset:0 起，按每次返回的「请把 offset 设为 X 继续读」按 offset 提示递增，\n直到出现「已到正文末尾」即可，摘要片数很少；读全之前不要下结论、不要只据第一片就归纳，\n也不要把每片 JSON 复述一遍。\n【能力边界】摘要按配方声明不含逐边明细 edges；这是声明式投影、不是数据被截断，\n不要据此补写或声称读到全量。\n读全关系摘要之后才做关系分析：归纳哪些账号形成弈友圈、谁是高连通枢纽、谁游离在外、谁与谁共享对手，\n并逐条给出基于数据的理由（引用具体的 gameCount / degree / games / shared / components 等计数与结构，\n而不是只下结论）。不要把原始 JSON 或整份列表复述一遍，也不要写「结果见上方列表」这类展示型引导语 ——\n本技能不走 display_json_list 旁路。\n\n【诚实兜底】任一节点失败（如 foxwq_fetch_batch 查不到昵称 / 全部取数失败、circle.normalize 未注册即\n「弈友圈关系算子」插件未安装启用）、返回异常或数据不全时，如实说明本次没能完成分析并提示到「🧩 插件」\n面板安装启用，绝不编造账号、对局或圈层结论；判定只看节点成败，不靠复述报错文案。\n昵称是必填项，用户没给就先问清野狐昵称，不假定某个账号。",
+  "prompt": "用户想分析某个野狐账号的弈友圈、看它最近都跟谁下棋，或找出经常互相交战的账号群体时使用本技能。\\n先确认野狐昵称；昵称缺失时只追问昵称，不假定账号。\\n\\n本技能由宿主 Workflow 执行完整采集与计算链：通用 fetch_batch 负责公开 GET；url、collection、pagination 插件负责 URL 参数、数组组合与游标分页；circle 插件负责围棋对手筛选和关系图计算。插件在受限沙箱中只做确定性计算，不联网。\\n\\nrun_workflow 成功后使用 workflow_result_read 读取完整摘要。摘要包含 summary（stats/nodes/components/commonOpponents）与 fetch-status（实际抓取页数、失败页数、是否完整）。若 failed 大于 0，明确说明数据不完整，不要把局部结果说成完整分析；若 complete 为 false，不要推断缺失对局。分析圈层、枢纽、游离账号和共同对手时，逐条引用具体计数与结构，不编造账号或对局。\\n\\n单个分页失败不会中断其他对手抓取，但会计入 fetch-status.failed；昵称查询失败或关键节点失败会终止流程并如实说明。用户可以调整 pages、opponentCount、maxHops 后重新运行。不要复述原始 JSON，不要声称读到了未包含在摘要中的 edges 明细。",
   "inputs": [
     {
       "name": "nickname",
@@ -41,34 +41,493 @@
   "workflow": {
     "steps": [
       {
-        "id": "fetch",
-        "call": "foxwq_fetch_batch",
+        "id": "user-url",
+        "call": "url.build",
         "args": {
-          "nickname": "{{input.nickname}}",
-          "pages": "{{input.pages}}",
+          "base": "https://newframe.foxwq.com/cgi/QueryUserInfoPanel",
+          "params": {
+            "srcuid": "0",
+            "username": "{{input.nickname}}"
+          }
+        }
+      },
+      {
+        "id": "user-request",
+        "call": "collection.singleton",
+        "bindings": [
+          {
+            "from": "user-url",
+            "path": "$",
+            "as": "value"
+          }
+        ]
+      },
+      {
+        "id": "user-fetch",
+        "call": "fetch_batch",
+        "bindings": [
+          {
+            "from": "user-request",
+            "path": "$",
+            "as": "requests"
+          }
+        ]
+      },
+      {
+        "id": "user-info",
+        "call": "json_extract",
+        "args": {
+          "path": "$",
+          "where": [
+            {
+              "path": "result",
+              "op": "eq",
+              "value": 0
+            }
+          ],
+          "pick": [
+            "uid",
+            "username",
+            "name",
+            "englishname"
+          ]
+        },
+        "bindings": [
+          {
+            "from": "user-fetch",
+            "path": "[0].value",
+            "as": "value"
+          }
+        ]
+      },
+      {
+        "id": "root-seed",
+        "call": "collection.singleton",
+        "bindings": [
+          {
+            "from": "user-info",
+            "path": "$",
+            "as": "value"
+          }
+        ]
+      },
+      {
+        "id": "root-pages",
+        "forEach": {
+          "from": "root-seed",
+          "path": "$",
+          "steps": [
+            {
+              "id": "root-paginate",
+              "repeat": {
+                "maxIterations": "{{input.pages}}",
+                "initialState": {
+                  "uid": "{{item.uid}}",
+                  "cursor": "0"
+                },
+                "stateFrom": {
+                  "from": "page-cursor",
+                  "path": "state"
+                },
+                "until": {
+                  "from": "page-cursor",
+                  "path": "done"
+                },
+                "steps": [
+                  {
+                    "id": "page-url",
+                    "call": "url.build",
+                    "args": {
+                      "base": "https://h5.foxwq.com/yehuDiamond/chessbook_local/YHWQFetchChessList",
+                      "params": {
+                        "srcuid": "0",
+                        "dstuid": "{{state.uid}}",
+                        "type": "1",
+                        "lastcode": "{{state.cursor}}",
+                        "searchkey": "",
+                        "uin": "{{state.uid}}"
+                      }
+                    }
+                  },
+                  {
+                    "id": "page-request",
+                    "call": "collection.singleton",
+                    "bindings": [
+                      {
+                        "from": "page-url",
+                        "path": "$",
+                        "as": "value"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "page-fetch",
+                    "call": "fetch_batch",
+                    "bindings": [
+                      {
+                        "from": "page-request",
+                        "path": "$",
+                        "as": "requests"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "page-json",
+                    "call": "json_extract",
+                    "args": {
+                      "path": "$",
+                      "pick": [
+                        "result",
+                        "lastcode",
+                        "chesslist"
+                      ]
+                    },
+                    "bindings": [
+                      {
+                        "from": "page-fetch",
+                        "path": "[0].value",
+                        "as": "value"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "page-cursor",
+                    "call": "pagination.cursor",
+                    "args": {
+                      "cursorPath": "lastcode",
+                      "itemsPath": "chesslist",
+                      "statusPath": "result",
+                      "successValue": 0
+                    },
+                    "bindings": [
+                      {
+                        "from": "page-json",
+                        "path": "$",
+                        "as": "response"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      {
+        "id": "root-games-raw",
+        "call": "json_extract",
+        "args": {
+          "path": "[*].items[*].items[*]"
+        },
+        "bindings": [
+          {
+            "from": "root-pages",
+            "path": "$",
+            "as": "value"
+          }
+        ]
+      },
+      {
+        "id": "root-games",
+        "call": "collection.asArray",
+        "bindings": [
+          {
+            "from": "root-games-raw",
+            "path": "$",
+            "as": "value"
+          }
+        ]
+      },
+      {
+        "id": "opponents",
+        "call": "circle.pickOpponents",
+        "args": {
           "opponentCount": "{{input.opponentCount}}",
           "maxHops": "{{input.maxHops}}"
+        },
+        "bindings": [
+          {
+            "from": "root-games",
+            "path": "$",
+            "as": "games"
+          },
+          {
+            "from": "user-info",
+            "path": "uid",
+            "as": "rootUid"
+          }
+        ]
+      },
+      {
+        "id": "opponent-pages",
+        "forEach": {
+          "from": "opponents",
+          "path": "$",
+          "steps": [
+            {
+              "id": "opponent-paginate",
+              "repeat": {
+                "maxIterations": "{{input.pages}}",
+                "initialState": {
+                  "uid": "{{item}}",
+                  "cursor": "0"
+                },
+                "stateFrom": {
+                  "from": "page-cursor",
+                  "path": "state"
+                },
+                "until": {
+                  "from": "page-cursor",
+                  "path": "done"
+                },
+                "steps": [
+                  {
+                    "id": "page-url",
+                    "call": "url.build",
+                    "args": {
+                      "base": "https://h5.foxwq.com/yehuDiamond/chessbook_local/YHWQFetchChessList",
+                      "params": {
+                        "srcuid": "0",
+                        "dstuid": "{{state.uid}}",
+                        "type": "1",
+                        "lastcode": "{{state.cursor}}",
+                        "searchkey": "",
+                        "uin": "{{state.uid}}"
+                      }
+                    }
+                  },
+                  {
+                    "id": "page-request",
+                    "call": "collection.singleton",
+                    "bindings": [
+                      {
+                        "from": "page-url",
+                        "path": "$",
+                        "as": "value"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "page-fetch",
+                    "call": "fetch_batch",
+                    "bindings": [
+                      {
+                        "from": "page-request",
+                        "path": "$",
+                        "as": "requests"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "page-json",
+                    "call": "json_extract",
+                    "args": {
+                      "path": "$",
+                      "pick": [
+                        "result",
+                        "lastcode",
+                        "chesslist"
+                      ]
+                    },
+                    "bindings": [
+                      {
+                        "from": "page-fetch",
+                        "path": "[0].value",
+                        "as": "value"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "page-cursor",
+                    "call": "pagination.cursor",
+                    "args": {
+                      "cursorPath": "lastcode",
+                      "itemsPath": "chesslist",
+                      "statusPath": "result",
+                      "successValue": 0
+                    },
+                    "bindings": [
+                      {
+                        "from": "page-json",
+                        "path": "$",
+                        "as": "response"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
         }
+      },
+      {
+        "id": "opponent-games-raw",
+        "call": "json_extract",
+        "args": {
+          "path": "[*].items[*].items[*]"
+        },
+        "bindings": [
+          {
+            "from": "opponent-pages",
+            "path": "$",
+            "as": "value"
+          }
+        ]
+      },
+      {
+        "id": "opponent-games",
+        "call": "collection.asArray",
+        "bindings": [
+          {
+            "from": "opponent-games-raw",
+            "path": "$",
+            "as": "value"
+          }
+        ]
+      },
+      {
+        "id": "root-status-raw",
+        "call": "json_extract",
+        "args": {
+          "path": "[*].items[*].ok"
+        },
+        "bindings": [
+          {
+            "from": "root-pages",
+            "path": "$",
+            "as": "value"
+          }
+        ]
+      },
+      {
+        "id": "root-status",
+        "call": "collection.asArray",
+        "bindings": [
+          {
+            "from": "root-status-raw",
+            "path": "$",
+            "as": "value"
+          }
+        ]
+      },
+      {
+        "id": "opponent-status-raw",
+        "call": "json_extract",
+        "args": {
+          "path": "[*].items[*].ok"
+        },
+        "bindings": [
+          {
+            "from": "opponent-pages",
+            "path": "$",
+            "as": "value"
+          }
+        ]
+      },
+      {
+        "id": "opponent-status",
+        "call": "collection.asArray",
+        "bindings": [
+          {
+            "from": "opponent-status-raw",
+            "path": "$",
+            "as": "value"
+          }
+        ]
+      },
+      {
+        "id": "all-status",
+        "call": "collection.join",
+        "bindings": [
+          {
+            "from": "root-status",
+            "path": "$",
+            "as": "left"
+          },
+          {
+            "from": "opponent-status",
+            "path": "$",
+            "as": "right"
+          }
+        ]
+      },
+      {
+        "id": "fetch-status",
+        "call": "collection.statusSummary",
+        "bindings": [
+          {
+            "from": "all-status",
+            "path": "$",
+            "as": "statuses"
+          }
+        ],
+        "yield": true
+      },
+      {
+        "id": "all-games",
+        "call": "collection.join",
+        "bindings": [
+          {
+            "from": "root-games",
+            "path": "$",
+            "as": "left"
+          },
+          {
+            "from": "opponent-games",
+            "path": "$",
+            "as": "right"
+          }
+        ]
+      },
+      {
+        "id": "unique-games",
+        "call": "collection.uniqueBy",
+        "args": {
+          "key": "chessid"
+        },
+        "bindings": [
+          {
+            "from": "all-games",
+            "path": "$",
+            "as": "items"
+          }
+        ]
       },
       {
         "id": "normalize",
         "call": "circle.normalize",
         "bindings": [
           {
-            "from": "fetch",
-            "path": "games",
+            "from": "unique-games",
+            "path": "$",
             "as": "games"
           },
           {
-            "from": "fetch",
-            "path": "rootUid",
+            "from": "user-info",
+            "path": "uid",
             "as": "rootUid"
+          }
+        ]
+      },
+      {
+        "id": "summary",
+        "call": "circle.summary",
+        "bindings": [
+          {
+            "from": "normalize",
+            "path": "$",
+            "as": "analysis"
           }
         ],
         "yield": true
       }
     ]
   },
-  "llmProjection": { "keep": ["stats", "nodes", "components", "commonOpponents"] },
+  "llmProjection": {
+    "keep": [
+      "summary",
+      "fetch-status"
+    ]
+  },
   "returnToLLM": true
 }
