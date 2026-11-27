@@ -289,7 +289,7 @@ function pickOpponents(args) {
   if (!Number.isInteger(count) || count < 0) throw new Error("opponentCount 必须是非负整数");
   if (hops !== 1 && hops !== 2) throw new Error("maxHops 只能是 1 或 2");
   if (hops === 1 || count === 0) return [];
-  var counts = {};
+  var counts = Object.create(null);
   for (var i = 0; i < args.games.length; i++) {
     var game = args.games[i];
     if (!game || typeof game !== "object") continue;
