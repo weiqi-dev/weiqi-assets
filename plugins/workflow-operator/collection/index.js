@@ -70,12 +70,20 @@ function concat(args) {
   }
   return out;
 }
+
+function statusSummary(args) {
+  if (!Array.isArray(args.statuses)) throw new Error("statuses 必须是数组");
+  var failed = 0;
+  for (var i = 0; i < args.statuses.length; i++) if (args.statuses[i] !== true) failed++;
+  return { total: args.statuses.length, failed: failed, complete: failed === 0 };
+}
 function call(input) {
   if (!input || typeof input.method !== "string" || !Array.isArray(input.args) || input.args.length !== 1) throw new Error("调用参数无效");
   var args = input.args[0] || {};
   if (!Array.isArray(args.items)) throw new Error("items 必须是数组");
   if (input.method === "singleton") return singleton(args);
-  if (input.method === "join") return join(args);\n  if (input.method === "concat") return concat(args);\n  if (input.method === "flatten") return flatten(args.items);
+  if (input.method === "join") return join(args);
+  if (input.method === "statusSummary") return statusSummary(args);\n  if (input.method === "concat") return concat(args);\n  if (input.method === "flatten") return flatten(args.items);
   if (input.method === "uniqueBy") return uniqueBy(args);
   if (input.method === "groupBy") return groupBy(args);
   if (input.method === "pluck") return pluck(args);
