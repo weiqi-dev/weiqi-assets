@@ -86,8 +86,8 @@ workflow 静态形状（含 `forEach` / `repeat` / `ifElse`）；带 workflow �
 ## 安全边界
 
 - 插件代码只在宿主 QuickJS 沙箱里执行，默认零 hostApi；资源库不提供任何提权途径。
-- `workflow-operator` 领域工件把领域计算能力带给宿主算子表，但不改变这条边界：源码不进主线程、不进模型上下文；通用 JSON / regex 则是宿主原生算子，不属于插件工件，
-  `method` 只认 `exposes[]` 白名单，`args` 只作为 JSON 数据进入沙箱；算子调用方给的文本永远不参与代码拼接。
+- `workflow-operator` 领域工件把领域计算能力带给宿主算子表，但不改变这条边界：源码不进主线程、不进模型上下文，`method` 只认 `exposes[]` 白名单，`args` 只作为 JSON 数据进入沙箱；算子调用方给的文本永远不参与代码拼接。
+- 通用 JSON / regex 是宿主原生 Workflow 算子，不属于插件工件；它们只处理上游值，并通过长度、节点数与正则模式限制控制同步计算成本。
   Workflow runner 按名执行普通算子节点，并提供通用有界 `forEach` / `repeat` 控制块；循环体仍由独立算子组成。
 - 工具条目的 `implementation.status` 明确区分「声明镜像」与「可下载实现」；
   当前没有 `downloadable`。将来若开放，必须先在宿主 `WebToolLoop` 里定义外部执行器的
