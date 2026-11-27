@@ -20,6 +20,69 @@
   "category": "算子",
   "exposes": [
     {
+      "name": "identity",
+      "description": "原样返回 value，便于把循环状态投影为后续 Workflow 节点输入。",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "value"
+        ],
+        "properties": {
+          "value": {}
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {},
+      "kind": "pure",
+      "idempotent": true
+    },
+    {
+      "name": "object",
+      "description": "根据 entries 构造一个 JSON 对象。",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "entries"
+        ],
+        "properties": {
+          "entries": {
+            "type": "object"
+          }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object"
+      },
+      "kind": "pure",
+      "idempotent": true
+    },
+    {
+      "name": "merge",
+      "description": "浅合并 left/right 两个对象，right 同名字段覆盖 left。",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "left",
+          "right"
+        ],
+        "properties": {
+          "left": {
+            "type": "object"
+          },
+          "right": {
+            "type": "object"
+          }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object"
+      },
+      "kind": "pure",
+      "idempotent": true
+    },
+    {
       "name": "castFields",
       "description": "按 fields 声明把对象顶层字段转换为 string/number/boolean，其他字段原样保留。",
       "inputSchema": {
@@ -54,6 +117,53 @@
     }
   ],
   "smoke": [
+    {
+      "method": "identity",
+      "args": [
+        {
+          "value": [
+            1,
+            2
+          ]
+        }
+      ],
+      "expect": [
+        1,
+        2
+      ]
+    },
+    {
+      "method": "object",
+      "args": [
+        {
+          "entries": {
+            "uid": "7",
+            "cursor": "0"
+          }
+        }
+      ],
+      "expect": {
+        "uid": "7",
+        "cursor": "0"
+      }
+    },
+    {
+      "method": "merge",
+      "args": [
+        {
+          "left": {
+            "a": 1
+          },
+          "right": {
+            "b": 2
+          }
+        }
+      ],
+      "expect": {
+        "a": 1,
+        "b": 2
+      }
+    },
     {
       "method": "castFields",
       "args": [
