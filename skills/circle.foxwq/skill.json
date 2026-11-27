@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "circle.foxwq",
-  "version": 2,
+  "version": 3,
   "name": "弈友圈",
   "summary": "分析某个野狐账号的弈友圈：按昵称查 UID，使用通用 web_fetch 与 JSON 沙箱算子分页获取主账号棋谱、提取交战对手并逐个抓取，再由 circle.normalize 生成关系事实供模型分析。",
   "routeHint": [
@@ -123,6 +123,21 @@
                       "url": "https://h5.foxwq.com/yehuDiamond/chessbook_local/YHWQFetchChessList?srcuid=0&dstuid={{urlencode.item}}&type=1&lastcode={{urlencode.state.lastcode}}&searchkey=&uin={{urlencode.item}}",
                       "storeOnly": true
                     }
+                  },
+                  {
+                    "id": "rootPageCheck",
+                    "call": "json.assert",
+                    "args": {
+                      "equals": 0,
+                      "message": "野狐棋谱接口返回失败"
+                    },
+                    "bindings": [
+                      {
+                        "from": "rootFetchPage",
+                        "path": "result",
+                        "as": "value"
+                      }
+                    ]
                   },
                   {
                     "id": "rootCursor",
@@ -378,6 +393,21 @@
                       "url": "https://h5.foxwq.com/yehuDiamond/chessbook_local/YHWQFetchChessList?srcuid=0&dstuid={{urlencode.item}}&type=1&lastcode={{urlencode.state.lastcode}}&searchkey=&uin={{urlencode.item}}",
                       "storeOnly": true
                     }
+                  },
+                  {
+                    "id": "opponentPageCheck",
+                    "call": "json.assert",
+                    "args": {
+                      "equals": 0,
+                      "message": "野狐棋谱接口返回失败"
+                    },
+                    "bindings": [
+                      {
+                        "from": "opponentFetchPage",
+                        "path": "result",
+                        "as": "value"
+                      }
+                    ]
                   },
                   {
                     "id": "opponentCursor",
