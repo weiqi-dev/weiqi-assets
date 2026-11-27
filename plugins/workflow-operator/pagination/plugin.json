@@ -1,0 +1,138 @@
+{
+  "$schema": "../../../schema/plugin.schema.json",
+  "id": "workflow-operator.pagination",
+  "name": "游标分页算子",
+  "type": "plugin",
+  "pointId": "workflow-operator",
+  "specVersion": 1,
+  "entry": "call",
+  "code": "plugins/workflow-operator/pagination/index.js",
+  "origin": "manual",
+  "intent": "把常见游标分页响应转换成统一的下一页状态、停止标记与当前页数组，供 Workflow repeat 控制块跨轮调度。只处理传入 JSON，不发起网络请求。",
+  "readme": "plugins/workflow-operator/pagination/README.md",
+  "license": "MIT",
+  "tags": [
+    "workflow-operator",
+    "pagination",
+    "cursor",
+    "collection"
+  ],
+  "category": "算子",
+  "exposes": [
+    {
+      "name": "cursor",
+      "description": "按 cursorPath / itemsPath 从分页响应提取下一页游标与当前页数组；可选校验状态字段。返回 {state:{cursor},done,items}。",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "response",
+          "cursorPath",
+          "itemsPath"
+        ],
+        "properties": {
+          "response": {
+            "type": "object"
+          },
+          "cursorPath": {
+            "type": "string"
+          },
+          "itemsPath": {
+            "type": "string"
+          },
+          "statusPath": {
+            "type": "string"
+          },
+          "successValue": {}
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "state",
+          "done",
+          "items"
+        ],
+        "properties": {
+          "state": {
+            "type": "object",
+            "required": [
+              "cursor"
+            ],
+            "properties": {
+              "cursor": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          },
+          "done": {
+            "type": "boolean"
+          },
+          "items": {
+            "type": "array"
+          }
+        },
+        "additionalProperties": false
+      },
+      "kind": "pure",
+      "idempotent": true
+    }
+  ],
+  "smoke": [
+    {
+      "method": "cursor",
+      "args": [
+        {
+          "response": {
+            "result": 0,
+            "lastcode": "next",
+            "chesslist": [
+              {
+                "id": 1
+              }
+            ]
+          },
+          "cursorPath": "lastcode",
+          "itemsPath": "chesslist",
+          "statusPath": "result",
+          "successValue": 0
+        }
+      ],
+      "expect": {
+        "state": {
+          "cursor": "next"
+        },
+        "done": false,
+        "items": [
+          {
+            "id": 1
+          }
+        ]
+      }
+    },
+    {
+      "method": "cursor",
+      "args": [
+        {
+          "response": {
+            "result": 0,
+            "lastcode": "",
+            "rows": []
+          },
+          "cursorPath": "lastcode",
+          "itemsPath": "rows",
+          "statusPath": "result",
+          "successValue": 0
+        }
+      ],
+      "expect": {
+        "state": {
+          "cursor": ""
+        },
+        "done": true,
+        "items": []
+      }
+    }
+  ]
+}
