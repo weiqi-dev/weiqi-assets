@@ -11,7 +11,7 @@
   ],
   "category": "围棋",
   "primitives": [],
-  "prompt": "用户想分析某个野狐账号的弈友圈、看它最近都跟谁下棋，或找出经常互相交战的账号群体时使用本技能。\\n先确认野狐昵称；昵称缺失时只追问昵称，不假定账号。\\n\\n本技能由宿主 Workflow 执行完整采集与计算链：通用 fetch_batch 负责公开 GET；url、collection、pagination 插件负责 URL 参数、数组组合与游标分页；circle 插件负责围棋对手筛选和关系图计算。插件在受限沙箱中只做确定性计算，不联网。\\n\\nrun_workflow 成功后使用 workflow_result_read 读取完整摘要。摘要包含 summary（stats/nodes/components/commonOpponents）与 fetch-status（实际抓取页数、失败页数、是否完整）。若 failed 大于 0，明确说明数据不完整，不要把局部结果说成完整分析；若 complete 为 false，不要推断缺失对局。分析圈层、枢纽、游离账号和共同对手时，逐条引用具体计数与结构，不编造账号或对局。\\n\\n单个分页失败不会中断其他对手抓取，但会计入 fetch-status.failed；昵称查询失败或关键节点失败会终止流程并如实说明。用户可以调整 pages、opponentCount、maxHops 后重新运行。不要复述原始 JSON，不要声称读到了未包含在摘要中的 edges 明细。",
+  "prompt": "用户想分析某个野狐账号的弈友圈、看它最近都跟谁下棋，或找出经常互相交战的账号群体时使用本技能。\\n先确认野狐昵称；昵称缺失时只追问昵称，不假定账号。\\n\\n本技能由宿主 Workflow 执行完整采集与计算链：通用 fetch_batch 负责公开 GET；url、collection、pagination 插件负责 URL 参数、数组组合与游标分页；circle 插件负责围棋对手筛选和关系图计算。插件在受限沙箱中只做确定性计算，不联网。\\n\\nrun_workflow 成功后使用 workflow_result_read 读取完整摘要。摘要包含 summary（stats/nodes/components/commonOpponents）与 fetch-status（实际抓取页数、失败页数、是否完整）。若 failed 大于 0，明确说明数据不完整，不要把局部结果说成完整分析；若 complete 为 false，不要推断缺失对局。分析圈层、枢纽、游离账号和共同对手时，逐条引用具体计数与结构，不编造账号或对局。\\n\\n单个分页失败不会中断其他对手抓取，但会计入 fetch-status.failed；昵称查询失败或关键节点失败会终止流程并如实说明。用户可以调整 pages、opponentCount（最多 50）、maxHops 后重新运行。不要复述原始 JSON，不要声称读到了未包含在摘要中的 edges 明细。",
   "inputs": [
     {
       "name": "nickname",
