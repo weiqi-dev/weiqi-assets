@@ -276,6 +276,36 @@ function buildCommonOpponents(rootUid, nodes, edges, rows) {
   return out;
 }
 
+
+/**
+ * 从主账号对局中提取对手 uid，按对局数降序、uid 升序选取。
+ * 只负责围棋对手语义，不负责取数或分页。
+ */
+function pickOpponents(args) {
+  if (!args || !Array.isArray(args.games)) throw new Error("games 必须是数组");
+  if (typeof args.rootUid !== "string") throw new Error("rootUid 必须是字符串");
+  var count = args.opponentCount === undefined ? 8 : args.opponentCount;
+  var hops = args.maxHops === undefined ? 2 : args.maxHops;
+  if (!Number.isInteger(count) || count < 0) throw new Error("opponentCount 必须是非负整数");
+  if (hops !== 1 && hops !== 2) throw new Error("maxHops 只能是 1 或 2");
+  if (hops === 1 || count === 0) return [];
+  var counts = {};
+  for (var i = 0; i < args.games.length; i++) {
+    var game = args.games[i];
+    if (!game || typeof game !== "object") continue;
+    var black = game.blackuid === undefined || game.blackuid === null ? "" : String(game.blackuid);
+    var white = game.whiteuid === undefined || game.whiteuid === null ? "" : String(game.whiteuid);
+    var other = black === args.rootUid ? white : (white === args.rootUid ? black : "");
+    if (!other || other === args.rootUid) continue;
+    if (counts[other] === undefined) counts[other] = 0;
+    counts[other] += 1;
+  }
+  return Object.keys(counts).sort(function (a, b) {
+    if (counts[a] !== counts[b]) return counts[b] - counts[a];
+    return cmpStr(a, b);
+  }).slice(0, count);
+}
+
 /**
  * normalize：把对局行投影为可复算的关系事实。
  * 出参 {stats, nodes, components, edges, commonOpponents}，摘要在前、明细在后。
@@ -314,6 +344,7 @@ function normalize(args) {
 function call(input) {
   if (!input || typeof input.method !== 'string') throw new Error('缺少 method');
   if (!Array.isArray(input.args) || input.args.length !== 1) throw new Error('args 必须是含一个参数对象的数组');
+  if (input.method === 'pickOpponents') return pickOpponents(input.args[0]);
   if (input.method === 'normalize') return normalize(input.args[0]);
   throw new Error('不支持的方法：' + input.method);
 }
