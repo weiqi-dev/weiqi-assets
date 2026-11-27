@@ -81,6 +81,79 @@
       },
       "kind": "pure",
       "idempotent": true
+    },
+    {
+      "name": "batchCursor",
+      "description": "聚合一批账号的分页结果：合并当前页 items/statuses，并为仍有游标的账号生成下一轮 pending 列表。",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "pages"
+        ],
+        "properties": {
+          "pages": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "state",
+          "done",
+          "items",
+          "statuses"
+        ],
+        "properties": {
+          "state": {
+            "type": "object",
+            "required": [
+              "pending"
+            ],
+            "properties": {
+              "pending": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "uid",
+                    "cursor"
+                  ],
+                  "properties": {
+                    "uid": {
+                      "type": "string"
+                    },
+                    "cursor": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          "done": {
+            "type": "boolean"
+          },
+          "items": {
+            "type": "array"
+          },
+          "statuses": {
+            "type": "array",
+            "items": {
+              "type": "boolean"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "kind": "pure",
+      "idempotent": true
     }
   ],
   "smoke": [
@@ -138,6 +211,64 @@
         "done": true,
         "items": [],
         "ok": true
+      }
+    },
+    {
+      "method": "batchCursor",
+      "args": [
+        {
+          "pages": [
+            {
+              "dstuid": "7",
+              "state": {
+                "cursor": "next"
+              },
+              "done": false,
+              "items": [
+                {
+                  "id": 1
+                }
+              ],
+              "ok": true
+            },
+            {
+              "dstuid": "8",
+              "state": {
+                "cursor": ""
+              },
+              "done": true,
+              "items": [
+                {
+                  "id": 2
+                }
+              ],
+              "ok": true
+            }
+          ]
+        }
+      ],
+      "expect": {
+        "state": {
+          "pending": [
+            {
+              "uid": "7",
+              "cursor": "next"
+            }
+          ]
+        },
+        "done": false,
+        "items": [
+          {
+            "id": 1
+          },
+          {
+            "id": 2
+          }
+        ],
+        "statuses": [
+          true,
+          true
+        ]
       }
     }
   ]
