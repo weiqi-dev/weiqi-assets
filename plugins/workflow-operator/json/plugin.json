@@ -487,6 +487,34 @@
           "uid": "b"
         }
       ]
+    },
+    {
+      "method": "select",
+      "args": [
+        {
+          "items": [
+            {
+              "uid": 123
+            },
+            {
+              "uid": "456"
+            },
+            {
+              "uid": null
+            }
+          ],
+          "where": {
+            "uid": {
+              "stringEq": "123"
+            }
+          }
+        }
+      ],
+      "expect": [
+        {
+          "uid": 123
+        }
+      ]
     }
   ]
 }
