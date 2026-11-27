@@ -51,7 +51,8 @@
         "required": [
           "state",
           "done",
-          "items"
+          "items",
+          "ok"
         ],
         "properties": {
           "state": {
@@ -71,6 +72,9 @@
           },
           "items": {
             "type": "array"
+          },
+          "ok": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -108,7 +112,8 @@
           {
             "id": 1
           }
-        ]
+        ],
+        "ok": true
       }
     },
     {
@@ -131,7 +136,8 @@
           "cursor": ""
         },
         "done": true,
-        "items": []
+        "items": [],
+        "ok": true
       }
     }
   ]
