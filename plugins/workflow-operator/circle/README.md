@@ -6,7 +6,7 @@ slug 来自资源 id `workflow-operator.circle`）。「弈友圈」技能 `circ
 引用它：
 
 ```
-foxwq_fetch_batch（宿主内置算子，取数）  →  circle.normalize（本插件，纯计算，yield:true）
+通用采集与解析节点（宿主内置算子，取数）  →  circle.normalize（本插件，纯计算，yield:true）
         └─ bindings: games ← games / rootUid ← rootUid ──────────┘
 ```
 
@@ -45,7 +45,7 @@ foxwq_fetch_batch（宿主内置算子，取数）  →  circle.normalize（本�
 
 ## 统计口径（确定性、可逐字段复算）
 
-- **预处理**：`uid` 一律字符串化后参与相等比较（与 `foxwq_fetch_batch` 的 `String(...)` 口径一致）；
+- **预处理**：`uid` 一律字符串化后参与相等比较（与输入标准化约定的 `String(...)` 口径一致）；
   按 `chessid` 去重；结构不合法的行跳过，不编造、不改写入参；`chessid` 缺失时用稳定行号键，
   避免把多条无 id 的行误并。清洗后按 `(starttime, chessid)` 升序稳定排序，使「最近一局取名字/段位」
   与输入数组顺序无关。
@@ -79,8 +79,8 @@ foxwq_fetch_batch（宿主内置算子，取数）  →  circle.normalize（本�
 
 | 出现处 | 来源 | 性质 |
 |---|---|---|
-| 对局行全部字段 | 野狐公开接口 `QueryUserInfoPanel` / `YHWQFetchChessList`（经 `https://api.weiqi.lol/?url=…` 透明代理），由宿主 `foxwq_fetch_batch` 取回并投影 | 公开数据，非本工件内置 |
-| `winner` 1/2/0 口径 | 契约 §A 照抄 weiqi-bot `services/game/providers/foxwq/FoxwqChessProvider.ts` 的单局字段语义 | 接口事实 |
+| 对局行全部字段 | 野狐公开接口 `QueryUserInfoPanel` / `YHWQFetchChessList`（经 `https://api.weiqi.lol/?url=…` 透明代理），由通用采集原语和 HTML/JSON 算子取回、解析并投影 | 公开数据，非本工件内置 |
+| `winner` 1/2/0 口径 | 按标准化对局输入约定提供的单局字段语义 | 接口事实 |
 | 字典序 / 计数 / BFS | ECMAScript 标准字符串比较与数组操作，无任何第三方实现代码 | 标准 / 自写 |
 
 ## 诚实兜底
