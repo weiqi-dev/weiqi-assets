@@ -186,7 +186,7 @@ function call(input) {
     return flattened;
   }
   if (m === 'take') {
-    if (!Array.isArray(a.items) || !Number.isInteger(a.count) || a.count < 0) throw new Error('items/count 参数无效');
+    if (!Array.isArray(a.items) || !Number.isInteger(a.count) || a.count < 0 || a.count > 100) throw new Error('items/count 参数无效（count 需为 0 到 100 的整数）');
     return a.items.slice(0, a.count);
   }
   throw new Error('不支持的 JSON action：' + m);
