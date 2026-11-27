@@ -46,7 +46,7 @@ weiqi-bot 的 Web 资源分两类：`web-resources.zip` 在客户端启动时预
 完整配方才有 `prompt` / `workflow` / `inputs` / `secrets`。
 `scripts/validate.mjs` 的 `validateSkillRegistry()` 校验索引形状、path 存在、
 **索引↔配方重叠字段逐字段硬比对**（防索引骗人，version 决定宿主「有更新」判定）、category 白名单与
-workflow 静态形状（含 `forEach` / `repeat`）；带 workflow 的形状契约在 `schema/workflow.schema.json`。
+workflow 静态形状（含 `forEach` / `repeat` / `ifElse`）；带 workflow 的形状契约在 `schema/workflow.schema.json`。
 宿主运行时取不到某条 skill.json 或该条校验不过，只把这一条标 `unavailable`，不影响其它条目；
 结构契约的另一半仍在宿主 `SkillRecipe.ts`。
 
