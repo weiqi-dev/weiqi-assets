@@ -6,7 +6,7 @@
 |---|---|
 | parse / stringify | JSON 字符串与 JSON 值互转 |
 | get / set | 按安全路径读取或设置字段 |
-| select | 数组条件筛选与字段投影（where 支持相等、ne、in、notIn） |
+| select | 数组条件筛选与字段投影（where 支持相等、stringEq、ne、in、notIn） |
 | pluck | 从数组记录提取指定路径 |
 | concat / append | 数组合并与追加 |
 | unique | 按完整值或指定路径稳定去重 |
