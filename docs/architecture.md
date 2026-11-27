@@ -46,7 +46,7 @@ weiqi-bot 的 Web 资源分两类：`web-resources.zip` 在客户端启动时预
 完整配方才有 `prompt` / `workflow` / `inputs` / `secrets`。
 `scripts/validate.mjs` 的 `validateSkillRegistry()` 校验索引形状、path 存在、
 **索引↔配方重叠字段逐字段硬比对**（防索引骗人，version 决定宿主「有更新」判定）、category 白名单与
-workflow 静态形状；带 workflow 的形状契约在 `schema/workflow.schema.json`。
+workflow 静态形状（含 forEach/repeat 控制块）；带 workflow 的形状契约在 `schema/workflow.schema.json`。
 宿主运行时取不到某条 skill.json 或该条校验不过，只把这一条标 `unavailable`，不影响其它条目；
 结构契约的另一半仍在宿主 `SkillRecipe.ts`。
 
@@ -86,7 +86,7 @@ workflow 静态形状；带 workflow 的形状契约在 `schema/workflow.schema.
 - 插件代码只在宿主 QuickJS 沙箱里执行，默认零 hostApi；资源库不提供任何提权途径。
 - `workflow-operator` 工件把确定性计算能力带给宿主算子表，但不改变这条边界：源码不进主线程、不进模型上下文，
   `method` 只认 `exposes[]` 白名单，`args` 只作为 JSON 数据进入沙箱；算子调用方给的文本永远不参与代码拼接。
-  阶段一只提供按名查/按名执行的注册地基，不做配方解析、不做 DAG runner。
+  Workflow runner 按名执行普通算子节点，并提供通用有界 forEach/repeat 控制块；循环体仍由独立算子组成，不包含业务专用采集逻辑。
 - 工具条目的 `implementation.status` 明确区分「声明镜像」与「可下载实现」；
   当前没有 `downloadable`。将来若开放，必须先在宿主 `WebToolLoop` 里定义外部执行器的
   隔离与注册规则，**不要把任意远程 JS 直接放进主线程**。
