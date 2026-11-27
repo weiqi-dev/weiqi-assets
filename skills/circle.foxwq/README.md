@@ -22,7 +22,7 @@
    - `json_extract` 提取 `lastcode` / `chesslist`；
    - `pagination.cursor` 产出下一轮状态、当前页数据与成功标记。
 5. `circle.pickOpponents` 根据主账号对局频率降序、uid 升序选取对手；`maxHops=1` 时不展开对手。
-6. 第二个 `forEach + repeat` 对每个对手执行相同分页流程。
+6. 第二个 `forEach + repeat` 为所有未结束对手构造当前页请求，每轮只调用一次 `fetch_batch` 批量抓取（最多 50 个 URL），再分别推进各自游标。
 7. `json_extract` / `collection.asArray` / `collection.join` / `collection.uniqueBy` 合并并按 `chessid` 去重。
 8. `circle.normalize` 计算关系图，`circle.summary` 去掉 edges 逐边明细，仅保留 LLM 分析所需摘要。
 9. `collection.statusSummary` 汇总所有分页请求的成功与失败数量。
@@ -50,10 +50,10 @@
 |---|---:|---|
 | `nickname` | 必填 | 野狐昵称 |
 | `pages` | 1 | 每个账号最多抓取的页数；野狐一页约 100 局 |
-| `opponentCount` | 8 | 从主账号对局中选取的高频对手数量 |
+| `opponentCount` | 8 | 从主账号对局中选取的高频对手数量，最多 50（受宿主单批 50 URL 限制） |
 | `maxHops` | 2 | 1=只抓主账号；2=主账号加选中的对手 |
 
-`pages` 是每个账号的有界循环上限；如果接口提前返回空游标，循环会提前停止。宿主对每个循环控制块限制 100 次迭代，并对整条 Workflow 设置 500 次总循环预算；`opponentCount` 最大 100。
+`pages` 是每个账号的有界循环上限；如果接口提前返回空游标，循环会提前停止。宿主对每个循环控制块限制 100 次迭代，并对整条 Workflow 设置 500 次总循环预算；`opponentCount` 最大 50，以匹配宿主单次 `fetch_batch` 的 50 URL 上限。
 
 ## 分页与失败语义
 
