@@ -3,7 +3,7 @@
   "id": "circle.foxwq",
   "version": 9,
   "name": "弈友圈",
-  "summary": "分析某个野狐账号的弈友圈：按昵称查 UID，使用通用 web_fetch 与 宿主 JSON 算子分页获取主账号棋谱、提取交战对手并逐个抓取，再由 circle.normalize 生成关系事实供模型分析。",
+  "summary": "分析某个野狐账号的弈友圈：按昵称查 UID，使用通用 web_fetch 与宿主 JSON 算子分页获取主账号棋谱、提取交战对手并逐个抓取，再由 circle.normalize 生成关系事实供模型分析。",
   "routeHint": [
     "分析某野狐账号的弈友圈",
     "看看这个野狐号最近都跟谁下棋",
