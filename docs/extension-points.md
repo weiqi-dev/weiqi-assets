@@ -163,7 +163,7 @@ interface ModelToolDefinition {
 
 - `forEach` 从更早节点的 value 按 path 取数组，对每项执行一个嵌套 steps 列表；循环体可用 `{{item}}`、`{{item.path}}` 与 `{{index}}` 数据占位符。
 - `repeat` 执行一个有界 steps 列表；每轮用 `{{state.path}}` 读取状态，由 `stateFrom` 更新对象状态，由 `until` 指向 boolean 停止条件。
-- `repeat.maxIterations` 可使用整数或 `{{input.name}}`；宿主对单个循环控制块设置统一迭代上限，防止失控展开。
+- `repeat.maxIterations` 可使用整数或 `{{input.name}}`；宿主对单个循环控制块限制 100 次迭代，并对整条 Workflow 设置 500 次累计循环预算，防止嵌套扇出失控。
 - 循环节点输出数组（forEach）或 `{ items, state, stopped }`（repeat）；普通下游节点通过标准 bindings 消费，不需要模型逐轮协调。
 
 ## 新增的通用算子插件
