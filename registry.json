@@ -101,6 +101,16 @@
       "specVersion": 1,
       "path": "plugins/workflow-operator/pagination/plugin.json",
       "category": "算子"
+    },
+    {
+      "id": "workflow-operator.transform",
+      "type": "plugin",
+      "name": "字段转换算子",
+      "summary": "通用 JSON 字段类型转换与结构变换，不访问宿主能力。",
+      "pointId": "workflow-operator",
+      "specVersion": 1,
+      "path": "plugins/workflow-operator/transform/plugin.json",
+      "category": "算子"
     }
   ]
 }
