@@ -18,10 +18,10 @@
 
 ## 新增插件
 
-1. 确认宿主已有对应扩展点 spec（见 [extension-points.md](extension-points.md)）。
-   没有就先在 weiqi-bot 里做，别先发资源。
-2. 建目录：`plugins/<pointId>/<slug>/`（`<pointId>` 取 `ranking` 或 `workflow-operator`，见 [extension-points.md](extension-points.md)）。
-3. 写 `plugin.json`（以 `workflow-operator` 工作流算子插件为例）：
+1. 先确认这项能力不是宿主已有的通用 Workflow 算子。JSON / regex 数据处理应直接调用宿主 `json.*` / `regex.*`，不要重新发布插件；只有领域专用计算才考虑 `workflow-operator` 插件。
+2. 确认宿主已有对应扩展点 spec（见 [extension-points.md](extension-points.md)）。没有就先在 weiqi-bot 里做，别先发资源。
+3. 建目录：`plugins/<pointId>/<slug>/`（`<pointId>` 取 `ranking` 或 `workflow-operator`，见 [extension-points.md](extension-points.md)）。
+4. 写 `plugin.json`（以 `workflow-operator` 工作流算子插件为例）：
 
    ```json
    {
@@ -52,15 +52,15 @@
    `scripts/validate.mjs` 的 `KNOWN_POINT_IDS` 白名单会拦截自造值。
    `exposes[]` 每个方法会按 `<slug>.<name>` 注册成一条宿主算子，供阶段二 workflow 按名调用。
 
-4. 写 `index.js`：全局函数 `call({ method, args })`，`method` 只认 `exposes[]` 白名单，
+5. 写 `index.js`：全局函数 `call({ method, args })`，`method` 只认 `exposes[]` 白名单，
    返回任意可 JSON 序列化值。不得引用宿主/浏览器全局，不得动态求值，不得无界循环；
    注释里也别写那些禁用词（`PluginValidator` 对整串做正则）。
    （ranking 插件则写 `rank({matches})` 返回 `{columns,rows}`，见 `plugins/ranking/total-score/index.js`）。
-5. 写 `README.md`：说明契约来源（宿主哪个文件）、算子方法的**明确选择**、安装形状（登记进宿主 `OperatorRegistry`）。
+6. 写 `README.md`：说明契约来源（宿主哪个文件）、算子方法的**明确选择**、安装形状（登记进宿主 `OperatorRegistry`）。
    如果用了任何阈值或常数，必须说清是物理推导、具名准则还是明说的业务约束。
-6. 在 `registry.json` 的 `resources` 追加条目，`type: "plugin"`，带 `pointId` 与 `specVersion`，
+7. 在 `registry.json` 的 `resources` 追加条目，`type: "plugin"`，带 `pointId` 与 `specVersion`，
    `category` 填 `算子`，`path` 指向 `plugin.json`。
-7. 跑 `npm run validate`；再在 weiqi-bot 里用 `PluginValidator` + QuickJS 试跑一次
+8. 跑 `npm run validate`；再在 weiqi-bot 里用 `PluginValidator` + QuickJS 试跑一次
    （workflow-operator 用 `smoke[]` 比对 `expect`；ranking 输出要能过 `validateRankingOutput`）。
 
 `workflow-operator` 是工作流算子插件：入口固定 `call({method,args})`，`method` 只认 `exposes[]` 里的名字，
@@ -131,7 +131,7 @@ manifest 还要给 `exposes[]`（算子方法名 + 说明 + 参数 JSON Schema�
    }
    ```
 
-   带 `workflow` 的配方再加 `inputs` / `workflow.steps[]`（形状见 `schema/workflow.schema.json`）；
+   带 `workflow` 的配方再加 `inputs` / `workflow.steps[]`（形状见 `schema/workflow.schema.json`）；普通 JSON / regex 操作直接使用宿主 `json.*` / `regex.*`，不会形成插件安装依赖；
    这类配方的 `primitives` 置空数组 `[]`（索引层看不到 workflow，**允许空数组**）。
    可选 `returnToLLM`（默认 false，仅带 `workflow` 的配方有意义）：显式 `true` 时正常模式也把
    `yield` 汇总 values 回灌给模型做分析；字段出处见 `schema/workflow.schema.json` 与 weiqi-bot
