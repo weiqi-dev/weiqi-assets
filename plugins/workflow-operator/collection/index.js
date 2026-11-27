@@ -4,6 +4,8 @@ function readPath(value, path) {
   var current = value;
   for (var i = 0; i < parts.length; i++) {
     if (current === null || current === undefined) return undefined;
+    if (parts[i] === "__proto__" || parts[i] === "prototype" || parts[i] === "constructor") return undefined;
+    if (!Object.prototype.hasOwnProperty.call(Object(current), parts[i])) return undefined;
     current = current[parts[i]];
   }
   return current;
@@ -17,7 +19,7 @@ function flatten(items) {
   return out;
 }
 function uniqueBy(args) {
-  var seen = {};
+  var seen = Object.create(null);
   var out = [];
   for (var i = 0; i < args.items.length; i++) {
     var item = args.items[i];
@@ -27,7 +29,7 @@ function uniqueBy(args) {
   return out;
 }
 function groupBy(args) {
-  var out = {};
+  var out = Object.create(null);
   for (var i = 0; i < args.items.length; i++) {
     var item = args.items[i];
     var key = String(readPath(item, args.key));
