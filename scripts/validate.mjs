@@ -401,6 +401,7 @@ function validateOperatorPlugin(m, ctx, entryName) {
       if (typeof e.idempotent !== 'boolean') fail(`${ec}.idempotent 必须是 boolean`);
     }
   }
+  const smokeMethods = new Set();
   if (!Array.isArray(m.smoke) || m.smoke.length === 0) {
     fail(`${ctx}.smoke 必须是非空数组`);
   } else {
@@ -409,8 +410,20 @@ function validateOperatorPlugin(m, ctx, entryName) {
       if (!s || typeof s !== 'object') { fail(`${sc} 必须是对象`); continue; }
       if (!Array.isArray(s.args) || s.args.length !== 1) fail(`${sc}.args 必须是含一个参数对象的数组`);
       if (s.expect === undefined) fail(`${sc}.expect 缺失`);
-      if (s.method !== undefined && (typeof s.method !== 'string' || !ENTRY_RE.test(s.method))) {
-        fail(`${sc}.method 不是合法方法标识符`);
+      if (typeof s.method !== 'string' || !ENTRY_RE.test(s.method)) {
+        fail(`${sc}.method 必须是合法方法标识符`);
+      } else {
+        smokeMethods.add(s.method);
+        if (Array.isArray(m.exposes) && !m.exposes.some((expose) => expose && expose.name === s.method)) {
+          fail(`${sc}.method (${s.method}) 未在 exposes[] 中声明`);
+        }
+      }
+    }
+  }
+  if (Array.isArray(m.exposes)) {
+    for (const expose of m.exposes) {
+      if (expose && typeof expose.name === 'string' && !smokeMethods.has(expose.name)) {
+        fail(`${ctx}.exposes.${expose.name} 缺少对应 smoke 用例`);
       }
     }
   }
