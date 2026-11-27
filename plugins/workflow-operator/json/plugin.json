@@ -131,7 +131,7 @@
     },
     {
       "name": "take",
-      "description": "取数组前 count 项。",
+      "description": "取数组前 count 项，count 为 0 到 100 的整数。",
       "inputSchema": {
         "type": "object"
       },
