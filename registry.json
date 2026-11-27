@@ -71,6 +71,16 @@
       "specVersion": 1,
       "path": "plugins/workflow-operator/json/plugin.json",
       "category": "算子"
+    },
+    {
+      "id": "workflow-operator.regex",
+      "type": "plugin",
+      "name": "正则算子",
+      "summary": "通用正则匹配、提取与替换，使用 ECMAScript RegExp 语义，在受限沙箱纯计算。",
+      "pointId": "workflow-operator",
+      "specVersion": 1,
+      "path": "plugins/workflow-operator/regex/plugin.json",
+      "category": "算子"
     }
   ]
 }
