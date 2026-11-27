@@ -280,98 +280,191 @@
         ]
       },
       {
-        "id": "opponent-pages",
+        "id": "opponent-seeds",
         "forEach": {
           "from": "opponents",
           "path": "$",
           "steps": [
             {
-              "id": "opponent-paginate",
+              "id": "opponent-seeds",
+              "call": "transform.object",
+              "args": {
+                "entries": {
+                  "uid": "{{item}}",
+                  "cursor": "0"
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "id": "opponent-pending-seed",
+        "call": "collection.singletonIfNotEmpty",
+        "bindings": [
+          {
+            "from": "opponent-seeds",
+            "path": "$",
+            "as": "items"
+          }
+        ]
+      },
+      {
+        "id": "opponent-pages",
+        "forEach": {
+          "from": "opponent-pending-seed",
+          "path": "$",
+          "steps": [
+            {
+              "id": "opponent-batch-paginate",
               "repeat": {
                 "maxIterations": "{{input.pages}}",
                 "initialState": {
-                  "uid": "{{item}}",
-                  "cursor": "0"
+                  "pending": "{{item}}"
                 },
                 "stateFrom": {
-                  "from": "page-cursor",
+                  "from": "batch-cursor",
                   "path": "state"
                 },
                 "until": {
-                  "from": "page-cursor",
+                  "from": "batch-cursor",
                   "path": "done"
                 },
                 "steps": [
                   {
-                    "id": "page-url",
-                    "call": "url.build",
+                    "id": "current-pending",
+                    "call": "transform.identity",
                     "args": {
-                      "base": "https://h5.foxwq.com/yehuDiamond/chessbook_local/YHWQFetchChessList",
-                      "params": {
-                        "srcuid": "0",
-                        "dstuid": "{{state.uid}}",
-                        "type": "1",
-                        "lastcode": "{{state.cursor}}",
-                        "searchkey": "",
-                        "uin": "{{state.uid}}"
-                      }
+                      "value": "{{state.pending}}"
                     }
                   },
                   {
-                    "id": "page-request",
-                    "call": "collection.singleton",
+                    "id": "pending-requests",
+                    "forEach": {
+                      "from": "current-pending",
+                      "path": "$",
+                      "steps": [
+                        {
+                          "id": "page-url",
+                          "call": "url.build",
+                          "args": {
+                            "base": "https://h5.foxwq.com/yehuDiamond/chessbook_local/YHWQFetchChessList",
+                            "params": {
+                              "srcuid": "0",
+                              "dstuid": "{{item.uid}}",
+                              "type": "1",
+                              "lastcode": "{{item.cursor}}",
+                              "searchkey": "",
+                              "uin": "{{item.uid}}"
+                            }
+                          }
+                        },
+                        {
+                          "id": "page-request",
+                          "call": "collection.singleton",
+                          "bindings": [
+                            {
+                              "from": "page-url",
+                              "path": "$",
+                              "as": "value"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "id": "flat-requests",
+                    "call": "collection.flatten",
                     "bindings": [
                       {
-                        "from": "page-url",
+                        "from": "pending-requests",
                         "path": "$",
-                        "as": "value"
+                        "as": "items"
                       }
                     ]
                   },
                   {
-                    "id": "page-fetch",
+                    "id": "opponent-batch-fetch",
                     "call": "fetch_batch",
                     "bindings": [
                       {
-                        "from": "page-request",
+                        "from": "flat-requests",
                         "path": "$",
                         "as": "requests"
                       }
                     ]
                   },
                   {
-                    "id": "page-json",
-                    "call": "json_extract",
-                    "args": {
+                    "id": "page-results",
+                    "forEach": {
+                      "from": "opponent-batch-fetch",
                       "path": "$",
-                      "pick": [
-                        "result",
-                        "lastcode",
-                        "chesslist"
+                      "steps": [
+                        {
+                          "id": "page-json",
+                          "call": "json_extract",
+                          "args": {
+                            "value": "{{item.value}}",
+                            "path": "$",
+                            "pick": [
+                              "result",
+                              "lastcode",
+                              "chesslist"
+                            ]
+                          }
+                        },
+                        {
+                          "id": "page-cursor",
+                          "call": "pagination.cursor",
+                          "args": {
+                            "cursorPath": "lastcode",
+                            "itemsPath": "chesslist",
+                            "statusPath": "result",
+                            "successValue": 0
+                          },
+                          "bindings": [
+                            {
+                              "from": "page-json",
+                              "path": "$",
+                              "as": "response"
+                            }
+                          ]
+                        },
+                        {
+                          "id": "request-query",
+                          "call": "url.parse",
+                          "args": {
+                            "url": "{{item.url}}"
+                          }
+                        },
+                        {
+                          "id": "page-enriched",
+                          "call": "transform.merge",
+                          "bindings": [
+                            {
+                              "from": "page-cursor",
+                              "path": "$",
+                              "as": "left"
+                            },
+                            {
+                              "from": "request-query",
+                              "path": "$",
+                              "as": "right"
+                            }
+                          ]
+                        }
                       ]
-                    },
-                    "bindings": [
-                      {
-                        "from": "page-fetch",
-                        "path": "[0].value",
-                        "as": "value"
-                      }
-                    ]
+                    }
                   },
                   {
-                    "id": "page-cursor",
-                    "call": "pagination.cursor",
-                    "args": {
-                      "cursorPath": "lastcode",
-                      "itemsPath": "chesslist",
-                      "statusPath": "result",
-                      "successValue": 0
-                    },
+                    "id": "batch-cursor",
+                    "call": "pagination.batchCursor",
                     "bindings": [
                       {
-                        "from": "page-json",
+                        "from": "page-results",
                         "path": "$",
-                        "as": "response"
+                        "as": "pages"
                       }
                     ]
                   }
@@ -435,7 +528,7 @@
         "id": "opponent-status-raw",
         "call": "json_extract",
         "args": {
-          "path": "[*].items[*].ok"
+          "path": "[*].items[*].statuses[*]"
         },
         "bindings": [
           {
