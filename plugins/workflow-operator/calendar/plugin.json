@@ -25,7 +25,7 @@
     {
       "name": "buildMonth",
       "description": "生成一张公历月表的最终可渲染数据。传 {year:整数, month:1-12, holidays:节假日JSON}；返回 {weeks[], legend[]}。weeks[] 每项 {mon..sun} 七个纯文本单元格，放假日用带圈数字 ①..㉛，其余用普通数字，单元格内容按传统节日>节气>农历日名只取一个；legend[] 每项 {text} 为表格外说明（农历月段、本月节气与节日、法定放假日、调休上班日、数据来源）。holidays 的 Years 按年份映射假期数组，StartDate..EndDate 连休区间内每天为法定放假日，CompDays 为调休上班日；补班同日优先。years/month 越界或 holidays 结构不合法即抛错。",
-      "params": {
+      "inputSchema": {
         "type": "object",
         "additionalProperties": false,
         "required": [
@@ -47,7 +47,10 @@
             "description": "节假日 JSON，含 Years 年份映射；由 workflow 的 web_fetch(storeOnly) 经绑定注入，插件自身零网络"
           }
         }
-      }
+      },
+      "outputSchema": {},
+      "kind": "pure",
+      "idempotent": true
     }
   ],
   "smoke": [
