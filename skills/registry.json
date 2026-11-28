@@ -22,7 +22,7 @@
     },
     {
       "id": "weather.wttr",
-      "version": 7,
+      "version": 8,
       "name": "查天气",
       "summary": "使用 wttr.in 查询单城或自选城市天气；支持管理自选城市与默认城市，默认轻量 j2，详细预报使用 j1。",
       "routeHint": [
