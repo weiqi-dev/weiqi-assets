@@ -61,11 +61,20 @@
 ⚠️ `PluginValidator` 是**对整串源码做正则**，注释与字符串里出现上述禁用词同样会被拦截。
 `scripts/validate.mjs` 复刻了这一点，示例插件的注释因此刻意规避了这些词。
 
-## `workflow-operator` 扩展点（工作流算子插件）
+## 宿主内置数据算子
 
-`workflow-operator` 是**工作流算子插件**：它不挂模型 `tools[]`，
+`json.*` 与 `regex.*` 是 weiqi-bot 的宿主内置 Workflow 算子，不属于插件扩展点，不出现在顶层 `registry.json`，也不需要安装或启用。它们只处理上游传入的原生值：
+
+- JSON：`parse`、`stringify`、`get`、`set`、`select`、`pluck`、`concat`、`unique`、`append`、`groupCount`、`sortBy`、`take`、`isEmpty`、`assert`、`flatten`、`toString`。
+- regex：`match`、`extract`、`replace`。由于原生 RegExp 在宿主线程同步执行，宿主对输入长度、模式长度、匹配数量设上限，并拒绝常见灾难性回溯模式。
+
+这些通用算子不访问网络、缓存、存储、时钟或 DOM。技能引用 `json.*` / `regex.*` 时不会产生插件安装依赖。
+
+## `workflow-operator` 扩展点（领域工作流算子插件）
+
+`workflow-operator` 是**领域工作流算子插件**：它不挂模型 `tools[]`，
 不进 `ModelRequest.tools`，也不向 system 提示词注入任何算子清单。工件 `exposes[]` 的**每个方法必须声明 `inputSchema`、`outputSchema`、`kind`、`idempotent`，并按名注册成一条宿主算子**
-（内置算子用 snake_case，插件算子用 `<slug>.<exposes[].name>`，如 `my-operator.compute`），
+（宿主通用算子使用 `json.<action>` / `regex.<action>`；其它宿主原语使用既有名称；插件算子用 `<slug>.<exposes[].name>`，如 `circle.normalize`），
 由宿主 `OperatorRegistry` 统一持有；**阶段二的 workflow/DAG runner** 在节点里写
 `"call": "<算子名>"` 按名查表并按名执行（value→value）。Workflow runner 按名执行普通算子节点，并提供通用有界 `forEach`、`repeat` 与 `ifElse` 控制块；循环体仍只调用独立算子，不承载业务逻辑。
 
@@ -89,7 +98,7 @@
 - 插件必须是经典脚本或 `module.exports` 形态；QuickJS 不支持 ESM `export`。
 - 不提供、也不自检 `new Date()` 依赖的非确定性字段（如 `isToday`、节气、生肖），
   因为沙箱里的时间来自宿主真实时钟，逐次运行结果会变。
-- 工件默认停用，**人工启用闸门**后才注册进 `OperatorRegistry`；缓存命中即零网络下载；正常调用复用 Worker，但每次调用创建独立 QuickJS Runtime / Context；超时、崩溃、OOM 或栈溢出后回收 Worker 并在下次调用重建。
+- 工件默认停用，**人工启用闸门**后才注册进 `OperatorRegistry`；缓存命中即零网络下载；每次调用创建独立 Worker、QuickJS Runtime 与 Context，调用结束或异常后立即销毁 Worker。
 
 ### 两条落地路径：在线安装与插件开发角色自建
 
