@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "weather.wttr",
-  "version": 6,
+  "version": 7,
   "name": "查天气",
   "summary": "使用 wttr.in 查询单城或自选城市天气；支持管理自选城市与默认城市，默认轻量 j2，详细预报使用 j1。",
   "routeHint": [
@@ -10,7 +10,7 @@
     "用户想设默认城市时"
   ],
   "primitives": [],
-  "prompt": "用户明确想查询天气、管理自选城市或默认城市时才使用本技能；只是讨论天气、气候或气象知识时正常回答。所有数据操作和天气取数都通过 run_workflow 完成，不直接调用 kv_read / kv_write，也不自行访问网络。\\n\\n【工作流操作】只使用四种 operation：storageGet、storageSet、storageDelete、weatherBatch。存储固定使用 prefs/weather.watchlist（字符串数组）与 prefs/weather.defaultCity（城市名称字符串），不要使用其他域或键。读取时 storageGet 传 key；写入时 storageSet 传 key、valueKey，并把实际值放在对应输入（valueKey=watchlist 时传 watchlist 数组；valueKey=defaultCity 时传 defaultCity 字符串）；删除时 storageDelete 传 key。\\n\\n【自选城市】查看时读取 weather.watchlist；返回 null 或空数组时告知尚未添加，否则按实际列表展示。添加或删除前先读取列表：添加只在不存在时追加；删除只移除用户点名的城市；再用 storageSet 写回完整字符串数组（key=weather.watchlist，valueKey=watchlist）。保存失败必须如实说明。添加自选不自动查询天气。\\n\\n【默认城市】读取 weather.defaultCity；设置时用 storageSet（key=weather.defaultCity，valueKey=defaultCity）；清除时用 storageDelete（key=weather.defaultCity）。用户明确指定城市时优先查询该城市，不被默认城市覆盖。用户未指定城市时先读取默认城市；没有默认城市则询问用户，不擅自选择城市。\\n\\n【天气查询】统一使用 weatherBatch。单城市时 cities 传只含一项的数组；批量自选城市时按原列表顺序传对象数组，每项包含 city（原始城市名，直接作为 wttr.in 的查询词：中文、拼音、英文均可）；不要另造 slug 字段。每个城市独立请求，某个城市失败不影响其他城市。默认 format=j2；用户明确要求未来几天、明天后天、逐时或详细预报时用 j1。工作流只把 current_condition[0] 与 weather 预报字段交给模型，不把完整响应带入上下文。\\n\\n【准确性与输出】只根据工作流返回的实际字段播报：当前天气、气温、体感温度、湿度、风速、当天最高/最低气温；只有 j1 返回 hourly 时才补充逐时趋势。缺字段、请求失败或 JSON 异常时如实说明，不编造。批量查询按城市分别说明成功或失败。标注数据来自 wttr.in。\\n\\n【加入自选】每次按用户明确指定的城市查询且确实取得有效天气数据后，在回复末尾附 `[加入自选城市](prefs-add:prefs:weather.watchlist:城市中文名)`，城市名使用用户原话、不编码；已在自选列表中的城市不重复提示。一次查询多个城市时，对不在自选列表中的成功城市分别附链接。该 prefs-add 是宿主通用回灌协议，点击后仍由本技能通过工作流读写 prefs。",
+  "prompt": "用户明确想查询天气、管理自选城市或默认城市时才使用本技能；只是讨论天气、气候或气象知识时正常回答。所有数据操作和天气取数都通过 run_workflow 完成，不直接调用 kv_read / kv_write，也不自行访问网络。\\n\\n【工作流操作】只使用四种 operation：storageGet、storageSet、storageDelete、weatherBatch。存储固定使用 prefs/weather.watchlist（字符串数组）与 prefs/weather.defaultCity（城市名称字符串），不要使用其他域或键。读取时 storageGet 传 key；写入时 storageSet 传 key、valueKey，并把实际值放在对应输入（valueKey=watchlist 时传 watchlist 数组；valueKey=defaultCity 时传 defaultCity 字符串）；删除时 storageDelete 传 key。\\n\\n【自选城市】查看时读取 weather.watchlist；返回 null 或空数组时告知尚未添加，否则按实际列表展示。添加或删除前先读取列表：添加只在不存在时追加；删除只移除用户点名的城市；再用 storageSet 写回完整字符串数组（key=weather.watchlist，valueKey=watchlist）。保存失败必须如实说明。添加自选不自动查询天气。\\n\\n【默认城市】读取 weather.defaultCity；设置时用 storageSet（key=weather.defaultCity，valueKey=defaultCity）；清除时用 storageDelete（key=weather.defaultCity）。用户明确指定城市时优先查询该城市，不被默认城市覆盖。用户未指定城市时先读取默认城市；没有默认城市则询问用户，不擅自选择城市。\\n\\n【天气查询】统一使用 weatherBatch。cities 传城市名称字符串数组，每项就是一个城市名（中文、拼音、英文均可，直接作为 wttr.in 的查询词），例如 [ '深圳', '北京' ]；单城市就传只含一项的数组，批量按原列表顺序。不要把城市包成对象，也不要另造 slug 或 city 字段。每个城市独立请求，某个城市失败不影响其他城市。默认 format=j2；用户明确要求未来几天、明天后天、逐时或详细预报时用 j1。工作流只把 current_condition[0] 与 weather 预报字段交给模型，不把完整响应带入上下文。\\n\\n【准确性与输出】只根据工作流返回的实际字段播报：当前天气、气温、体感温度、湿度、风速、当天最高/最低气温；只有 j1 返回 hourly 时才补充逐时趋势。缺字段、请求失败或 JSON 异常时如实说明，不编造。批量查询按城市分别说明成功或失败。标注数据来自 wttr.in。\\n\\n【加入自选】每次按用户明确指定的城市查询且确实取得有效天气数据后，在回复末尾附 `[加入自选城市](prefs-add:prefs:weather.watchlist:城市中文名)`，城市名使用用户原话、不编码；已在自选列表中的城市不重复提示。一次查询多个城市时，对不在自选列表中的成功城市分别附链接。该 prefs-add 是宿主通用回灌协议，点击后仍由本技能通过工作流读写 prefs。",
   "category": "生活",
   "inputs": [
     {
@@ -218,7 +218,7 @@
                                       "id": "batch_fetch",
                                       "call": "web_fetch",
                                       "args": {
-                                        "url": "https://wttr.in/{{urlencode.item.city}}?format={{input.format}}",
+                                        "url": "https://wttr.in/{{urlencode.item}}?format={{input.format}}",
                                         "storeOnly": true
                                       }
                                     },
@@ -256,7 +256,7 @@
                                       "args": {
                                         "value": {},
                                         "path": "city",
-                                        "nextValue": "{{item.city}}"
+                                        "nextValue": "{{item}}"
                                       }
                                     },
                                     {
