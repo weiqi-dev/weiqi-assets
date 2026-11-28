@@ -65,12 +65,12 @@
         "args": {
           "value": {
             "watchlist.read": true,
-            "watchlist.write": true,
-            "default.read": true,
-            "default.write": true,
-            "default.delete": true,
-            "weather.city": true,
-            "weather.batch": true
+            "watchlist.write": false,
+            "default.read": false,
+            "default.write": false,
+            "default.delete": false,
+            "weather.city": false,
+            "weather.batch": false
           },
           "path": "{{input.operation}}"
         }
@@ -99,13 +99,13 @@
               "call": "json.get",
               "args": {
                 "value": {
-                  "watchlist.read": true,
+                  "watchlist.read": false,
                   "watchlist.write": true,
-                  "default.read": true,
-                  "default.write": true,
-                  "default.delete": true,
-                  "weather.city": true,
-                  "weather.batch": true
+                  "default.read": false,
+                  "default.write": false,
+                  "default.delete": false,
+                  "weather.city": false,
+                  "weather.batch": false
                 },
                 "path": "{{input.operation}}"
               }
@@ -135,13 +135,13 @@
                     "call": "json.get",
                     "args": {
                       "value": {
-                        "watchlist.read": true,
-                        "watchlist.write": true,
+                        "watchlist.read": false,
+                        "watchlist.write": false,
                         "default.read": true,
-                        "default.write": true,
-                        "default.delete": true,
-                        "weather.city": true,
-                        "weather.batch": true
+                        "default.write": false,
+                        "default.delete": false,
+                        "weather.city": false,
+                        "weather.batch": false
                       },
                       "path": "{{input.operation}}"
                     }
@@ -170,13 +170,13 @@
                           "call": "json.get",
                           "args": {
                             "value": {
-                              "watchlist.read": true,
-                              "watchlist.write": true,
-                              "default.read": true,
+                              "watchlist.read": false,
+                              "watchlist.write": false,
+                              "default.read": false,
                               "default.write": true,
-                              "default.delete": true,
-                              "weather.city": true,
-                              "weather.batch": true
+                              "default.delete": false,
+                              "weather.city": false,
+                              "weather.batch": false
                             },
                             "path": "{{input.operation}}"
                           }
@@ -206,13 +206,13 @@
                                 "call": "json.get",
                                 "args": {
                                   "value": {
-                                    "watchlist.read": true,
-                                    "watchlist.write": true,
-                                    "default.read": true,
-                                    "default.write": true,
+                                    "watchlist.read": false,
+                                    "watchlist.write": false,
+                                    "default.read": false,
+                                    "default.write": false,
                                     "default.delete": true,
-                                    "weather.city": true,
-                                    "weather.batch": true
+                                    "weather.city": false,
+                                    "weather.batch": false
                                   },
                                   "path": "{{input.operation}}"
                                 }
@@ -241,13 +241,13 @@
                                       "call": "json.get",
                                       "args": {
                                         "value": {
-                                          "watchlist.read": true,
-                                          "watchlist.write": true,
-                                          "default.read": true,
-                                          "default.write": true,
-                                          "default.delete": true,
+                                          "watchlist.read": false,
+                                          "watchlist.write": false,
+                                          "default.read": false,
+                                          "default.write": false,
+                                          "default.delete": false,
                                           "weather.city": true,
-                                          "weather.batch": true
+                                          "weather.batch": false
                                         },
                                         "path": "{{input.operation}}"
                                       }
@@ -309,8 +309,7 @@
                                             "id": "city_with_current",
                                             "call": "json.set",
                                             "args": {
-                                              "path": "current",
-                                              "nextValue": "{{input.__unused}}"
+                                              "path": "current"
                                             },
                                             "bindings": [
                                               {
@@ -329,8 +328,7 @@
                                             "id": "city_summary",
                                             "call": "json.set",
                                             "args": {
-                                              "path": "forecast",
-                                              "nextValue": "{{input.__unused}}"
+                                              "path": "forecast"
                                             },
                                             "bindings": [
                                               {
@@ -353,12 +351,12 @@
                                             "call": "json.get",
                                             "args": {
                                               "value": {
-                                                "watchlist.read": true,
-                                                "watchlist.write": true,
-                                                "default.read": true,
-                                                "default.write": true,
-                                                "default.delete": true,
-                                                "weather.city": true,
+                                                "watchlist.read": false,
+                                                "watchlist.write": false,
+                                                "default.read": false,
+                                                "default.write": false,
+                                                "default.delete": false,
+                                                "weather.city": false,
                                                 "weather.batch": true
                                               },
                                               "path": "{{input.operation}}"
