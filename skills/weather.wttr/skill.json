@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "weather.wttr",
-  "version": 8,
+  "version": 9,
   "name": "查天气",
   "summary": "使用 wttr.in 查询单城或自选城市天气；支持管理自选城市与默认城市，默认轻量 j2，详细预报使用 j1。",
   "routeHint": [
@@ -10,7 +10,7 @@
     "用户想设默认城市时"
   ],
   "primitives": [],
-  "prompt": "用户明确想查询天气、管理自选城市或默认城市时才使用本技能；只是讨论天气、气候或气象知识时正常回答。所有数据操作和天气取数都通过 run_workflow 完成，不直接调用 kv_read / kv_write，也不自行访问网络。\\n\\n【工作流操作】只使用五种 operation：storageGet、storageSet、storageDelete、weatherBatch、weatherWatchlist。存储固定使用 prefs/weather.watchlist（字符串数组）与 prefs/weather.defaultCity（城市名称字符串），不要使用其他域或键。读取时 storageGet 传 key；写入时 storageSet 传 key、valueKey，并把实际值放在对应输入（valueKey=watchlist 时传 watchlist 数组；valueKey=defaultCity 时传 defaultCity 字符串）；删除时 storageDelete 传 key。\\n\\n【自选城市】查看时读取 weather.watchlist；返回 null 或空数组时告知尚未添加，否则按实际列表展示。添加或删除前先读取列表：添加只在不存在时追加；删除只移除用户点名的城市；再用 storageSet 写回完整字符串数组（key=weather.watchlist，valueKey=watchlist）。保存失败必须如实说明。添加自选不自动查询天气。\\n\\n【默认城市】读取 weather.defaultCity；设置时用 storageSet（key=weather.defaultCity，valueKey=defaultCity）；清除时用 storageDelete（key=weather.defaultCity）。用户明确指定城市时优先查询该城市，不被默认城市覆盖。用户未指定城市时先读取默认城市；没有默认城市则询问用户，不擅自选择城市。\\n\\n【天气查询】查询用户明确点名的城市或批量指定城市时用 weatherBatch；查询「我的自选城市天气 / 自选城市列表天气」时用 weatherWatchlist（这种查询不显示加入自选链接，因为那些城市已在自选里）。两种操作 cities 都传城市名称字符串数组，每项就是一个城市名（中文、拼音、英文均可，直接作为 wttr.in 的查询词），例如 [ '深圳', '北京' ]；单城市就传只含一项的数组，批量按原列表顺序。不要把城市包成对象，也不要另造 slug 或 city 字段。每个城市独立请求，某个城市失败不影响其他城市。默认 format=j2；用户明确要求未来几天、明天后天、逐时或详细预报时用 j1。工作流只把 current_condition[0] 与 weather 预报字段交给模型，不把完整响应带入上下文。\\n\\n【准确性与输出】只根据工作流返回的实际字段播报：当前天气、气温、体感温度、湿度、风速、当天最高/最低气温；只有 j1 返回 hourly 时才补充逐时趋势。缺字段、请求失败或 JSON 异常时如实说明，不编造。批量查询按城市分别说明成功或失败。标注数据来自 wttr.in。\\n\\n\\n\\n【加入自选链接】weatherBatch 取数成功后，宿主会在结果下方自动展示每个城市的「加入自选城市」链接（prefs-add 协议，由工作流 display 节点产出、走数据旁路，不进模型上下文）；你不需要、也不应该在回复正文里自己写任何链接。weatherWatchlist（查自选列表天气）不显示该链接。用户点击链接或明确说加入/删除自选时，按【自选城市】段用 storageGet / storageSet 读写 weather.watchlist 并回执。",
+  "prompt": "用户明确想查询天气、管理自选城市或默认城市时才使用本技能；只是讨论天气、气候或气象知识时正常回答。所有数据操作和天气取数都通过 run_workflow 完成，不直接调用 kv_read / kv_write，也不自行访问网络。\\n\\n【工作流操作】只使用五种 operation：storageGet、storageSet、storageDelete、weatherBatch、weatherWatchlist。存储固定使用 prefs/weather.watchlist（字符串数组）与 prefs/weather.defaultCity（城市名称字符串），不要使用其他域或键。读取时 storageGet 传 key；写入时 storageSet 传 key、valueKey，并把实际值放在对应输入（valueKey=watchlist 时传 watchlist 数组；valueKey=defaultCity 时传 defaultCity 字符串）；删除时 storageDelete 传 key。\\n\\n【自选城市】查看时读取 weather.watchlist；返回 null 或空数组时告知尚未添加，否则按实际列表展示。添加或删除前先读取列表：添加只在不存在时追加；删除只移除用户点名的城市；再用 storageSet 写回完整字符串数组（key=weather.watchlist，valueKey=watchlist）。保存失败必须如实说明。添加自选不自动查询天气。\\n\\n【默认城市】读取 weather.defaultCity；设置时用 storageSet（key=weather.defaultCity，valueKey=defaultCity）；清除时用 storageDelete（key=weather.defaultCity）。用户明确指定城市时优先查询该城市，不被默认城市覆盖。用户未指定城市时先读取默认城市；没有默认城市则询问用户，不擅自选择城市。\\n\\n【天气查询】查询用户明确点名的城市或批量指定城市时用 weatherBatch；查询「我的自选城市天气 / 自选城市列表天气」时用 weatherWatchlist，**不传 cities**，宿主会自动读取 prefs/weather.watchlist 作为城市列表（这种查询不显示加入自选链接，因为那些城市已在自选里）。两种操作 cities 都传城市名称字符串数组，每项就是一个城市名（中文、拼音、英文均可，直接作为 wttr.in 的查询词），例如 [ '深圳', '北京' ]；单城市就传只含一项的数组，批量按原列表顺序。不要把城市包成对象，也不要另造 slug 或 city 字段。每个城市独立请求，某个城市失败不影响其他城市。默认 format=j2；用户明确要求未来几天、明天后天、逐时或详细预报时用 j1。工作流只把 current_condition[0] 与 weather 预报字段交给模型，不把完整响应带入上下文。\\n\\n【准确性与输出】只根据工作流返回的实际字段播报：当前天气、气温、体感温度、湿度、风速、当天最高/最低气温；只有 j1 返回 hourly 时才补充逐时趋势。缺字段、请求失败或 JSON 异常时如实说明，不编造。批量查询按城市分别说明成功或失败。标注数据来自 wttr.in。\\n\\n\\n\\n【加入自选链接】weatherBatch 取数成功后，宿主会在结果下方自动展示每个城市的「加入自选城市」链接（prefs-add 协议，由工作流 display 节点产出、走数据旁路，不进模型上下文）；你不需要、也不应该在回复正文里自己写任何链接。weatherWatchlist（查自选列表天气）不显示该链接。用户点击链接或明确说加入/删除自选时，按【自选城市】段用 storageGet / storageSet 读写 weather.watchlist 并回执。",
   "category": "生活",
   "inputs": [
     {
@@ -214,14 +214,63 @@
                                 }
                               },
                               {
-                                "id": "city_items",
-                                "call": "json.get",
-                                "args": {
-                                  "value": {
-                                    "cities": "{{input.cities}}"
+                                "id": "city_source",
+                                "ifElse": {
+                                  "condition": {
+                                    "from": "show_link_flag",
+                                    "path": "$"
                                   },
-                                  "path": "cities"
+                                  "then": [
+                                    {
+                                      "id": "from_input",
+                                      "call": "json.get",
+                                      "args": {
+                                        "value": {
+                                          "cities": "{{input.cities}}"
+                                        },
+                                        "path": "cities"
+                                      }
+                                    }
+                                  ],
+                                  "else": [
+                                    {
+                                      "id": "watchlist_get",
+                                      "call": "storage.get",
+                                      "args": {
+                                        "domain": "prefs",
+                                        "key": "weather.watchlist"
+                                      }
+                                    },
+                                    {
+                                      "id": "from_watchlist",
+                                      "call": "json.concat",
+                                      "args": {
+                                        "right": []
+                                      },
+                                      "bindings": [
+                                        {
+                                          "from": "watchlist_get",
+                                          "path": "$",
+                                          "as": "left"
+                                        }
+                                      ]
+                                    }
+                                  ]
                                 }
+                              },
+                              {
+                                "id": "city_items",
+                                "call": "json.concat",
+                                "args": {
+                                  "right": []
+                                },
+                                "bindings": [
+                                  {
+                                    "from": "city_source",
+                                    "path": "value",
+                                    "as": "left"
+                                  }
+                                ]
                               },
                               {
                                 "id": "batch_loop",
