@@ -22,20 +22,15 @@
     },
     {
       "id": "weather.wttr",
-      "version": 4,
+      "version": 5,
       "name": "查天气",
-      "summary": "按需求选择 wttr.in 请求参数：默认查当天用精简 JSON 一次拿全，要更多天/逐时才取全量并分页；支持自选城市，参数可查 :help。",
+      "summary": "使用 wttr.in 查询单城或自选城市天气；支持管理自选城市与默认城市，默认轻量 j2，详细预报使用 j1。",
       "routeHint": [
         "用户想查某地天气 / 预报时",
         "用户想管理自选城市时",
         "用户想设默认城市时"
       ],
-      "primitives": [
-        "web_fetch",
-        "web_cache_read",
-        "kv_read",
-        "kv_write"
-      ],
+      "primitives": [],
       "category": "生活",
       "path": "weather.wttr/skill.json"
     },
