@@ -23,6 +23,8 @@
 
 插件是**可执行代码**（在宿主 QuickJS 沙箱里跑，零宿主能力）；工具目前是**声明镜像**（执行器由宿主内置，见各条目 `README.md`）；
 技能配方是**纯声明 JSON**，只引用宿主已注册的原语名，永远不含可执行代码。
+
+Workflow 的通用 JSON / regex 数据处理属于宿主内置纯计算算子（`json.*` / `regex.*`），不作为插件发布、不需要安装，也不启动 QuickJS Worker。`calendar`、`circle` 等业务领域计算仍可作为 `workflow-operator` 插件发布。
 插件与工具通过顶层 `registry.json` 索引，`schema/` 给出 JSON Schema 契约，`scripts/validate.mjs` 做一致性校验。
 **技能配方不进顶层 `registry.json`**：它是**独立两段式清单**（瘦索引 `skills/registry.json` + 每技能一个
 `skills/<id>/skill.json`），结构契约在 weiqi-bot 的 `SkillRecipe.ts`；带 workflow 的配方形状由本仓库
@@ -48,7 +50,7 @@
 
 运行时模型调用带凭据的原语**只给声明好的参数**（如 `http_fetch_auth` 只能给 `url` 和 `secretKey`；`asset_export` 给 `kind` / `id`，`github_publish_file` 给 `handle` / 可选 `message`）；允许访问哪些域名、请求头怎么拼、用 GET 还是 POST、body 里有哪些字段，全部由宿主按这份 `secrets` 声明强制决定，模型传不进来、也永远接触不到凭据明文。首次使用或凭据失效时，原语回一条 `secret-prompt:<key>` 链接，模型只负责把链接原样贴给用户并**结束本轮、等用户下一条消息**；用户点开弹框录入即自动保存到本地（`secrets` 域，opaque），宿主回灌一条用户消息触发下一轮，下次不再弹框。说「修改 / 换」也由 `secret_prompt` 触发同一个弹框。
 
-发布是写外部仓库，必须遵守 `SKILL_FOOTER`：改动业务库 / 外部状态的写操作要先预览、结束本轮、等用户下一条消息明确确认后再提交。本技能把「预览 = `asset_export` 的摘要（只转述句柄与变更集，不复述文件正文）」「提交 = `github_publish_file`（直提默认分支固定路径、Pages 立即公开）」写清楚，两件事不挤在同一轮。带 `workflow` 的技能还要连同依赖的 `workflow-operator` 算子插件一起发布。回复正文绝不自己写 http(s) 外站链接，宿主自定义 scheme 链接（`secret-prompt:`）原样转贴是唯一例外。
+发布是写外部仓库，必须遵守 `SKILL_FOOTER`：改动业务库 / 外部状态的写操作要先预览、结束本轮、等用户下一条消息明确确认后再提交。本技能把「预览 = `asset_export` 的摘要（只转述句柄与变更集，不复述文件正文）」「提交 = `github_publish_file`（直提默认分支固定路径、Pages 立即公开）」写清楚，两件事不挤在同一轮。带 `workflow` 的技能若调用 `calendar.*`、`circle.*` 等领域插件算子，仍需发布并安装对应插件；`json.*` / `regex.*` 是宿主内置算子，不存在插件依赖。回复正文绝不自己写 http(s) 外站链接，宿主自定义 scheme 链接（`secret-prompt:`）原样转贴是唯一例外。
 
 **扩展**：接入另一家认证 API、或再做一个需要凭据的管理者技能，只需再写一条配方、换一份 `secrets` 声明（不同的 key / allowedHosts / header / method / body），宿主内核与弹框都不用改。早先那份通用 GitHub REST 查数配方（连目录带引用）已彻底删除，不做兼容桥 / 别名 / 重定向。
 
@@ -69,7 +71,7 @@
 
 **扩展**：再加一类用户偏好（默认分类、常用参数…）只需在配方里换一个键名与值形状，宿主一行不改 —— 这正是本地数据层「加场景不改内核」的扩展点。
 
-**算子插件与技能配方分属两条链**：`workflow-operator` 算子插件的 `exposes[]` 每个方法按名注册进宿主 `OperatorRegistry`；带 `workflow` 的技能配方用 `"call"` 节点按算子名引用它们，由 `inputs` 填空、`steps` 声明普通算子节点与有界 `forEach` / `repeat` 控制块、宿主 `run_workflow` 触发。无 `workflow` 的配方沿用现有散文执行路径。配方与算子注册表之间不设依赖声明，旧的 llm 对接通道及 system 清单已一并删除。
+**宿主数据算子、领域插件与技能配方分属不同层次**：`json.*` / `regex.*` 由 weiqi-bot 内置并直接注册进 `OperatorRegistry`；`workflow-operator` 领域插件的 `exposes[]` 每个方法按名注册进宿主 `OperatorRegistry`；带 `workflow` 的技能配方用 `"call"` 节点按算子名引用它们，由 `inputs` 填空、`steps` 声明普通算子节点与有界 `forEach` / `repeat` 控制块、宿主 `run_workflow` 触发。无 `workflow` 的配方沿用现有散文执行路径。配方与算子注册表之间不设依赖声明，旧的 llm 对接通道及 system 清单已一并删除。
 
 宿主的在线插件平台**只安装 `type: plugin`**；`type: tool` 只在列表里展示，不提供安装按钮。
 插件默认源 `https://weiqi-dev.github.io/weiqi-assets/registry.json` 只读、由本仓库 git 发布，宿主可另加自定义源但默认源不可覆盖。

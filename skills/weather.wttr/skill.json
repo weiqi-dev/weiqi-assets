@@ -1,20 +1,649 @@
 {
   "schemaVersion": 1,
   "id": "weather.wttr",
-  "version": 4,
+  "version": 5,
   "name": "查天气",
-  "summary": "按需求选择 wttr.in 请求参数：默认查当天用精简 JSON 一次拿全，要更多天/逐时才取全量并分页；支持自选城市，参数可查 :help。",
+  "summary": "天气查询与自选城市管理由 Workflow 执行：支持单城市、批量自选城市、默认城市及城市列表维护；默认轻量查询，详细预报按需取完整数据。",
   "routeHint": [
     "用户想查某地天气 / 预报时",
     "用户想管理自选城市时",
     "用户想设默认城市时"
   ],
   "primitives": [
-    "web_fetch",
-    "web_cache_read",
-    "kv_read",
-    "kv_write"
+    "web_fetch"
   ],
-  "prompt": "用户明确想查询天气、管理自选城市时才使用本技能；只是讨论天气、气候或气象知识时正常回答，不调用工具。\n\n【城市识别】\n用户直接指定城市时，查询该城市，不受自选列表影响。把中文城市名转换为英文或汉语拼音（如 北京→Beijing、上海→Shanghai、广州→Guangzhou），拼成 wttr.in 的接口路径 https://wttr.in/城市拼音?参数。\n用户没有指定城市，也没有要求查询自选城市时，先读取自选列表：如果列表有城市，询问用户是否查询自选城市；如果列表为空，询问用户想查询哪个城市。不要擅自默认北京。\n\n【按需求选请求（关键：先判断要什么，再决定用哪档参数，别一律取全量）】\nwttr.in 同一城市不同参数返回的正文体积差很多，默认走轻量的那一档，只有确实需要更详细/更多天的数据时才取全量：\n- 默认「查今天天气 / 现在天气 / 某城市天气」等一般需求：用 `?format=j2`。这是精简 JSON（实测约 3 千字符），含 current_condition 全部字段（temp_C、weatherDesc、FeelsLikeC、humidity、windspeedKmph、observation_time 等）和 weather 里当天的最高/最低温（maxtempC / mintempC），足够做当天的中文播报；不含逐时 hourly。这个体积能一次完整给到，通常不需要 web_cache_read 翻页。\n- 用户明确要「未来几天 / 明天后天 / 3 天预报 / 逐时 / 早午晚每个时段 / 详细数据」时：改用 `?format=j1`。这是完整 JSON（实测约 3.9 万字符），含 3 天预报、每天 8 段 hourly。它体积大，观察多半只给预览，必须按下面【天气取数与缓存】用 web_cache_read 分页/grep 读全，不能凭预览播报。\n- 参数手册：wttr.in 的完整参数见 https://wttr.in/:help 。当用户临时提出上面两档覆盖不了的需求（换单位 m/u/M、指定语言 lang=、只看当前天气的文本速览 ?0/?1/?2、月相 /moon、机场码、经纬度定位等）时，可先用 web_fetch 读一次 :help 查到正确写法，再按需拼 URL；不要凭记忆编参数。实测提醒：`?0/?1/?2` 这类 view options 只对文本/终端排版输出生效，对 format=j1/j2 的 JSON 无效（拼成 `format=j1&0` 体积不变），别用来给 JSON「减小输出」；`lang=zh` 也不会把 weatherDesc 变成中文，别依赖它。\n- 一句话原则：能一次拿全的小响应就一次拿全并直接播报；只有用户确实要更详细/更多天时才取大响应，并老实分页读完。\n\n【自选城市存储】\n自选城市保存在本地数据层 prefs 域，固定键 weather.watchlist，值为城市名称字符串数组，例如 [\"北京\",\"上海\",\"巴黎\"]。只使用 prefs 域和 weather.watchlist 键，不要使用 secrets 或其他键名。\n【加入自选链接（通用机制）】宿主提供统一 scheme `prefs-add:<domain>:<key>:<value>`，任何技能存偏好都用同一条链路；点击后宿主只回灌一条用户消息，实际读写仍由你按本配方调用 kv_read / kv_write。本技能的链接固定写成 `prefs-add:prefs:weather.watchlist:<城市中文名>`，城市名用明文、不做编码。\n\nA. 添加自选城市：用户说「把上海加入自选」「记住巴黎这个城市」，或点了上面的链接、收到宿主回灌的一条「把「XX」按当前技能说明保存到本地偏好（domain='prefs'、key='weather.watchlist'），并回执结果。」消息时：\n1. 先调用 kv_read，domain='prefs'、key='weather.watchlist'。\n2. 不存在时按空数组处理；如果城市已存在，如实告知已在自选中，不重复添加。\n3. 不存在则把用户明确提供的城市名称追加到数组末尾。\n4. 调用 kv_write 写回去重后的完整字符串数组，domain='prefs'、key='weather.watchlist'。\n5. 根据工具结果回执。写入失败时如实说明，不得谎报保存成功。\n添加城市只保存偏好，不自动查询天气，除非用户同时明确要求查询。\n\nB. 删除自选城市：用户明确要求删除某个城市时，先 kv_read 读取列表，只删除用户点名的城市，再用 kv_write 写回完整数组。城市不存在时如实告知，不要改动其他城市。写入失败时如实说明。\n\nC. 查看自选城市：用户说「看看我的自选城市」「有哪些自选城市」时，调用 kv_read。列表为空或不存在时告知尚未添加；否则按实际列表展示城市名称，不要自行补充城市。\n\nD. 查询自选城市天气：用户说「查询自选城市天气」「看看我收藏的城市天气」等时：\n1. 先 kv_read 读取 prefs/weather.watchlist。\n2. 列表不存在或为空时，告知还没有自选城市，并提示用户可以先指定城市查询，再要求将其加入自选。\n3. 按【按需求选请求】判断该用 format=j2 还是 format=j1（默认 j2；用户要更多天/逐时才 j1），对列表中的每个城市分别转换为 wttr.in 可用的英文或拼音名称，分别调用 web_fetch。不要漏掉列表中的城市，也不要把多个城市拼成一个城市路径。\n4. 对每个请求分别处理返回结果；某个城市取数失败时单独标注，不要影响其他城市的播报，也不要编造数据。\n\n【天气取数与缓存】\n调用 web_fetch 获取 wttr.in 的公开 JSON 接口。format=j2 一般一次即可拿全；format=j1 等大响应若观察提示正文未完整显示，必须使用 web_cache_read 读取对应 URL 的缓存正文，直到取得需要的字段；不能只根据预览播报。每个城市使用本次 web_fetch 返回的绝对 URL 读取缓存。\n从 current_condition 读取 temp_C、weatherDesc 天气描述、FeelsLikeC、humidity、windspeedKmph 和观测时间；从 weather 数组第一天读取 maxtempC、mintempC。只有当用户要更详细的数据、且确实取到了 j1 的 hourly 时，才补充早、午、晚几个关键时段的天气趋势（j2 没有 hourly，此时不要臆造）。只使用实际读到的字段。\n接口取不到、返回异常、JSON 不合法或所需字段缺失时如实说明，不要编造天气数据。\n\n【输出】\n用简洁自然的中文播报，至少包括城市、当前天气、气温、体感温度、湿度、风速、当天最高和最低气温；只有取到 hourly 时才补充早午晚趋势。查询多个自选城市时按城市分组列出，开头说明实际查询的城市数量。标注数据来自 wttr.in。\n\n【查完城市后附「加入自选」链接】每次按用户明确指定的城市查完天气、且本次确实取到了有效天气数据后，在回复末尾附一条 markdown 链接，格式严格为 `[加入自选城市](prefs-add:prefs:weather.watchlist:城市中文名)`，城市名用用户原话里的中文名（如 `[加入自选城市](prefs-add:prefs:weather.watchlist:北京)`）。\n- 这是宿主自定义 scheme，宿主接管点击并回灌一条用户消息；**只按格式原样贴出，不改写、不补域名、不编造别的 scheme、不在链接里塞温度或其它值**。\n- 一次查了多个城市时为每座城市各附一条；查询自选城市天气时**不要**重复附（已在列表中）；取不到天气数据时不附链接。\n- 除这类链接外，回复正文里不要写任何网址；数据来源用文字「wttr.in」说明即可。",
-  "category": "生活"
+  "prompt": "用户明确想查询天气或管理天气偏好时才使用本技能；只是讨论天气、气候或气象知识时正常回答，不调用 Workflow。\n\n【Workflow 操作】\n通过 run_workflow 调用本技能的 workflow，operation 只能使用以下动作：\n- query：查询用户明确指定的单个城市。传 city（用户看到的城市名）、cityPath（wttr.in 可识别的英文城市名或拼音）和 format。\n- queryCities：批量查询自选城市。先用 listCities 取得真实自选列表，再把每个城市转换为 {name,path}，传入 cities；不要漏掉城市。\n- listCities：读取并展示自选城市。\n- addCity：添加 city；Workflow 会去重。\n- removeCity：删除 city；只删除完全匹配的城市，不改动其他城市。\n- setDefaultCity：设置默认城市，传 city 和 cityPath。\n- getDefaultCity：读取默认城市。用户未指定城市时先取默认城市；存在则用返回的 name/path 再调用 query；不存在时读取自选城市并询问用户，不能擅自默认某个城市。\n\n【城市识别与偏好】\n- 用户明确指定城市时直接查询，不受自选列表影响。\n- 将中文城市名转换为 wttr.in 可识别的英文名或拼音，例如北京使用 Beijing、上海使用 Shanghai；cityPath 只传城市路径，不要带 URL 或查询参数。\n- 自选城市保存在 prefs/weather.watchlist，值为城市名称字符串数组；默认城市保存在 prefs/weather.defaultCity，值为 {name,path}。\n- 所有读写都必须通过本技能 Workflow 的 storage.* 宿主算子完成；不要调用 LLM 的 kv_read / kv_write，也不要把存储逻辑改成模型工具。\n- 用户点击加入自选链接后，宿主会回灌「把「XX」按当前技能说明保存到本地偏好……」消息；收到后调用 addCity。\n- 用户明确要求加入或删除城市时直接执行对应 Workflow 操作，并根据执行结果回执。\n\n【天气请求】\n- 一般的现在天气 / 当天天气使用 format=j2。\n- 用户明确要求未来几天、明天后天、逐时或详细预报时使用 format=j1。\n- Workflow 使用 web_fetch 的 storeOnly 模式，完整 JSON 作为结构化 value 交给后续宿主 JSON 算子处理；正文不进入模型上下文。不要为了读取这份 Workflow 数据再调用 web_cache_read，也不要依据工具观察文本里的预览猜测数据。\n- 单城市查询从 current_condition[0] 和 weather[0] 读取；j1 的逐时信息在 weather[0].hourly 中。批量查询逐城独立请求，某个城市失败只标记该城市失败，不影响其他城市。\n- 请求失败、返回非 JSON、所需字段缺失时如实说明，不得编造天气数据。\n\n【输出】\n用简洁自然的中文播报。至少包括城市、当前天气、气温、体感温度、湿度、风速、当天最高和最低气温；只有确实取得 hourly 数据时才补充时段趋势。批量查询按城市分组，分别标明失败项，说明实际成功查询的城市。\n标注数据来源 wttr.in，不要在正文中输出原始网址。\n每次按用户明确指定的城市查询成功后，在回复末尾附加入自选链接，格式为 [加入自选城市](prefs-add:prefs:weather.watchlist:城市中文名)。一次查询多个明确指定的城市时，每个城市各附一条；查询自选城市天气时不要重复附；查询失败时不附。",
+  "category": "生活",
+  "inputs": [
+    {
+      "name": "operation",
+      "type": "string",
+      "required": true,
+      "enum": [
+        "query",
+        "queryCities",
+        "listCities",
+        "addCity",
+        "removeCity",
+        "setDefaultCity",
+        "getDefaultCity"
+      ]
+    },
+    {
+      "name": "city",
+      "type": "string",
+      "default": ""
+    },
+    {
+      "name": "cityPath",
+      "type": "string",
+      "default": ""
+    },
+    {
+      "name": "cities",
+      "type": "array",
+      "default": []
+    },
+    {
+      "name": "format",
+      "type": "string",
+      "default": "j2",
+      "enum": [
+        "j2",
+        "j1"
+      ]
+    }
+  ],
+  "workflow": {
+    "steps": [
+      {
+        "id": "readWatchlist",
+        "call": "storage.get",
+        "args": {
+          "domain": "prefs",
+          "key": "weather.watchlist"
+        },
+        "yield": true
+      },
+      {
+        "id": "watchlistValue",
+        "call": "json.get",
+        "args": {
+          "path": "value",
+          "default": []
+        },
+        "bindings": [
+          {
+            "from": "readWatchlist",
+            "path": "$",
+            "as": "value"
+          }
+        ],
+        "yield": true
+      },
+      {
+        "id": "watchlistEmpty",
+        "call": "json.isEmpty",
+        "args": {},
+        "bindings": [
+          {
+            "from": "watchlistValue",
+            "path": "$",
+            "as": "value"
+          }
+        ]
+      },
+      {
+        "id": "readDefaultCity",
+        "call": "storage.get",
+        "args": {
+          "domain": "prefs",
+          "key": "weather.defaultCity"
+        },
+        "yield": true
+      },
+      {
+        "id": "defaultCityValue",
+        "call": "json.get",
+        "args": {
+          "path": "value",
+          "default": null
+        },
+        "bindings": [
+          {
+            "from": "readDefaultCity",
+            "path": "$",
+            "as": "value"
+          }
+        ],
+        "yield": true
+      },
+      {
+        "id": "addCityMatch",
+        "call": "json.select",
+        "args": {
+          "items": [
+            "{{input.operation}}"
+          ],
+          "where": {
+            "$": {
+              "stringEq": "addCity"
+            }
+          }
+        }
+      },
+      {
+        "id": "addCitySkip",
+        "call": "json.isEmpty",
+        "args": {},
+        "bindings": [
+          {
+            "from": "addCityMatch",
+            "path": "$",
+            "as": "value"
+          }
+        ]
+      },
+      {
+        "id": "addCityAction",
+        "ifElse": {
+          "condition": {
+            "from": "addCitySkip",
+            "path": "$"
+          },
+          "then": [
+            {
+              "id": "skipAddCity",
+              "call": "json.isEmpty",
+              "args": {
+                "value": ""
+              }
+            }
+          ],
+          "else": [
+            {
+              "id": "addCityListBranch",
+              "ifElse": {
+                "condition": {
+                  "from": "watchlistEmpty",
+                  "path": "$"
+                },
+                "then": [
+                  {
+                    "id": "writeFirstCity",
+                    "call": "storage.set",
+                    "args": {
+                      "domain": "prefs",
+                      "key": "weather.watchlist",
+                      "value": [
+                        "{{input.city}}"
+                      ]
+                    }
+                  }
+                ],
+                "else": [
+                  {
+                    "id": "appendCity",
+                    "call": "json.append",
+                    "args": {
+                      "value": "{{input.city}}"
+                    },
+                    "bindings": [
+                      {
+                        "from": "watchlistValue",
+                        "path": "$",
+                        "as": "items"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "uniqueCities",
+                    "call": "json.unique",
+                    "args": {},
+                    "bindings": [
+                      {
+                        "from": "appendCity",
+                        "path": "$",
+                        "as": "items"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "writeCities",
+                    "call": "storage.set",
+                    "args": {
+                      "domain": "prefs",
+                      "key": "weather.watchlist"
+                    },
+                    "bindings": [
+                      {
+                        "from": "uniqueCities",
+                        "path": "$",
+                        "as": "value"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      {
+        "id": "removeCityMatch",
+        "call": "json.select",
+        "args": {
+          "items": [
+            "{{input.operation}}"
+          ],
+          "where": {
+            "$": {
+              "stringEq": "removeCity"
+            }
+          }
+        }
+      },
+      {
+        "id": "removeCitySkip",
+        "call": "json.isEmpty",
+        "args": {},
+        "bindings": [
+          {
+            "from": "removeCityMatch",
+            "path": "$",
+            "as": "value"
+          }
+        ]
+      },
+      {
+        "id": "removeCityAction",
+        "ifElse": {
+          "condition": {
+            "from": "removeCitySkip",
+            "path": "$"
+          },
+          "then": [
+            {
+              "id": "skipRemoveCity",
+              "call": "json.isEmpty",
+              "args": {
+                "value": ""
+              }
+            }
+          ],
+          "else": [
+            {
+              "id": "removeCityIfPresent",
+              "ifElse": {
+                "condition": {
+                  "from": "watchlistEmpty",
+                  "path": "$"
+                },
+                "then": [
+                  {
+                    "id": "noCitiesToRemove",
+                    "call": "json.isEmpty",
+                    "args": {
+                      "value": ""
+                    }
+                  }
+                ],
+                "else": [
+                  {
+                    "id": "filteredCities",
+                    "call": "json.select",
+                    "args": {
+                      "where": {
+                        "$": {
+                          "ne": "{{input.city}}"
+                        }
+                      }
+                    },
+                    "bindings": [
+                      {
+                        "from": "watchlistValue",
+                        "path": "$",
+                        "as": "items"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "writeFilteredCities",
+                    "call": "storage.set",
+                    "args": {
+                      "domain": "prefs",
+                      "key": "weather.watchlist"
+                    },
+                    "bindings": [
+                      {
+                        "from": "filteredCities",
+                        "path": "$",
+                        "as": "value"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      {
+        "id": "setDefaultMatch",
+        "call": "json.select",
+        "args": {
+          "items": [
+            "{{input.operation}}"
+          ],
+          "where": {
+            "$": {
+              "stringEq": "setDefaultCity"
+            }
+          }
+        }
+      },
+      {
+        "id": "setDefaultSkip",
+        "call": "json.isEmpty",
+        "args": {},
+        "bindings": [
+          {
+            "from": "setDefaultMatch",
+            "path": "$",
+            "as": "value"
+          }
+        ]
+      },
+      {
+        "id": "setDefaultCityAction",
+        "ifElse": {
+          "condition": {
+            "from": "setDefaultSkip",
+            "path": "$"
+          },
+          "then": [
+            {
+              "id": "skipSetDefault",
+              "call": "json.isEmpty",
+              "args": {
+                "value": ""
+              }
+            }
+          ],
+          "else": [
+            {
+              "id": "writeDefaultCity",
+              "call": "storage.set",
+              "args": {
+                "domain": "prefs",
+                "key": "weather.defaultCity",
+                "value": {
+                  "name": "{{input.city}}",
+                  "path": "{{input.cityPath}}"
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "id": "queryCityMatch",
+        "call": "json.select",
+        "args": {
+          "items": [
+            "{{input.operation}}"
+          ],
+          "where": {
+            "$": {
+              "stringEq": "query"
+            }
+          }
+        }
+      },
+      {
+        "id": "queryCitySkip",
+        "call": "json.isEmpty",
+        "args": {},
+        "bindings": [
+          {
+            "from": "queryCityMatch",
+            "path": "$",
+            "as": "value"
+          }
+        ]
+      },
+      {
+        "id": "queryCityAction",
+        "ifElse": {
+          "condition": {
+            "from": "queryCitySkip",
+            "path": "$"
+          },
+          "then": [
+            {
+              "id": "skipQueryCity",
+              "call": "json.isEmpty",
+              "args": {
+                "value": ""
+              }
+            }
+          ],
+          "else": [
+            {
+              "id": "fetchCity",
+              "call": "web_fetch",
+              "args": {
+                "url": "https://wttr.in/{{urlencode.input.cityPath}}?format={{input.format}}",
+                "storeOnly": true
+              }
+            },
+            {
+              "id": "cityCurrent",
+              "call": "json.get",
+              "args": {
+                "path": "current_condition[0]"
+              },
+              "bindings": [
+                {
+                  "from": "fetchCity",
+                  "path": "$",
+                  "as": "value"
+                }
+              ]
+            },
+            {
+              "id": "cityDay",
+              "call": "json.get",
+              "args": {
+                "path": "weather[0]"
+              },
+              "bindings": [
+                {
+                  "from": "fetchCity",
+                  "path": "$",
+                  "as": "value"
+                }
+              ]
+            },
+            {
+              "id": "cityBrief",
+              "call": "json.set",
+              "args": {
+                "value": {
+                  "city": "{{input.city}}"
+                },
+                "path": "current"
+              },
+              "bindings": [
+                {
+                  "from": "cityCurrent",
+                  "path": "$",
+                  "as": "nextValue"
+                }
+              ]
+            },
+            {
+              "id": "cityResult",
+              "call": "json.set",
+              "args": {
+                "path": "day"
+              },
+              "bindings": [
+                {
+                  "from": "cityBrief",
+                  "path": "$",
+                  "as": "value"
+                },
+                {
+                  "from": "cityDay",
+                  "path": "$",
+                  "as": "nextValue"
+                }
+              ],
+              "yield": true
+            }
+          ]
+        }
+      },
+      {
+        "id": "queryCitiesMatch",
+        "call": "json.select",
+        "args": {
+          "items": [
+            "{{input.operation}}"
+          ],
+          "where": {
+            "$": {
+              "stringEq": "queryCities"
+            }
+          }
+        }
+      },
+      {
+        "id": "queryCitiesSkip",
+        "call": "json.isEmpty",
+        "args": {},
+        "bindings": [
+          {
+            "from": "queryCitiesMatch",
+            "path": "$",
+            "as": "value"
+          }
+        ]
+      },
+      {
+        "id": "queryCitiesAction",
+        "ifElse": {
+          "condition": {
+            "from": "queryCitiesSkip",
+            "path": "$"
+          },
+          "then": [
+            {
+              "id": "skipQueryCities",
+              "call": "json.isEmpty",
+              "args": {
+                "value": ""
+              }
+            }
+          ],
+          "else": [
+            {
+              "id": "normalizeCities",
+              "call": "json.concat",
+              "args": {
+                "arrays": [
+                  "{{input.cities}}"
+                ]
+              }
+            },
+            {
+              "id": "fetchEachCity",
+              "forEach": {
+                "from": "normalizeCities",
+                "path": "$",
+                "onError": "continue",
+                "steps": [
+                  {
+                    "id": "fetchEachWeather",
+                    "call": "web_fetch",
+                    "args": {
+                      "url": "https://wttr.in/{{urlencode.item.path}}?format={{input.format}}",
+                      "storeOnly": true
+                    }
+                  },
+                  {
+                    "id": "eachCurrent",
+                    "call": "json.get",
+                    "args": {
+                      "path": "current_condition[0]"
+                    },
+                    "bindings": [
+                      {
+                        "from": "fetchEachWeather",
+                        "path": "$",
+                        "as": "value"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "eachDay",
+                    "call": "json.get",
+                    "args": {
+                      "path": "weather[0]"
+                    },
+                    "bindings": [
+                      {
+                        "from": "fetchEachWeather",
+                        "path": "$",
+                        "as": "value"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "eachBrief",
+                    "call": "json.set",
+                    "args": {
+                      "value": {
+                        "city": "{{item.name}}"
+                      },
+                      "path": "current"
+                    },
+                    "bindings": [
+                      {
+                        "from": "eachCurrent",
+                        "path": "$",
+                        "as": "nextValue"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "eachResult",
+                    "call": "json.set",
+                    "args": {
+                      "path": "day"
+                    },
+                    "bindings": [
+                      {
+                        "from": "eachBrief",
+                        "path": "$",
+                        "as": "value"
+                      },
+                      {
+                        "from": "eachDay",
+                        "path": "$",
+                        "as": "nextValue"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "yield": true
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "returnToLLM": true
 }
