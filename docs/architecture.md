@@ -21,7 +21,7 @@ weiqi-assets 是 **weiqi-bot 的开放扩展资源仓库**，不是一个应用�
 | 插件工件模型 | `domain/plugin/types.ts`（`PluginArtifact` / `PluginSpec`） | `plugins/` 的 manifest 对齐它 |
 | 插件校验 | `domain/plugin/PluginValidator.ts`、`domain/ranking/RankingTable.ts` | `scripts/validate.mjs` 复用同一套禁用规则 + 扩展点白名单 |
 | 插件执行 | `infrastructure/plugin-vm/QuickJsRuntime.ts`（QuickJS + wasm Worker） | 插件源码必须能在零能力沙箱里跑 |
-| 扩展点接入 | `application/plugin/RankingPluginAdapter.ts`（ranking）、`OperatorRegistry.ts`（workflow-operator） | 注册表 `PLUGIN_SPECS` 两个扩展点：`ranking` 走赛事页排名管线；`workflow-operator` 是可选的第三方工作流算子插件，`exposes[]` 每个方法按名注册进宿主 `OperatorRegistry`；JSON 与 regex 是宿主内置 Workflow 算子，不属于插件资源 |
+| 扩展点接入 | `application/plugin/RankingPluginAdapter.ts`（ranking）、`OperatorRegistry.ts`（workflow-operator） | `ranking` 走赛事页排名管线；领域型 `workflow-operator` 插件按 `exposes[]` 注册进算子表。通用 `json.*` / `regex.*` 则由宿主原生实现，不经过插件系统 |
 | 在线插件平台 | `services/plugin-catalog/*`（取清单/装/更新）、助手页「插件」弹框的「在线插件」标签页 | 取 `registry.json`，按 `pointId` 查 spec 分别试跑，只装 `type: plugin`，默认停用、人工启用 |
 | 工具声明 | `application/model/IModelGateway.ts`（`ModelToolDefinition`） | `tools/` 的 `definition` 对齐它 |
 | 工具注册 | `application/chat/WebToolLoop.ts`（`TOOLS[]` / `EXECUTORS`） | 目前全部宿主内置 |
@@ -49,6 +49,8 @@ weiqi-bot 的 Web 资源分两类：`web-resources.zip` 在客户端启动时预
 workflow 静态形状（含 `forEach` / `repeat` / `ifElse`）；带 workflow 的形状契约在 `schema/workflow.schema.json`。
 宿主运行时取不到某条 skill.json 或该条校验不过，只把这一条标 `unavailable`，不影响其它条目；
 结构契约的另一半仍在宿主 `SkillRecipe.ts`。
+
+宿主内置 Workflow 数据算子：`json.*` 与 `regex.*` 直接运行在宿主 Workflow 执行层，纯计算、无插件安装和 Worker 启动；输入、输出均为 Workflow 原生值，并对数据规模与正则模式施加上限。它们不依赖 `registry.json`。
 
 宿主侧 `services/plugin-catalog/*` 已实现「资源清单客户端」（取 `registry.json` → 过滤 → 取条目 → 安装），
 默认源是 `services/share/WeiqiAssetsUrls.ts` 的 `WEIQI_ASSETS_REGISTRY_URL`，用户可另加自定义源
@@ -84,9 +86,9 @@ workflow 静态形状（含 `forEach` / `repeat` / `ifElse`）；带 workflow �
 ## 安全边界
 
 - 插件代码只在宿主 QuickJS 沙箱里执行，默认零 hostApi；资源库不提供任何提权途径。
-- `workflow-operator` 工件把可扩展计算能力带给宿主算子表，但不改变这条边界：源码不进主线程、不进模型上下文。JSON / regex 使用宿主维护的固定实现，不下载、不安装、不执行远程代码；
-  `method` 只认 `exposes[]` 白名单，`args` 只作为 JSON 数据进入沙箱；算子调用方给的文本永远不参与代码拼接。
-  Workflow runner 按名执行普通算子节点，并提供通用有界 `forEach` / `repeat` 控制块；循环体仍由独立算子组成。
+- `workflow-operator` 领域工件把领域计算能力带给宿主算子表，但不改变这条边界：源码不进主线程、不进模型上下文，`method` 只认 `exposes[]` 白名单，`args` 只作为 JSON 数据进入沙箱；算子调用方给的文本永远不参与代码拼接。
+- 通用 JSON / regex 是宿主原生 Workflow 算子，不属于插件工件；它们只处理上游值，并通过长度、节点数与正则模式限制控制同步计算成本。
+- Workflow runner 按名执行普通算子节点，并提供通用有界 `forEach` / `repeat` 控制块；循环体仍由独立算子组成。
 - 工具条目的 `implementation.status` 明确区分「声明镜像」与「可下载实现」；
   当前没有 `downloadable`。将来若开放，必须先在宿主 `WebToolLoop` 里定义外部执行器的
   隔离与注册规则，**不要把任意远程 JS 直接放进主线程**。
