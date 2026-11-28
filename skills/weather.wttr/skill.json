@@ -10,7 +10,7 @@
     "用户想设默认城市时"
   ],
   "primitives": [],
-  "prompt": "用户明确想查询天气、管理自选城市或默认城市时才使用本技能；只是讨论天气、气候或气象知识时正常回答。所有数据操作和天气取数都通过 run_workflow 完成，不直接调用 kv_read / kv_write，也不自行访问网络。\\n\\n【工作流操作】根据当前意图选择 operation：watchlist.read / watchlist.write / default.read / default.write / default.delete / weather.city / weather.batch。每次只执行对应的一项操作。存储固定使用 prefs/weather.watchlist（字符串数组）与 prefs/weather.defaultCity（城市名称字符串），不要使用其他域或键。\\n\\n【自选城市】查看时执行 watchlist.read，按返回值原样展示。添加或删除前先读取列表：添加只在不存在时追加；删除只移除用户点名的城市；然后将完整字符串数组交给 watchlist.write 保存。保存失败必须如实说明。添加自选不自动查询天气。\\n\\n【默认城市】读取使用 default.read；设置使用 default.write 并传 defaultCity；清除使用 default.delete。用户明确指定城市时优先查询该城市，不被默认城市覆盖。用户未指定城市时先读取默认城市；没有默认城市则询问用户，不擅自选择城市。\\n\\n【天气查询】单城市使用 weather.city，传 cityName（原始城市名）、citySlug（wttr.in 接受的英文名或拼音）和 format。批量自选城市使用 weather.batch，cities 为按原列表顺序组成的对象数组，每项包含 city 与 slug；每个城市独立请求，某个城市失败不影响其他城市。默认 format=j2；用户明确要求未来几天、明天后天、逐时或详细预报时用 j1。工作流只把 current_condition[0] 与 weather 预报字段交给模型，不把完整响应带入上下文。\\n\\n【准确性与输出】只根据工作流返回的实际字段播报：当前天气、气温、体感温度、湿度、风速、当天最高/最低气温；只有 j1 返回 hourly 时才补充逐时趋势。缺字段、请求失败或 JSON 异常时如实说明，不编造。批量查询按城市分别说明成功或失败。标注数据来自 wttr.in。\\n\\n【加入自选】每次按用户明确指定的城市查询且确实取得有效天气数据后，在回复末尾附 `[加入自选城市](prefs-add:prefs:weather.watchlist:城市中文名)`，城市名使用用户原话、不编码；已在自选列表中的城市不重复提示。一次查询多个城市时，对不在自选列表中的成功城市分别附链接。该 prefs-add 是宿主通用回灌协议，点击后仍由本技能通过工作流读写 prefs。",
+  "prompt": "用户明确想查询天气、管理自选城市或默认城市时才使用本技能；只是讨论天气、气候或气象知识时正常回答。所有数据操作和天气取数都通过 run_workflow 完成，不直接调用 kv_read / kv_write，也不自行访问网络。\\n\\n【工作流操作】根据当前意图选择 operation：watchlistRead / watchlistWrite / defaultRead / defaultWrite / defaultDelete / weatherCity / weatherBatch。每次只执行对应的一项操作。存储固定使用 prefs/weather.watchlist（字符串数组）与 prefs/weather.defaultCity（城市名称字符串），不要使用其他域或键。\\n\\n【自选城市】查看时执行 watchlistRead，按返回值原样展示。添加或删除前先读取列表：添加只在不存在时追加；删除只移除用户点名的城市；然后将完整字符串数组交给 watchlistWrite 保存。保存失败必须如实说明。添加自选不自动查询天气。\\n\\n【默认城市】读取使用 defaultRead；设置使用 defaultWrite 并传 defaultCity；清除使用 defaultDelete。用户明确指定城市时优先查询该城市，不被默认城市覆盖。用户未指定城市时先读取默认城市；没有默认城市则询问用户，不擅自选择城市。\\n\\n【天气查询】单城市使用 weatherCity，传 cityName（原始城市名）、citySlug（wttr.in 接受的英文名或拼音）和 format。批量自选城市使用 weatherBatch，cities 为按原列表顺序组成的对象数组，每项包含 city 与 slug；每个城市独立请求，某个城市失败不影响其他城市。默认 format=j2；用户明确要求未来几天、明天后天、逐时或详细预报时用 j1。工作流只把 current_condition[0] 与 weather 预报字段交给模型，不把完整响应带入上下文。\\n\\n【准确性与输出】只根据工作流返回的实际字段播报：当前天气、气温、体感温度、湿度、风速、当天最高/最低气温；只有 j1 返回 hourly 时才补充逐时趋势。缺字段、请求失败或 JSON 异常时如实说明，不编造。批量查询按城市分别说明成功或失败。标注数据来自 wttr.in。\\n\\n【加入自选】每次按用户明确指定的城市查询且确实取得有效天气数据后，在回复末尾附 `[加入自选城市](prefs-add:prefs:weather.watchlist:城市中文名)`，城市名使用用户原话、不编码；已在自选列表中的城市不重复提示。一次查询多个城市时，对不在自选列表中的成功城市分别附链接。该 prefs-add 是宿主通用回灌协议，点击后仍由本技能通过工作流读写 prefs。",
   "category": "生活",
   "inputs": [
     {
@@ -18,13 +18,13 @@
       "type": "string",
       "required": true,
       "enum": [
-        "watchlist.read",
-        "watchlist.write",
-        "default.read",
-        "default.write",
-        "default.delete",
-        "weather.city",
-        "weather.batch"
+        "watchlistRead",
+        "watchlistWrite",
+        "defaultRead",
+        "defaultWrite",
+        "defaultDelete",
+        "weatherCity",
+        "weatherBatch"
       ]
     },
     {
@@ -64,13 +64,13 @@
         "call": "json.get",
         "args": {
           "value": {
-            "watchlist.read": true,
-            "watchlist.write": false,
-            "default.read": false,
-            "default.write": false,
-            "default.delete": false,
-            "weather.city": false,
-            "weather.batch": false
+            "watchlistRead": true,
+            "watchlistWrite": false,
+            "defaultRead": false,
+            "defaultWrite": false,
+            "defaultDelete": false,
+            "weatherCity": false,
+            "weatherBatch": false
           },
           "path": "{{input.operation}}"
         }
@@ -99,13 +99,13 @@
               "call": "json.get",
               "args": {
                 "value": {
-                  "watchlist.read": false,
-                  "watchlist.write": true,
-                  "default.read": false,
-                  "default.write": false,
-                  "default.delete": false,
-                  "weather.city": false,
-                  "weather.batch": false
+                  "watchlistRead": false,
+                  "watchlistWrite": true,
+                  "defaultRead": false,
+                  "defaultWrite": false,
+                  "defaultDelete": false,
+                  "weatherCity": false,
+                  "weatherBatch": false
                 },
                 "path": "{{input.operation}}"
               }
@@ -135,13 +135,13 @@
                     "call": "json.get",
                     "args": {
                       "value": {
-                        "watchlist.read": false,
-                        "watchlist.write": false,
-                        "default.read": true,
-                        "default.write": false,
-                        "default.delete": false,
-                        "weather.city": false,
-                        "weather.batch": false
+                        "watchlistRead": false,
+                        "watchlistWrite": false,
+                        "defaultRead": true,
+                        "defaultWrite": false,
+                        "defaultDelete": false,
+                        "weatherCity": false,
+                        "weatherBatch": false
                       },
                       "path": "{{input.operation}}"
                     }
@@ -170,13 +170,13 @@
                           "call": "json.get",
                           "args": {
                             "value": {
-                              "watchlist.read": false,
-                              "watchlist.write": false,
-                              "default.read": false,
-                              "default.write": true,
-                              "default.delete": false,
-                              "weather.city": false,
-                              "weather.batch": false
+                              "watchlistRead": false,
+                              "watchlistWrite": false,
+                              "defaultRead": false,
+                              "defaultWrite": true,
+                              "defaultDelete": false,
+                              "weatherCity": false,
+                              "weatherBatch": false
                             },
                             "path": "{{input.operation}}"
                           }
@@ -206,13 +206,13 @@
                                 "call": "json.get",
                                 "args": {
                                   "value": {
-                                    "watchlist.read": false,
-                                    "watchlist.write": false,
-                                    "default.read": false,
-                                    "default.write": false,
-                                    "default.delete": true,
-                                    "weather.city": false,
-                                    "weather.batch": false
+                                    "watchlistRead": false,
+                                    "watchlistWrite": false,
+                                    "defaultRead": false,
+                                    "defaultWrite": false,
+                                    "defaultDelete": true,
+                                    "weatherCity": false,
+                                    "weatherBatch": false
                                   },
                                   "path": "{{input.operation}}"
                                 }
@@ -241,13 +241,13 @@
                                       "call": "json.get",
                                       "args": {
                                         "value": {
-                                          "watchlist.read": false,
-                                          "watchlist.write": false,
-                                          "default.read": false,
-                                          "default.write": false,
-                                          "default.delete": false,
-                                          "weather.city": true,
-                                          "weather.batch": false
+                                          "watchlistRead": false,
+                                          "watchlistWrite": false,
+                                          "defaultRead": false,
+                                          "defaultWrite": false,
+                                          "defaultDelete": false,
+                                          "weatherCity": true,
+                                          "weatherBatch": false
                                         },
                                         "path": "{{input.operation}}"
                                       }
@@ -351,13 +351,13 @@
                                             "call": "json.get",
                                             "args": {
                                               "value": {
-                                                "watchlist.read": false,
-                                                "watchlist.write": false,
-                                                "default.read": false,
-                                                "default.write": false,
-                                                "default.delete": false,
-                                                "weather.city": false,
-                                                "weather.batch": true
+                                                "watchlistRead": false,
+                                                "watchlistWrite": false,
+                                                "defaultRead": false,
+                                                "defaultWrite": false,
+                                                "defaultDelete": false,
+                                                "weatherCity": false,
+                                                "weatherBatch": true
                                               },
                                               "path": "{{input.operation}}"
                                             }
